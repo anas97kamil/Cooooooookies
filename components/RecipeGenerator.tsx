@@ -31,7 +31,7 @@ export const RecipeGenerator: React.FC = () => {
       onClick={(e) => e.stopPropagation()}
     >
       {/* Container Box - Glassmorphism */}
-      <div className="bg-white/30 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/50 transition-all duration-300 hover:shadow-green-200/20 hover:scale-[1.005]">
+      <div className="bg-white/30 backdrop-blur-xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-white/50 transition-all duration-300 hover:shadow-green-200/20 hover:scale-[1.005]">
         
         {/* Header Section */}
         <div className="bg-white/10 p-6 md:p-8 text-center border-b border-white/30 relative">

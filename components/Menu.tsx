@@ -13,7 +13,7 @@ export const Menu: React.FC = () => {
         <Cookie size={80} className="-rotate-12" />
       </div>
 
-      <div className="bg-white/30 backdrop-blur-2xl p-8 md:p-14 rounded-[3rem] shadow-2xl border border-white/50 max-w-3xl w-full transform transition-all hover:scale-[1.02] relative z-10 group overflow-hidden">
+      <div className="bg-white/30 backdrop-blur-xl p-8 md:p-14 rounded-[3rem] shadow-2xl border border-white/50 max-w-3xl w-full transform transition-all hover:scale-[1.02] relative z-10 group overflow-hidden">
         
         {/* Glossy reflection */}
         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-white/20 via-transparent to-transparent pointer-events-none"></div>
@@ -49,7 +49,7 @@ export const Menu: React.FC = () => {
               نخبز لكم شيئاً مميزاً.. 🍪
             </p>
             <p className="text-gray-700 font-medium leading-loose text-lg">
-              نقوم حالياً بتجهيز قائمة بألذ وصفات الكوكيز، البراونيز، والحلويات الغربية وتصويرها لتليق بذائقتكم. 
+              نقوم حالياً بتجهيز قائمة بألذ وصفات الكوكيز، البراونيز، والحلويات الغربية وتصويرها لتليق بكم. 
               <br/>
               <span className="opacity-70 text-sm">يرجى العودة لاحقاً لرؤية المفاجآت.</span>
             </p>

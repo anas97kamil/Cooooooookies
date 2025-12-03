@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Header } from './components/Header';
 import { InfoBox } from './components/InfoBox';
 import { RecipeGenerator } from './components/RecipeGenerator';
@@ -8,19 +8,52 @@ import { Cookie, ChefHat, Utensils, Phone } from 'lucide-react';
 
 const App: React.FC = () => {
   const [clicks, setClicks] = useState<{id: number, x: number, y: number}[]>([]);
-  const [scrollY, setScrollY] = useState(0);
   const [currentView, setCurrentView] = useState<'home' | 'menu'>('home');
 
+  // Refs for Parallax Elements to avoid re-renders on scroll
+  const cookie1Ref = useRef<HTMLDivElement>(null);
+  const hat1Ref = useRef<HTMLDivElement>(null);
+  const utensilRef = useRef<HTMLDivElement>(null);
+  const cookie2Ref = useRef<HTMLDivElement>(null);
+  const hat2Ref = useRef<HTMLDivElement>(null);
+  const logoWrapperRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
+    let rafId: number;
+
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      // Use requestAnimationFrame for smooth 60fps performance
+      rafId = requestAnimationFrame(() => {
+        const y = window.scrollY;
+
+        // Apply transforms directly to DOM nodes
+        if (cookie1Ref.current) {
+          cookie1Ref.current.style.transform = `translate3d(0, ${y * 0.3}px, 0) rotate(15deg)`;
+        }
+        if (hat1Ref.current) {
+          hat1Ref.current.style.transform = `translate3d(0, ${y * 0.5}px, 0) rotate(-10deg)`;
+        }
+        if (utensilRef.current) {
+          utensilRef.current.style.transform = `translate3d(0, ${y * 0.4}px, 0) rotate(45deg)`;
+        }
+        if (cookie2Ref.current) {
+          cookie2Ref.current.style.transform = `translate3d(0, ${y * 0.6}px, 0) rotate(-25deg)`;
+        }
+        if (hat2Ref.current) {
+          hat2Ref.current.style.transform = `translate3d(0, ${y * 0.15}px, 0) rotate(180deg)`;
+        }
+        if (logoWrapperRef.current) {
+          // Only apply if element exists (it might be unmounted in 'menu' view)
+          logoWrapperRef.current.style.transform = `translate3d(0, ${y * 0.1}px, 0)`;
+        }
+      });
     };
 
-    // Add scroll listener with passive option for performance
     window.addEventListener('scroll', handleScroll, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -51,44 +84,49 @@ const App: React.FC = () => {
       className="min-h-screen flex flex-col cursor-pointer sm:cursor-auto relative overflow-hidden" 
       onClick={handleGlobalClick}
     >
-      {/* Parallax Background Layer */}
+      {/* Parallax Background Layer - Using will-change-transform for GPU acceleration */}
       <div className="fixed inset-0 w-full h-full pointer-events-none z-0">
         {/* Top Left Cookie - Moves slowly */}
         <div 
-          className="absolute top-[5%] left-[5%] text-[#FA8072] opacity-[0.06]"
-          style={{ transform: `translateY(${scrollY * 0.3}px) rotate(15deg)` }}
+          ref={cookie1Ref}
+          className="absolute top-[5%] left-[5%] text-[#FA8072] opacity-[0.06] will-change-transform"
+          style={{ transform: 'rotate(15deg)' }}
         >
           <Cookie size={120} />
         </div>
 
         {/* Top Right Chef Hat - Moves faster */}
         <div 
-          className="absolute top-[15%] right-[8%] text-[#D4A76A] opacity-[0.08]"
-          style={{ transform: `translateY(${scrollY * 0.5}px) rotate(-10deg)` }}
+          ref={hat1Ref}
+          className="absolute top-[15%] right-[8%] text-[#D4A76A] opacity-[0.08] will-change-transform"
+          style={{ transform: 'rotate(-10deg)' }}
         >
           <ChefHat size={140} />
         </div>
 
         {/* Middle Left Utensils - Medium speed */}
         <div 
-          className="absolute top-[45%] left-[10%] text-gray-500 opacity-[0.05]"
-          style={{ transform: `translateY(${scrollY * 0.4}px) rotate(45deg)` }}
+          ref={utensilRef}
+          className="absolute top-[45%] left-[10%] text-gray-500 opacity-[0.05] will-change-transform"
+          style={{ transform: 'rotate(45deg)' }}
         >
           <Utensils size={100} />
         </div>
 
         {/* Bottom Right Cookie - Fast */}
         <div 
-          className="absolute top-[70%] right-[15%] text-[#4E342E] opacity-[0.04]"
-          style={{ transform: `translateY(${scrollY * 0.6}px) rotate(-25deg)` }}
+          ref={cookie2Ref}
+          className="absolute top-[70%] right-[15%] text-[#4E342E] opacity-[0.04] will-change-transform"
+          style={{ transform: 'rotate(-25deg)' }}
         >
           <Cookie size={160} />
         </div>
 
         {/* Center Deep Background - Very slow */}
         <div 
-          className="absolute top-[30%] left-[40%] text-[#FA8072] opacity-[0.03]"
-          style={{ transform: `translateY(${scrollY * 0.15}px) rotate(180deg)` }}
+          ref={hat2Ref}
+          className="absolute top-[30%] left-[40%] text-[#FA8072] opacity-[0.03] will-change-transform"
+          style={{ transform: 'rotate(180deg)' }}
         >
           <ChefHat size={200} />
         </div>
@@ -104,8 +142,8 @@ const App: React.FC = () => {
             <>
               {/* Logo Section with Parallax Lift (Only on Home) */}
               <div 
-                className="flex justify-center py-4 relative"
-                style={{ transform: `translateY(${scrollY * 0.1}px)` }} 
+                ref={logoWrapperRef}
+                className="flex justify-center py-4 relative will-change-transform"
               >
                 <div className="relative group">
                   <Logo 

@@ -3,7 +3,7 @@ import { Phone, Mail, MapPin, MessageCircle, Facebook, Instagram } from 'lucide-
 
 export const InfoBox: React.FC = () => {
   return (
-    <div className="bg-white/30 backdrop-blur-2xl w-full max-w-3xl mx-auto p-8 rounded-[2.5rem] shadow-2xl border border-white/50 transform transition-all duration-200 hover:shadow-orange-200/20 hover:scale-[1.01] active:scale-[0.99] cursor-default relative overflow-hidden group/box">
+    <div className="bg-white/30 backdrop-blur-xl w-full max-w-3xl mx-auto p-8 rounded-[2.5rem] shadow-2xl border border-white/50 transform transition-all duration-200 hover:shadow-orange-200/20 hover:scale-[1.01] active:scale-[0.99] cursor-default relative overflow-hidden group/box">
       
       {/* Glossy reflection effect */}
       <div className="absolute top-0 left-0 w-full h-1/2 bg-gradient-to-b from-white/40 to-transparent pointer-events-none"></div>
