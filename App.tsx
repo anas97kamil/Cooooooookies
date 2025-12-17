@@ -114,15 +114,21 @@ const App: React.FC = () => {
       reader.onload = (e) => {
           try {
               const data = JSON.parse(e.target?.result as string);
-              if (data.sales) setSales(data.sales);
-              if (data.purchaseInvoices) setPurchaseInvoices(data.purchaseInvoices);
-              if (data.history) setHistory(data.history);
-              if (data.products) setProducts(data.products);
-              if (data.customers) setCustomers(data.customers);
-              if (data.suppliers) setSuppliers(data.suppliers);
-              alert('تم استيراد البيانات بنجاح!');
+              
+              // Direct save to localStorage to bypass React's async cycle before reload
+              if (data.sales) localStorage.setItem('dailySales', JSON.stringify(data.sales));
+              if (data.purchaseInvoices) localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(data.purchaseInvoices));
+              if (data.history) localStorage.setItem('salesHistory', JSON.stringify(data.history));
+              if (data.products) localStorage.setItem('products', JSON.stringify(data.products));
+              if (data.customers) localStorage.setItem('customers', JSON.stringify(data.customers));
+              if (data.suppliers) localStorage.setItem('suppliers', JSON.stringify(data.suppliers));
+              
+              alert('تم استيراد البيانات بنجاح! سيتم إعادة تحميل التطبيق الآن.');
               window.location.reload();
-          } catch (err) { alert('خطأ في تنسيق الملف!'); }
+          } catch (err) { 
+              console.error(err);
+              alert('خطأ في استعادة البيانات! تأكد من أن الملف صحيح.'); 
+          }
       };
       reader.readAsText(file);
   }, []);
