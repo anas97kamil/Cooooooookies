@@ -29,7 +29,7 @@ const LoadingScreen = ({ progress, message }: { progress: number, message: strin
         <div className="relative flex items-center justify-center mb-10">
             <svg height={radius * 2} width={radius * 2} className="transform rotate-[-90deg]">
                 <circle stroke="#1e293b" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius} fill="transparent" />
-                <circle stroke="#FA8072" strokeWidth={stroke} strokeDasharray={`${circumference} ${circumference}`} style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.3s ease' }} strokeLinecap="round" r={normalizedRadius} cx={radius} cy={radius} fill="transparent" />
+                <circle stroke="#FA8072" strokeWidth={stroke} strokeDasharray={`${circumference} ${circumference}`} style={{ strokeDashoffset, transition: 'stroke-dashoffset 0.3s x' }} strokeLinecap="round" r={normalizedRadius} cx={radius} cy={radius} fill="transparent" />
             </svg>
             <div className="absolute text-white font-black text-2xl">{progress}%</div>
         </div>
@@ -94,7 +94,7 @@ const App: React.FC = () => {
 
   const handleExport = useCallback(() => {
       const data = { 
-          version: '1.4', 
+          version: '1.5', 
           backupDate: new Date().toISOString(),
           sales, purchaseInvoices, history, products, customers, suppliers 
       };
@@ -149,6 +149,10 @@ const App: React.FC = () => {
 
           return prevProducts.map(p => p.id === id ? { ...p, ...updates } : p);
       });
+  }, []);
+
+  const handleUpdateItemPrice = useCallback((itemId: string, newPrice: number) => {
+    setSales(prev => prev.map(item => item.id === itemId ? { ...item, price: newPrice } : item));
   }, []);
 
   const onUpdateArchivedOrder = useCallback((date: string, orderId: string, updatedItems: SaleItem[]) => {
@@ -214,7 +218,6 @@ const App: React.FC = () => {
       const orderId = Date.now().toString();
       const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       
-      // Robust customer number calculation to avoid NaN
       const currentCustomerNumbers = sales.map(s => Number(s.customerNumber)).filter(n => !isNaN(n));
       const nextCustomerNumber = currentCustomerNumbers.length > 0 ? Math.max(...currentCustomerNumbers) + 1 : 1;
       
@@ -244,7 +247,15 @@ const App: React.FC = () => {
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl">
         <Summary items={sales} onPreview={() => setInvoiceItems(sales)} />
         <POSInterface onCompleteOrder={completeOrder} products={products} customers={customers} onOpenProductManager={() => setModals({...modals, products: true})} onOpenCustomerManager={() => setModals({...modals, customers: true})} />
-        <div className="mt-8"><SalesTable items={sales} onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} /></div>
+        <div className="mt-8">
+            <SalesTable 
+                items={sales} 
+                onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} 
+                onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} 
+                onPreviewInvoice={setInvoiceItems}
+                onUpdateItemPrice={handleUpdateItemPrice}
+            />
+        </div>
       </main>
 
       <Suspense fallback={<ModalLoader />}>
@@ -285,7 +296,7 @@ const App: React.FC = () => {
       )}
 
       <footer className="text-center py-6 text-gray-600 text-[10px] no-print">
-          <p onClick={() => setShowResetModal(true)} className="cursor-pointer select-none px-4 py-2 hover:text-gray-400 transition-colors inline-block">v1.4 Optimized</p>
+          <p onClick={() => setShowResetModal(true)} className="cursor-pointer select-none px-4 py-2 hover:text-gray-400 transition-colors inline-block">v1.5 Optimized</p>
       </footer>
     </div>
   );

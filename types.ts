@@ -1,3 +1,4 @@
+
 export type UnitType = 'piece' | 'kg';
 export type SaleType = 'retail' | 'wholesale';
 export type PaymentStatus = 'paid' | 'credit';
@@ -52,6 +53,7 @@ export interface Product {
   id: string;
   name: string;
   price: number;
+  wholesalePrice: number; // New field
   costPrice: number; // Added for profit calculation
   unitType: UnitType;
 }

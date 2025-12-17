@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Settings, X, Scale, Box, Edit2, Check, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, Settings, X, Scale, Box, Edit2, Check, RotateCcw, Store } from 'lucide-react';
 import { Product, UnitType } from '../types';
 
 interface ProductManagerProps {
@@ -22,34 +22,43 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
+  const [wholesalePrice, setWholesalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [unitType, setUnitType] = useState<UnitType>('piece');
   
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', price: '', costPrice: '', unitType: 'piece' as UnitType });
+  const [editForm, setEditForm] = useState({ name: '', price: '', wholesalePrice: '', costPrice: '', unitType: 'piece' as UnitType });
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !price || !costPrice) return;
+    if (!name || !price || !costPrice || !wholesalePrice) return;
 
     onAddProduct({
       name,
       price: parseFloat(price),
+      wholesalePrice: parseFloat(wholesalePrice),
       costPrice: parseFloat(costPrice),
       unitType
     });
 
     setName('');
     setPrice('');
+    setWholesalePrice('');
     setCostPrice('');
     setUnitType('piece');
   };
 
   const startEdit = (p: Product) => {
     setEditingId(p.id);
-    setEditForm({ name: p.name, price: p.price.toString(), costPrice: p.costPrice.toString(), unitType: p.unitType });
+    setEditForm({ 
+      name: p.name, 
+      price: p.price.toString(), 
+      wholesalePrice: (p.wholesalePrice || p.price).toString(), 
+      costPrice: p.costPrice.toString(), 
+      unitType: p.unitType 
+    });
   };
 
   const handleUpdate = () => {
@@ -57,6 +66,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
     onUpdateProduct(editingId, {
       name: editForm.name,
       price: parseFloat(editForm.price),
+      wholesalePrice: parseFloat(editForm.wholesalePrice),
       costPrice: parseFloat(editForm.costPrice),
       unitType: editForm.unitType
     });
@@ -93,26 +103,37 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                         required
                     />
                     
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div className="space-y-1">
-                            <label className="text-[10px] text-gray-500 font-bold pr-1">رأس المال (التكلفة)</label>
+                            <label className="text-[10px] text-gray-500 font-bold pr-1">التكلفة</label>
                             <input
                                 type="number"
                                 value={costPrice}
                                 onChange={(e) => setCostPrice(e.target.value)}
                                 placeholder="التكلفة"
-                                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-[#FA8072] rounded-lg outline-none text-sm font-bold"
+                                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-red-400 rounded-lg outline-none text-sm font-bold"
                                 required
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[10px] text-gray-500 font-bold pr-1">سعر البيع</label>
+                            <label className="text-[10px] text-gray-500 font-bold pr-1">سعر المفرق</label>
                             <input
                                 type="number"
                                 value={price}
                                 onChange={(e) => setPrice(e.target.value)}
-                                placeholder="سعر البيع"
+                                placeholder="سعر المفرق"
                                 className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-green-400 rounded-lg outline-none text-sm font-bold"
+                                required
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] text-gray-500 font-bold pr-1">سعر الجملة</label>
+                            <input
+                                type="number"
+                                value={wholesalePrice}
+                                onChange={(e) => setWholesalePrice(e.target.value)}
+                                placeholder="سعر الجملة"
+                                className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-blue-400 rounded-lg outline-none text-sm font-bold"
                                 required
                             />
                         </div>
@@ -134,21 +155,24 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                   <h4 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2"><Edit2 size={16} /> تعديل بيانات: {editForm.name}</h4>
                   <div className="space-y-3">
                       <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm" />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                           <div className="space-y-1">
-                              <label className="text-[10px] text-gray-400">رأس المال الجديد</label>
+                              <label className="text-[10px] text-gray-400">التكلفة</label>
                               <input type="number" value={editForm.costPrice} onChange={e => setEditForm({...editForm, costPrice: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-[#FA8072] p-2 rounded-lg font-bold" />
                           </div>
                           <div className="space-y-1">
-                              <label className="text-[10px] text-gray-400">سعر البيع الجديد</label>
+                              <label className="text-[10px] text-gray-400">المفرق</label>
                               <input type="number" value={editForm.price} onChange={e => setEditForm({...editForm, price: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-green-400 p-2 rounded-lg font-bold" />
+                          </div>
+                          <div className="space-y-1">
+                              <label className="text-[10px] text-gray-400">الجملة</label>
+                              <input type="number" value={editForm.wholesalePrice} onChange={e => setEditForm({...editForm, wholesalePrice: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-blue-400 p-2 rounded-lg font-bold" />
                           </div>
                       </div>
                       <div className="flex gap-2">
                           <button onClick={handleUpdate} className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold flex items-center justify-center gap-2"><Check size={18} /> حفظ التغييرات</button>
                           <button onClick={() => setEditingId(null)} className="px-4 bg-gray-700 text-gray-300 py-2 rounded-lg"><RotateCcw size={18} /></button>
                       </div>
-                      <p className="text-[10px] text-gray-500 text-center font-bold">* ملاحظة: سيتم تحديث الاسم الجديد في جميع فواتير الأرشيف والمبيعات الحالية فوراً.</p>
                   </div>
               </div>
           )}
@@ -165,7 +189,8 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                       </div>
                       <div className="flex items-center gap-3 mt-1.5">
                           <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">التكلفة:</span><span className="text-red-400 text-xs font-bold">{product.costPrice.toLocaleString()}</span></div>
-                          <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">البيع:</span><span className="text-green-400 text-xs font-bold">{product.price.toLocaleString()}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">المفرق:</span><span className="text-green-400 text-xs font-bold">{product.price.toLocaleString()}</span></div>
+                          <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">الجملة:</span><span className="text-blue-400 text-xs font-bold">{(product.wholesalePrice || product.price).toLocaleString()}</span></div>
                       </div>
                     </div>
                     

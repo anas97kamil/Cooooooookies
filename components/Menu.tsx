@@ -1,5 +1,6 @@
+
 import React, { useState, useMemo } from 'react';
-import { Trash2, ShoppingBag, Search, User, Download, Store } from 'lucide-react';
+import { Trash2, ShoppingBag, Search, User, Download, Store, Edit3, Check, X } from 'lucide-react';
 import { SaleItem } from '../types';
 
 interface SalesTableProps {
@@ -7,15 +8,20 @@ interface SalesTableProps {
   onDeleteItem: (id: string) => void;
   onDeleteOrder?: (orderId: string) => void;
   onPreviewInvoice: (items: SaleItem[]) => void;
+  onUpdateItemPrice?: (itemId: string, newPrice: number) => void; 
 }
 
-export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onDeleteOrder, onPreviewInvoice }) => {
+export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onDeleteOrder, onPreviewInvoice, onUpdateItemPrice }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   
   // State for inline deletion confirmation
   const [confirmItemId, setConfirmItemId] = useState<string | null>(null);
   const [confirmOrderId, setConfirmOrderId] = useState<string | null>(null);
   
+  // State for price editing
+  const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
+  const [tempPrice, setTempPrice] = useState<string>('');
+
   // Group items by orderId
   const groupedOrders = useMemo(() => {
     const groups: { [key: string]: SaleItem[] } = {};
@@ -27,11 +33,12 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
         groups[key].push(item);
     });
     
-    // Convert to array and sort by time (newest first)
+    // Sort orders by time (newest first)
     return Object.values(groups).sort((a, b) => {
-        const timeA = a[0]?.id ? 1 : 0; // Simple check, ideally parse timestamp
-        return 0; // Keeping original sort order (newest usually appended, so we might want to reverse in UI)
-    }).reverse();
+        const timeA = a[0].time;
+        const timeB = b[0].time;
+        return timeB.localeCompare(timeA);
+    });
   }, [items]);
 
   // Filter logic for Search
@@ -45,6 +52,19 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
           return name.includes(lowerTerm) || number.includes(lowerTerm);
       });
   }, [groupedOrders, searchTerm]);
+
+  const startEditPrice = (item: SaleItem) => {
+    setEditingPriceId(item.id);
+    setTempPrice(item.price.toString());
+  };
+
+  const savePrice = (itemId: string) => {
+    const newPrice = parseFloat(tempPrice);
+    if (!isNaN(newPrice) && newPrice >= 0 && onUpdateItemPrice) {
+        onUpdateItemPrice(itemId, newPrice);
+    }
+    setEditingPriceId(null);
+  };
 
   if (items.length === 0) {
     return (
@@ -95,7 +115,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                     {isWholesale ? <Store size={16} /> : <User size={16} />}
                                     <span>
                                         {displayName}
-                                        {/* If name exists, show number in small text */}
                                         {firstItem.customerName && <span className="text-xs opacity-70 mr-2">#{firstItem.customerNumber}</span>}
                                     </span>
                                 </div>
@@ -108,11 +127,9 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                     {orderTotal.toLocaleString('en-US')} ل.س
                                 </div>
                                 
-                                {/* Download Invoice Button */}
                                 <button 
                                     onClick={() => onPreviewInvoice(group)}
                                     className="flex items-center gap-1 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors no-print ml-2"
-                                    title="تحميل الفاتورة PDF"
                                 >
                                     <Download size={14} />
                                     تحميل PDF
@@ -121,7 +138,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                 {onDeleteOrder && (
                                     confirmOrderId === orderId ? (
                                         <div className="flex items-center gap-2 no-print">
-                                            <span className="text-xs text-red-300 hidden md:inline">حذف؟</span>
                                             <button 
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -132,26 +148,10 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                             >
                                                 نعم
                                             </button>
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setConfirmOrderId(null);
-                                                }}
-                                                className="bg-gray-600 text-white px-2 py-1 rounded text-xs hover:bg-gray-500"
-                                            >
-                                                إلغاء
-                                            </button>
+                                            <button onClick={() => setConfirmOrderId(null)} className="bg-gray-600 text-white px-2 py-1 rounded text-xs">إلغاء</button>
                                         </div>
                                     ) : (
-                                        <button 
-                                            type="button"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setConfirmOrderId(orderId);
-                                            }}
-                                            className="text-red-400 hover:bg-red-400/10 p-2 rounded-lg transition-colors no-print"
-                                            title="حذف الطلب بالكامل"
-                                        >
+                                        <button onClick={() => setConfirmOrderId(orderId)} className="text-red-400 hover:bg-red-400/10 p-2 rounded-lg transition-colors no-print">
                                             <Trash2 size={18} />
                                         </button>
                                     )
@@ -174,48 +174,47 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                 <tbody className="divide-y divide-gray-700/50 text-sm">
                                     {group.map(item => (
                                         <tr key={item.id} className="hover:bg-gray-700/20 transition-colors">
-                                            <td className="py-2 px-4 font-medium text-gray-200">
-                                                {item.name}
-                                            </td>
+                                            <td className="py-2 px-4 font-medium text-gray-200">{item.name}</td>
                                             <td className="py-2 px-4 text-center">
                                                 <span className="bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-xs">
                                                     {item.quantity} {item.unitType === 'kg' ? 'كغ' : 'قطعة'}
                                                 </span>
                                             </td>
-                                            <td className="py-2 px-4 text-gray-400">{item.price.toLocaleString('en-US')}</td>
-                                            <td className="py-2 px-4 text-[#FA8072] font-medium">
+                                            <td className="py-2 px-4 text-gray-400">
+                                                {editingPriceId === item.id ? (
+                                                    <div className="flex items-center gap-1">
+                                                        <input 
+                                                            type="number" 
+                                                            value={tempPrice} 
+                                                            onChange={e => setTempPrice(e.target.value)} 
+                                                            onKeyDown={e => {
+                                                                if(e.key === 'Enter') savePrice(item.id);
+                                                                if(e.key === 'Escape') setEditingPriceId(null);
+                                                            }}
+                                                            className="w-20 bg-gray-900 border border-[#FA8072] text-white text-xs rounded px-1 py-0.5 outline-none font-bold"
+                                                            autoFocus
+                                                        />
+                                                        <button onClick={() => savePrice(item.id)} className="text-green-500 hover:text-green-400 transition-colors"><Check size={14}/></button>
+                                                        <button onClick={() => setEditingPriceId(null)} className="text-gray-500 hover:text-white transition-colors"><X size={14}/></button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2 group/price cursor-pointer" onClick={() => startEditPrice(item)} title="انقر لتعديل السعر">
+                                                        <span className="font-mono">{item.price.toLocaleString('en-US')}</span>
+                                                        <Edit3 size={12} className="opacity-30 group-hover/price:opacity-100 transition-opacity text-[#FA8072]" />
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="py-2 px-4 text-[#FA8072] font-bold">
                                                 {(item.price * item.quantity).toLocaleString('en-US')}
                                             </td>
                                             <td className="py-2 px-4 text-left">
                                                 {confirmItemId === item.id ? (
                                                     <div className="flex items-center gap-1">
-                                                        <button
-                                                            onClick={() => {
-                                                                onDeleteItem(item.id);
-                                                                setConfirmItemId(null);
-                                                            }}
-                                                            className="text-red-500 text-xs font-bold hover:underline"
-                                                        >
-                                                            تأكيد
-                                                        </button>
-                                                        <span className="text-gray-600">/</span>
-                                                        <button
-                                                            onClick={() => setConfirmItemId(null)}
-                                                            className="text-gray-400 text-xs hover:text-white"
-                                                        >
-                                                            إلغاء
-                                                        </button>
+                                                        <button onClick={() => { onDeleteItem(item.id); setConfirmItemId(null); }} className="text-red-500 text-xs font-bold underline">تأكيد</button>
+                                                        <button onClick={() => setConfirmItemId(null)} className="text-gray-400 text-xs">إلغاء</button>
                                                     </div>
                                                 ) : (
-                                                    <button
-                                                        type="button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setConfirmItemId(item.id);
-                                                        }}
-                                                        className="text-gray-600 hover:text-red-400 transition-colors cursor-pointer"
-                                                        title="حذف مادة"
-                                                    >
+                                                    <button onClick={() => setConfirmItemId(item.id)} className="text-gray-600 hover:text-red-400 transition-colors no-print">
                                                         <Trash2 size={14} />
                                                     </button>
                                                 )}
