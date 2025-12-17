@@ -29,31 +29,39 @@
           display: none !important;
         }
 
-        /* Essential fix for double printing: Hide root when in print mode */
-        body.print-mode #root {
-          display: none !important;
+        /* Fix blank page issue: Don't hide root, just ensure container is visible */
+        body {
+          background-color: white !important;
+          color: black !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
 
-        body.print-mode #invoice-content {
+        #root {
+          background-color: white !important;
+        }
+
+        /* Ensure invoice content takes full width and is visible */
+        #invoice-content {
           display: block !important;
-          visibility: visible !important;
-          position: static !important;
           width: 100% !important;
-          margin: 0 !important;
-          padding: 15mm !important;
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
           background: white !important;
           color: black !important;
+          padding: 10mm !important;
+          z-index: 9999 !important;
         }
 
         #invoice-content * {
-          visibility: visible !important;
           color: black !important;
         }
       }
       
       @page {
         size: auto;
-        margin: 0;
+        margin: 5mm;
       }
     </style>
   <script type="importmap">

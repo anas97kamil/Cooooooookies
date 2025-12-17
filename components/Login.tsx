@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Lock, User, LogIn, AlertCircle } from 'lucide-react';
 
@@ -92,7 +93,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </form>
 
         <div className="mt-8 text-center text-xs text-gray-600">
-          نسخة النظام v1.0 &copy; 2024
+          نسخة النظام v1.0 &copy; 2026
         </div>
       </div>
     </div>

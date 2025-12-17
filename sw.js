@@ -1,23 +1,23 @@
 
-const CACHE_NAME = 'cookies-bakery-offline-pro-v6';
+const CACHE_NAME = 'cookies-bakery-v2026-offline-v1';
 
-// Assets that MUST be cached immediately on install
+// Assets to cache immediately
 const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/logo.png',
   '/manifest.json',
-  '/index.tsx',
-  'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap'
+  'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap',
+  'https://cdn.tailwindcss.com',
+  'https://aistudiocdn.com/lucide-react@^0.555.0'
 ];
 
-// Domains that host our external libraries (CDNs)
+// Domains that host our external libraries
 const EXTERNAL_DOMAINS = [
   'cdn.tailwindcss.com',
   'aistudiocdn.com',
   'fonts.googleapis.com',
   'fonts.gstatic.com',
-  'cdn.jsdelivr.net',
   'esm.sh'
 ];
 
@@ -56,6 +56,7 @@ self.addEventListener('fetch', (event) => {
   if (isExternalAsset || isLocalAsset) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
+        // Stale-While-Revalidate Strategy
         const fetchPromise = fetch(event.request)
           .then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
@@ -67,7 +68,6 @@ self.addEventListener('fetch', (event) => {
             return networkResponse;
           })
           .catch(() => {
-            // Silence network errors if we have a cache hit
             return cachedResponse;
           });
 

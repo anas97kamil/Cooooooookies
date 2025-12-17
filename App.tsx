@@ -6,7 +6,7 @@ import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
 import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
-import { Loader2, Lock, X, DownloadCloud, Database } from 'lucide-react';
+import { Loader2, Lock, X, DownloadCloud, Database, RotateCcw, AlertTriangle, RefreshCw } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
 const ProductManager = React.lazy(() => import('./components/ProductManager').then(m => ({ default: m.ProductManager })));
@@ -14,6 +14,7 @@ const HistoryModal = React.lazy(() => import('./components/HistoryModal').then(m
 const DataManagementModal = React.lazy(() => import('./components/DataManagementModal').then(m => ({ default: m.DataManagementModal })));
 const CustomerManager = React.lazy(() => import('./components/CustomerManager').then(m => ({ default: m.CustomerManager })));
 const ExpensesModal = React.lazy(() => import('./components/ExpensesModal').then(m => ({ default: m.ExpensesModal })));
+const AnalyticsModal = React.lazy(() => import('./components/AnalyticsModal').then(m => ({ default: m.AnalyticsModal })));
 
 const ModalLoader = () => <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center"><div className="bg-gray-800 p-4 rounded-full border border-gray-700"><Loader2 className="animate-spin text-[#FA8072]" size={32} /></div></div>;
 
@@ -41,6 +42,11 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('isAuth') === 'true');
   const [isAppLoading, setIsAppLoading] = useState(false);
   const [loading, setLoading] = useState({ progress: 0, message: '' });
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<Date>(() => {
+    const saved = localStorage.getItem('lastSyncTime');
+    return saved ? new Date(saved) : new Date();
+  });
   
   const [showLock, setShowLock] = useState<{ target: string } | null>(null);
   const [lockPass, setLockPass] = useState('');
@@ -54,28 +60,59 @@ const App: React.FC = () => {
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => JSON.parse(localStorage.getItem('suppliers') || '[]'));
   
   const [invoiceItems, setInvoiceItems] = useState<SaleItem[] | null>(null);
-  const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false });
+  const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false, analytics: false });
 
+  // Instant persistence on any state change
   useEffect(() => {
-    localStorage.setItem('dailySales', JSON.stringify(sales));
-    localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
-    localStorage.setItem('salesHistory', JSON.stringify(history));
-    localStorage.setItem('products', JSON.stringify(products));
-    localStorage.setItem('customers', JSON.stringify(customers));
-    localStorage.setItem('suppliers', JSON.stringify(suppliers));
+    const saveData = () => {
+      localStorage.setItem('dailySales', JSON.stringify(sales));
+      localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
+      localStorage.setItem('salesHistory', JSON.stringify(history));
+      localStorage.setItem('products', JSON.stringify(products));
+      localStorage.setItem('customers', JSON.stringify(customers));
+      localStorage.setItem('suppliers', JSON.stringify(suppliers));
+    };
+    saveData();
   }, [sales, purchaseInvoices, history, products, customers, suppliers]);
 
-  const handleOpenProtected = (target: keyof typeof modals) => {
-    if (target === 'data') {
-        setModals(m => ({ ...m, [target]: true }));
-        return;
-    }
+  const handleOpenProtected = (target: string) => {
     setShowLock({ target });
   };
 
+  const handleManualSync = () => {
+    setIsSyncing(true);
+    // Explicitly re-save everything and simulate sync animation
+    setTimeout(() => {
+        const now = new Date();
+        localStorage.setItem('dailySales', JSON.stringify(sales));
+        localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
+        localStorage.setItem('salesHistory', JSON.stringify(history));
+        localStorage.setItem('products', JSON.stringify(products));
+        localStorage.setItem('customers', JSON.stringify(customers));
+        localStorage.setItem('suppliers', JSON.stringify(suppliers));
+        localStorage.setItem('lastSyncTime', now.toISOString());
+        
+        setLastSyncTime(now);
+        setIsSyncing(false);
+    }, 1000);
+  };
+
+  const fullReset = useCallback(() => {
+    if (confirm('هل أنت متأكد تماماً؟ سيتم مسح كافة البيانات (أصناف، عملاء، سجل، مبيعات) بشكل نهائي!')) {
+        localStorage.clear();
+        sessionStorage.clear();
+        alert('تم تصفير كافة بيانات الموقع بنجاح.');
+        window.location.reload();
+    }
+  }, []);
+
   const verifyLock = () => {
     if (lockPass === '1997') {
-      if (showLock) setModals(m => ({ ...m, [showLock.target]: true }));
+      if (showLock?.target === 'full_reset') {
+          fullReset();
+      } else if (showLock) {
+          setModals(m => ({ ...m, [showLock.target]: true }));
+      }
       setShowLock(null);
       setLockPass('');
       setLockError(false);
@@ -121,7 +158,6 @@ const App: React.FC = () => {
 
   const handleLogin = () => {
       setIsAppLoading(true);
-      // Realistic loading simulation sequence
       const stages = [
           { p: 15, m: 'جاري التحقق من الصلاحيات...' },
           { p: 40, m: 'تحميل قائمة المنتجات...' },
@@ -132,7 +168,6 @@ const App: React.FC = () => {
 
       stages.forEach((stage, index) => {
           setTimeout(() => {
-              // Fix: Correct mapping of properties from stages to match the loading state type
               setLoading({ progress: stage.p, message: stage.m });
               if (index === stages.length - 1) {
                   setTimeout(() => {
@@ -172,21 +207,15 @@ const App: React.FC = () => {
         onOpenHistory={() => handleOpenProtected('history')} 
         onOpenDataManagement={() => handleOpenProtected('data')} 
         onOpenExpenses={() => handleOpenProtected('expenses')}
-        isOnline={navigator.onLine} lastSyncTime={new Date()} onManualSync={() => {}} isSyncing={false}
+        onOpenAnalytics={() => handleOpenProtected('analytics')}
+        isOnline={navigator.onLine} 
+        lastSyncTime={lastSyncTime} 
+        onManualSync={handleManualSync} 
+        onQuickBackup={handleExport}
+        isSyncing={isSyncing}
       />
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl">
         
-        {/* Quick Backup Action - Small & Compact above Summary */}
-        <div className="mb-2 flex justify-end">
-            <button 
-                onClick={handleExport}
-                className="bg-gray-800/80 hover:bg-gray-700 border border-gray-700/50 text-gray-400 rounded-xl px-3 py-1.5 flex items-center gap-2 transition-all active:scale-95 group"
-            >
-                <DownloadCloud size={14} className="group-hover:text-blue-400" />
-                <span className="text-[10px] font-bold">نسخة سريعة للبيانات</span>
-            </button>
-        </div>
-
         <div className="mb-6">
             <Summary items={sales} onPreview={() => setInvoiceItems(sales)} />
         </div>
@@ -204,7 +233,25 @@ const App: React.FC = () => {
         </div>
       </main>
 
+      <footer className="mt-12 py-8 border-t border-gray-800/50 bg-gray-900/50 no-print">
+        <div className="container mx-auto px-4 flex flex-col items-center justify-center gap-4">
+             <div className="flex items-center gap-3">
+                 <button 
+                    onClick={() => handleOpenProtected('full_reset')}
+                    className="text-gray-500 text-xs font-bold hover:text-gray-400 transition-colors"
+                 >
+                    نسخة النظام v1.5 &copy; 2026
+                 </button>
+             </div>
+             <div className="flex items-center gap-2 text-gray-700 text-[10px] font-bold">
+                <Database size={10} />
+                <span>البيانات مخزنة محلياً في المتصفح وتعمل بدون انترنت</span>
+             </div>
+        </div>
+      </footer>
+
       <Suspense fallback={<ModalLoader />}>
+        {modals.analytics && <AnalyticsModal history={history} currentSales={sales} currentPurchases={purchaseInvoices} onClose={() => setModals(m => ({ ...m, analytics: false }))} />}
         {modals.expenses && <ExpensesModal isOpen={modals.expenses} onClose={() => setModals(m => ({...m, expenses: false}))} currentPurchases={purchaseInvoices} archivedHistory={history} onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} suppliers={suppliers} onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} />}
         {modals.history && <HistoryModal history={history} onClose={() => setModals(m => ({...m, history: false}))} onClearHistory={() => setHistory([])} onPreviewInvoice={setInvoiceItems} onUpdateOrder={(d, o, i) => setHistory(h => h.map(day => day.date === d ? {...day, items: day.items.map(item => item.orderId === o ? i.find(x => x.id === item.id) || item : item)} : day))} />}
         {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={(id, u) => setProducts(s => s.map(p => p.id === id ? {...p, ...u} : p))} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
@@ -220,7 +267,19 @@ const App: React.FC = () => {
                 <Lock className="text-[#FA8072]" size={24} />
                 <button onClick={() => {setShowLock(null); setLockPass('');}} className="text-gray-500"><X size={20}/></button>
             </div>
-            <h3 className="text-white font-bold mb-4">القسم مقفل</h3>
+            <h3 className="text-white font-bold mb-4">
+                {showLock.target === 'full_reset' ? 'تصفير شامل للبيانات' : 'القسم مقفل'}
+            </h3>
+            <p className="text-gray-400 text-xs mb-4 leading-relaxed">
+                {showLock.target === 'full_reset' ? 'تحذير: هذا الخيار سيمسح كل شيء في الموقع (الأصناف، العملاء، السجل). أدخل كلمة السر للمتابعة.' : 
+                 'أدخل كلمة المرور للمتابعة.'}
+            </p>
+            {showLock.target === 'full_reset' && (
+                <div className="flex items-center gap-2 bg-red-900/20 p-2 rounded-lg border border-red-500/20 mb-4 text-red-400">
+                    <AlertTriangle size={16} />
+                    <span className="text-[10px] font-bold">هذه العملية لا يمكن التراجع عنها!</span>
+                </div>
+            )}
             <input 
               type="password" 
               value={lockPass} 
@@ -230,8 +289,8 @@ const App: React.FC = () => {
               autoFocus
               onKeyDown={e => e.key === 'Enter' && verifyLock()}
             />
-            {lockError && <p className="text-red-500 text-xs text-center mb-3">خطأ!</p>}
-            <button onClick={verifyLock} className="w-full bg-[#FA8072] text-white py-3 rounded-xl font-bold">فتح القسم</button>
+            {lockError && <p className="text-red-500 text-xs text-center mb-3">خطأ في كلمة المرور!</p>}
+            <button onClick={verifyLock} className="w-full bg-[#FA8072] text-white py-3 rounded-xl font-bold transition-all active:scale-95 shadow-lg shadow-orange-900/20">تأكيد العملية</button>
           </div>
         </div>
       )}

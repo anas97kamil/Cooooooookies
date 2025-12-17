@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { FileText, History, Database, Wifi, WifiOff, RefreshCw, Clock, Calendar, Download, Wallet } from 'lucide-react';
+import { FileText, History, Database, Wifi, WifiOff, RefreshCw, Clock, Calendar, Download, Wallet, DownloadCloud, BarChart3 } from 'lucide-react';
 
 interface HeaderProps {
   onOpenHistory: () => void;
   onOpenDataManagement: () => void;
   onOpenExpenses: () => void;
+  onOpenAnalytics: () => void;
   isOnline: boolean;
   lastSyncTime: Date;
   onManualSync: () => void;
+  onQuickBackup: () => void;
   isSyncing: boolean;
   installPrompt?: any;
   onInstall?: () => void;
@@ -18,9 +20,11 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenHistory, 
   onOpenDataManagement, 
   onOpenExpenses,
+  onOpenAnalytics,
   isOnline,
   lastSyncTime,
   onManualSync,
+  onQuickBackup,
   isSyncing,
   installPrompt,
   onInstall
@@ -33,6 +37,10 @@ export const Header: React.FC<HeaderProps> = ({
     }, 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const formatLastSync = (date: Date) => {
+    return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  };
 
   return (
     <header className="bg-[#1F2937] border-b border-gray-700 shadow-lg sticky top-0 z-40 no-print">
@@ -76,23 +84,40 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                  )}
 
-                 <div className="flex items-center gap-2 bg-gray-900/60 rounded-xl px-2 py-1 border border-gray-700 mr-1">
-                    <div className="flex flex-col items-end pr-1">
-                        <span className="text-[9px] text-gray-500 font-medium">آخر مزامنة</span>
-                        <div className="flex items-center gap-1 text-[10px] text-gray-300 font-mono">
-                            <Clock size={10} />
-                            {lastSyncTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                 <div className="flex items-center gap-1">
+                    <button 
+                        onClick={onManualSync}
+                        disabled={isSyncing}
+                        className={`flex flex-col items-center justify-center px-4 py-1.5 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/30 rounded-xl transition-all group min-w-[100px] ${isSyncing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title="مزامنة لحظية للبيانات في المتصفح"
+                    >
+                        <div className="flex items-center gap-2">
+                            <RefreshCw size={14} className={`${isSyncing ? 'animate-spin text-white' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                            <span className="text-[11px] font-black uppercase tracking-wider">{isSyncing ? 'جاري...' : 'مزامنة'}</span>
                         </div>
-                    </div>
-                    <button onClick={onManualSync} disabled={isSyncing} className={`p-2 rounded-lg transition-all ${isSyncing ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-700 hover:bg-gray-600 text-white hover:text-[#FA8072]'} active:scale-95`}>
-                        <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
+                        <span className="text-[9px] font-bold text-blue-300/60 mt-0.5">
+                            {formatLastSync(lastSyncTime)}
+                        </span>
+                    </button>
+
+                    <button 
+                        onClick={onQuickBackup}
+                        className="flex items-center gap-2 px-3 py-2 bg-gray-700/50 hover:bg-gray-700 text-gray-300 border border-gray-600/50 rounded-xl transition-all group"
+                        title="تحميل نسخة احتياطية فورية"
+                    >
+                        <DownloadCloud size={16} className="group-hover:text-blue-400 transition-colors" />
+                        <span className="text-xs font-bold hidden sm:inline">نسخة سريعة</span>
                     </button>
                  </div>
 
                  <div className="w-px h-6 bg-gray-700 mx-1"></div>
 
                  <div className="flex items-center gap-1">
-                    {/* Expenses and Sales Together */}
+                    <button onClick={onOpenAnalytics} className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors group" title="التحليلات والرسوم البيانية">
+                        <BarChart3 size={18} className="group-hover:text-green-400 transition-colors" />
+                        <span className="text-xs font-bold hidden lg:inline">التحليلات</span>
+                    </button>
+
                     <button onClick={onOpenExpenses} className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors group" title="المشتريات">
                         <Wallet size={18} className="group-hover:text-red-400 transition-colors" />
                         <span className="text-xs font-bold hidden lg:inline">المشتريات</span>
