@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, Trash2, Settings, X, Scale, Box, Edit2, Check, RotateCcw } from 'lucide-react';
 import { Product, UnitType } from '../types';
@@ -147,7 +148,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                           <button onClick={handleUpdate} className="flex-1 bg-green-600 text-white py-2 rounded-lg font-bold flex items-center justify-center gap-2"><Check size={18} /> حفظ التغييرات</button>
                           <button onClick={() => setEditingId(null)} className="px-4 bg-gray-700 text-gray-300 py-2 rounded-lg"><RotateCcw size={18} /></button>
                       </div>
-                      <p className="text-[10px] text-gray-500 text-center font-bold">* التغيير سيطبق على المبيعات المستقبلية فقط ولا يؤثر على الأرشيف.</p>
+                      <p className="text-[10px] text-gray-500 text-center font-bold">* ملاحظة: سيتم تحديث الاسم الجديد في جميع فواتير الأرشيف والمبيعات الحالية فوراً.</p>
                   </div>
               </div>
           )}

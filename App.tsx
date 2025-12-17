@@ -127,6 +127,34 @@ const App: React.FC = () => {
       reader.readAsText(file);
   }, []);
 
+  const handleUpdateProduct = useCallback((id: string, updates: Partial<Product>) => {
+      setProducts(prevProducts => {
+          const productToUpdate = prevProducts.find(p => p.id === id);
+          if (!productToUpdate) return prevProducts;
+
+          const oldName = productToUpdate.name;
+          const newName = updates.name;
+
+          // GLOBAL SYNC: If product name is changing, update all records in current sales and history
+          if (newName && newName !== oldName) {
+              // Update Current Daily Sales
+              setSales(prevSales => prevSales.map(item => 
+                  item.name === oldName ? { ...item, name: newName } : item
+              ));
+              
+              // Update History/Archive
+              setHistory(prevHistory => prevHistory.map(day => ({
+                  ...day,
+                  items: day.items.map(item => 
+                      item.name === oldName ? { ...item, name: newName } : item
+                  )
+              })));
+          }
+
+          return prevProducts.map(p => p.id === id ? { ...p, ...updates } : p);
+      });
+  }, []);
+
   const onUpdateArchivedOrder = useCallback((date: string, orderId: string, updatedItems: SaleItem[]) => {
       const today = new Date().toLocaleDateString('en-GB');
       if (date === today) {
@@ -212,7 +240,7 @@ const App: React.FC = () => {
       <Suspense fallback={<ModalLoader />}>
         {modals.expenses && <ExpensesModal isOpen={modals.expenses} onClose={() => setModals({...modals, expenses: false})} currentPurchases={purchaseInvoices} archivedHistory={history} onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} suppliers={suppliers} onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} onUpdatePurchase={onUpdateArchivedPurchase} />}
         {modals.history && <HistoryModal history={history} onClose={() => setModals({...modals, history: false})} onClearHistory={() => setHistory([])} onPreviewInvoice={setInvoiceItems} onUpdateOrder={onUpdateArchivedOrder} />}
-        {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals({...modals, products: false})} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={(id, u) => setProducts(p => p.map(it => it.id === id ? {...it, ...u} : it))} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
+        {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals({...modals, products: false})} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={handleUpdateProduct} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals({...modals, customers: false})} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
         {modals.data && <DataManagementModal onClose={() => setModals({...modals, data: false})} onExport={handleExport} onImport={handleImport} />}
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
