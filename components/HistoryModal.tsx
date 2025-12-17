@@ -340,15 +340,24 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
 
                                             {expandedDayId === day.id && (
                                                 <div className="bg-gray-900/50 border-t border-gray-700 p-3 space-y-3 animate-fade-up">
-                                                    {/* Show Expenses List if any */}
-                                                    {day.expenses && day.expenses.length > 0 && (
+                                                    {/* Show Purchase Invoices List if any */}
+                                                    {day.purchaseInvoices && day.purchaseInvoices.length > 0 && (
                                                         <div className="bg-red-900/10 border border-red-900/30 rounded-lg p-3 mb-2">
-                                                            <h5 className="text-xs font-bold text-red-400 mb-2 flex items-center gap-1"><TrendingDown size={12} /> قائمة المصاريف</h5>
-                                                            <div className="space-y-1">
-                                                                {day.expenses.map((exp, ei) => (
-                                                                    <div key={ei} className="flex justify-between text-xs text-gray-300">
-                                                                        <span>- {exp.description} ({exp.time})</span>
-                                                                        <span className="font-bold">{exp.amount.toLocaleString('en-US')}</span>
+                                                            <h5 className="text-xs font-bold text-red-400 mb-2 flex items-center gap-1"><TrendingDown size={12} /> فواتير المشتريات</h5>
+                                                            <div className="space-y-2">
+                                                                {day.purchaseInvoices.map((inv) => (
+                                                                    <div key={inv.id} className="bg-gray-800/50 p-2 rounded border border-red-900/20">
+                                                                        <div className="flex justify-between text-xs text-gray-200 mb-1">
+                                                                            <span className="font-bold">- {inv.supplierName}</span>
+                                                                            <span className="font-bold text-red-300">{inv.totalAmount.toLocaleString('en-US')}</span>
+                                                                        </div>
+                                                                        <div className="text-[10px] text-gray-400 pr-2">
+                                                                            {inv.items.map((item, idx) => (
+                                                                                <span key={idx} className="ml-2">
+                                                                                    {item.name} ({item.quantity})
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
                                                                     </div>
                                                                 ))}
                                                             </div>
