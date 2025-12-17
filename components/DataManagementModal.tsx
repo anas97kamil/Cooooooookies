@@ -47,20 +47,21 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
     try {
       const file = prepareBackupFile();
 
+      // Check if native sharing is available (Mobile/Advanced Browsers)
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: 'نسخة احتياطية - مخبز كوكيز',
-          text: `النسخة الاحتياطية بتاريخ ${new Date().toLocaleDateString('ar-SY')}`,
+          text: `النسخة الاحتياطية لمخبز كوكيز بتاريخ ${new Date().toLocaleDateString('ar-SY')}`,
         });
       } else {
-        // Fallback for desktop or non-supporting browsers
+        // Immediate fallback: Download and inform
         onExport();
-        alert('تم تحميل النسخة على جهازك. يمكنك الآن إرسال الملف يدوياً عبر واتساب.');
+        alert('المشاركة المباشرة غير مدعومة على هذا المتصفح. تم تحميل الملف تلقائياً، يمكنك الآن إرساله يدوياً عبر واتساب.');
       }
     } catch (error) {
       console.error('Error sharing:', error);
-      // If sharing is cancelled by user, don't show alert
+      // AbortError means user cancelled, so we ignore it
       if ((error as Error).name !== 'AbortError') {
         onExport();
       }
@@ -87,7 +88,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                     <div className="bg-blue-500/20 p-3 rounded-xl text-blue-400"><Download size={24} /></div>
                     <div>
                         <h4 className="text-white font-bold">تصدير النسخة الاحتياطية</h4>
-                        <p className="text-gray-500 text-xs mt-1">يمكنك حفظ البيانات أو إرسالها مباشرة.</p>
+                        <p className="text-gray-500 text-xs mt-1">احفظ بياناتك وأرسلها فورياً لتجنب الضياع.</p>
                     </div>
                 </div>
                 
@@ -95,18 +96,18 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                     <button 
                         onClick={handleShareToWhatsApp} 
                         disabled={isSharing}
-                        className="bg-green-600 hover:bg-green-500 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50"
+                        className="bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50 ring-2 ring-green-500/20"
                     >
-                        <MessageCircle size={18} />
+                        <MessageCircle size={20} className={isSharing ? "animate-spin" : ""} />
                         {isSharing ? 'جاري التحضير...' : 'مشاركة عبر واتساب'}
                     </button>
                     
                     <button 
                         onClick={onExport} 
-                        className="bg-gray-700 hover:bg-gray-600 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border border-gray-600 active:scale-95"
+                        className="bg-gray-700 hover:bg-gray-600 text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border border-gray-600 active:scale-95"
                     >
                         <Download size={18} />
-                        تحميل يدوي
+                        تحميل يدوي (JSON)
                     </button>
                 </div>
             </div>
@@ -119,7 +120,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                 
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-5 flex items-start gap-3">
                     <AlertTriangle size={20} className="text-red-500 shrink-0" />
-                    <p className="text-[11px] text-red-200 font-bold leading-relaxed">تنبيه: استعادة البيانات ستمسح كافة السجلات الحالية على هذا الجهاز وتستبدلها ببيانات الملف.</p>
+                    <p className="text-[11px] text-red-200 font-bold leading-relaxed">تنبيه: استعادة البيانات ستمسح كافة السجلات الحالية على هذا الجهاز وتستبدلها ببيانات الملف المختار.</p>
                 </div>
 
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
@@ -143,7 +144,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                         </div>
                         <button onClick={handleConfirmImport} className="w-full bg-green-600 hover:bg-green-500 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 active:scale-95">
                             <Check size={18} />
-                            تأكيد الاستعادة الآن
+                            تأكيد الاستعادة الفورية
                         </button>
                     </div>
                 )}

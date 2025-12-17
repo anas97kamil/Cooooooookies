@@ -52,10 +52,23 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
 
   const [invoiceToPrint, setInvoiceToPrint] = useState<PurchaseInvoice | null>(null);
 
+  // FIX: Collect all unique invoices by ID to prevent duplication between current purchases and history
   const allInvoices = useMemo(() => {
-    let all = [...currentPurchases];
-    archivedHistory.forEach(day => { if (day.purchaseInvoices) all = [...all, ...day.purchaseInvoices]; });
-    return all.sort((a, b) => b.timestamp - a.timestamp);
+    const invoiceMap = new Map<string, PurchaseInvoice>();
+    
+    // First, add archived invoices
+    archivedHistory.forEach(day => {
+      day.purchaseInvoices?.forEach(inv => {
+        invoiceMap.set(inv.id, inv);
+      });
+    });
+
+    // Then, add/overwrite with current day's purchases to ensure latest data
+    currentPurchases.forEach(inv => {
+      invoiceMap.set(inv.id, inv);
+    });
+
+    return Array.from(invoiceMap.values()).sort((a, b) => b.timestamp - a.timestamp);
   }, [currentPurchases, archivedHistory]);
 
   const years = useMemo(() => {
