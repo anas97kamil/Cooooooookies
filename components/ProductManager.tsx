@@ -126,7 +126,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                               {product.unitType === 'kg' ? 'كيلو' : 'قطعة'}
                           </span>
                       </div>
-                      <span className="text-[#FA8072] text-sm font-bold">{product.price.toLocaleString()} ل.س</span>
+                      <span className="text-[#FA8072] text-sm font-bold">{product.price.toLocaleString('en-US')} ل.س</span>
                     </div>
                     
                     {/* Delete Action with Confirmation */}

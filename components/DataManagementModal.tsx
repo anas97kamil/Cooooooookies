@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, Upload, Database, AlertTriangle, FileJson, Check, Trash2 } from 'lucide-react';
+import { X, Download, Upload, Database, AlertTriangle, FileJson, Check, Trash2, Share2, Cloud } from 'lucide-react';
 
 interface DataManagementModalProps {
   onExport: () => void;
@@ -22,15 +22,43 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
 
   const handleConfirmImport = () => {
     if (!selectedFile) return;
-    
-    // Execute immediately without native confirm dialog
-    // The UI button itself serves as the confirmation
     onImport(selectedFile);
     onClose();
   };
 
   const clearSelection = () => {
       setSelectedFile(null);
+  };
+
+  const handleShareToDrive = async () => {
+      // 1. Create the data payload
+      const sales = JSON.parse(localStorage.getItem('dailySales') || '[]');
+      const history = JSON.parse(localStorage.getItem('salesHistory') || '[]');
+      const products = JSON.parse(localStorage.getItem('products') || '[]');
+      const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+      
+      const data = { appVersion: '1.1', timestamp: Date.now(), sales, history, products, customers };
+      const fileName = `cookies-bakery-backup-${new Date().toLocaleDateString('ar-SY').replace(/\//g, '-')}.json`;
+      
+      const file = new File([JSON.stringify(data, null, 2)], fileName, {
+          type: 'application/json',
+      });
+
+      // 2. Use Web Share API
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+              await navigator.share({
+                  files: [file],
+                  title: 'نسخة احتياطية - مخبز كوكيز',
+                  text: 'ملف النسخة الاحتياطية لنظام المبيعات',
+              });
+              // Note: User should select "Drive" from the share sheet
+          } catch (error) {
+              console.log('Error sharing:', error);
+          }
+      } else {
+          alert('المشاركة المباشرة غير مدعومة في هذا المتصفح. يرجى استخدام زر "تحميل ملف البيانات" ثم رفعه يدوياً.');
+      }
   };
 
   return (
@@ -60,23 +88,37 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                     <div>
                         <h4 className="text-white font-bold text-sm">تصدير نسخة احتياطية</h4>
                         <p className="text-gray-400 text-xs mt-1">
-                            حفظ نسخة كاملة من البيانات كملف (JSON) على جهازك.
+                            حفظ البيانات على جهازك أو رفعها إلى السحابة.
                         </p>
                     </div>
                 </div>
-                <button 
-                    onClick={onExport}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                    <Download size={18} />
-                    تحميل ملف البيانات
-                </button>
+                
+                <div className="grid grid-cols-2 gap-3">
+                    <button 
+                        onClick={onExport}
+                        className="bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Download size={16} />
+                        تحميل (جهاز)
+                    </button>
+                    
+                    <button 
+                        onClick={handleShareToDrive}
+                        className="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Cloud size={16} />
+                        Google Drive
+                    </button>
+                </div>
+                 <p className="text-[10px] text-gray-500 mt-2 text-center">
+                    * لمزامنة جوجل درايف: اضغط الزر الأخضر ثم اختر تطبيق "Drive" من القائمة.
+                </p>
             </div>
 
             {/* Import Section */}
             <div className="bg-gray-700/30 p-4 rounded-xl border border-gray-600">
                 <div className="flex items-start gap-3 mb-3">
-                    <div className="bg-green-500/20 p-2 rounded-lg text-green-400">
+                    <div className="bg-purple-500/20 p-2 rounded-lg text-purple-400">
                         <Upload size={24} />
                     </div>
                     <div>

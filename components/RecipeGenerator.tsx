@@ -1,28 +1,38 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Settings, Edit3, Trash2, CheckCircle, Plus, Minus, Calculator, UserPen } from 'lucide-react';
-import { SaleItem, Product, UnitType } from '../types';
+import { ShoppingCart, Settings, Edit3, Trash2, CheckCircle, Plus, Minus, Calculator, UserPen, Users, Store, UserPlus } from 'lucide-react';
+import { SaleItem, Product, UnitType, SaleType, Customer } from '../types';
 
 interface POSInterfaceProps {
-  onCompleteOrder: (items: Omit<SaleItem, 'id' | 'time' | 'customerNumber' | 'orderId'>[], customerName?: string) => void;
+  onCompleteOrder: (items: Omit<SaleItem, 'id' | 'time' | 'customerNumber' | 'orderId'>[], customerName?: string, customerId?: string, saleType?: SaleType) => void;
   products: Product[];
+  customers: Customer[];
   onOpenProductManager: () => void;
+  onOpenCustomerManager: () => void;
 }
 
 // Internal type for the local cart
 interface CartItem {
     tempId: string;
     name: string;
-    price: number; // This is now the "Sold Price" (editable)
+    price: number;
     quantity: number;
     unitType: UnitType;
     isCustom?: boolean;
 }
 
-export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, products, onOpenProductManager }) => {
+export const POSInterface: React.FC<POSInterfaceProps> = ({ 
+    onCompleteOrder, 
+    products, 
+    customers, 
+    onOpenProductManager, 
+    onOpenCustomerManager 
+}) => {
   const [cart, setCart] = useState<CartItem[]>([]);
   
-  // Customer Name State
-  const [customerName, setCustomerName] = useState('');
+  // Sale Context State
+  const [saleType, setSaleType] = useState<SaleType>('retail');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [manualCustomerName, setManualCustomerName] = useState(''); // For retail optional name
   
   // Custom item modal/inline state
   const [showCustomInput, setShowCustomInput] = useState(false);
@@ -82,30 +92,35 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
   };
 
   const updateQuantityDirectly = (tempId: string, val: string) => {
+      // Allow empty string (clearing the input) to act as 0 temporarily
+      if (val === '') {
+          setCart(prev => prev.map(item => item.tempId === tempId ? { ...item, quantity: 0 } : item));
+          return;
+      }
       const num = parseFloat(val);
       if (isNaN(num) || num < 0) return;
       setCart(prev => prev.map(item => item.tempId === tempId ? { ...item, quantity: num } : item));
   };
 
   const updatePriceDirectly = (tempId: string, val: string) => {
+      if (val === '') {
+          setCart(prev => prev.map(item => item.tempId === tempId ? { ...item, price: 0 } : item));
+          return;
+      }
       const num = parseFloat(val);
       if (isNaN(num) || num < 0) return;
       setCart(prev => prev.map(item => item.tempId === tempId ? { ...item, price: num } : item));
   };
 
-  // NEW: Update Total Price directly -> Calculates Quantity
   const updateTotalDirectly = (tempId: string, val: string) => {
+      if (val === '') return; // Don't update on empty string for total
       const newTotal = parseFloat(val);
       if (isNaN(newTotal) || newTotal < 0) return;
 
       setCart(prev => prev.map(item => {
           if (item.tempId === tempId) {
-              if (item.price === 0) return item; // Avoid division by zero
-              
-              // Reverse calculation: Quantity = Total / Unit Price
+              if (item.price === 0) return item;
               const newQty = newTotal / item.price;
-              
-              // Use more precision for KG (3 decimals), less for pieces if needed (but keep decimals for math consistency)
               return { ...item, quantity: parseFloat(newQty.toFixed(3)) };
           }
           return item;
@@ -118,21 +133,37 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
 
   const clearCart = () => {
       setCart([]);
-      setCustomerName('');
+      setManualCustomerName('');
+      setSelectedCustomerId('');
+      setSaleType('retail');
   };
 
   // 4. Finalize Order
   const handleCheckout = () => {
       if (cart.length === 0) return;
       
+      // Validation for Wholesale
+      if (saleType === 'wholesale' && !selectedCustomerId) {
+          alert('يجب اختيار عميل عند البيع بالجملة');
+          return;
+      }
+
       const salesItems = cart.map(({ name, price, quantity, unitType }) => ({
           name,
           price,
           quantity,
-          unitType
+          unitType,
+          saleType // Include sale type in item
       }));
 
-      onCompleteOrder(salesItems, customerName);
+      // Determine final customer name
+      let finalCustomerName = manualCustomerName;
+      if (saleType === 'wholesale' && selectedCustomerId) {
+          const cust = customers.find(c => c.id === selectedCustomerId);
+          if (cust) finalCustomerName = cust.name;
+      }
+
+      onCompleteOrder(salesItems, finalCustomerName, selectedCustomerId || undefined, saleType);
       clearCart();
   };
 
@@ -169,7 +200,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
                     </div>
                     
                     <span className="font-bold text-sm text-center mb-1 line-clamp-2 group-hover:text-[#FA8072] transition-colors">{product.name}</span>
-                    <span className="text-xs text-gray-400 bg-gray-900/50 px-2 py-1 rounded-md">{product.price.toLocaleString()} ل.س</span>
+                    <span className="text-xs text-gray-400 bg-gray-900/50 px-2 py-1 rounded-md">{product.price.toLocaleString('en-US')} ل.س</span>
                 </button>
             ))}
 
@@ -240,7 +271,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
                 <div className="flex justify-between items-center">
                     <h3 className="font-bold text-white flex items-center gap-2">
                         <ShoppingCart size={20} className="text-[#FA8072]" />
-                        زبون حالي
+                        فاتورة البيع
                     </h3>
                     {cart.length > 0 && (
                         <button onClick={clearCart} className="text-xs text-red-400 hover:text-red-300 underline">
@@ -249,19 +280,62 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
                     )}
                 </div>
 
-                {/* Customer Name Input */}
-                <div className="relative">
-                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
+                {/* --- Wholesale vs Retail Toggle --- */}
+                <div className="grid grid-cols-2 bg-gray-700 p-1 rounded-lg">
+                    <button 
+                        onClick={() => setSaleType('retail')}
+                        className={`py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-2 transition-colors ${saleType === 'retail' ? 'bg-white text-black shadow' : 'text-gray-400 hover:text-white'}`}
+                    >
                         <UserPen size={14} />
-                    </div>
-                    <input 
-                        type="text" 
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="اسم الزبون (اختياري)..."
-                        className="w-full bg-gray-800 border border-gray-600 text-white text-sm rounded-lg pr-9 pl-3 py-2 focus:border-[#FA8072] focus:ring-1 focus:ring-[#FA8072] outline-none transition-all placeholder:text-gray-600"
-                    />
+                        مفرق (عادي)
+                    </button>
+                    <button 
+                        onClick={() => setSaleType('wholesale')}
+                        className={`py-1.5 text-xs font-bold rounded-md flex items-center justify-center gap-2 transition-colors ${saleType === 'wholesale' ? 'bg-[#FA8072] text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        <Store size={14} />
+                        جملة
+                    </button>
                 </div>
+
+                {/* Customer Selection */}
+                {saleType === 'retail' ? (
+                     <div className="relative">
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-500">
+                            <UserPen size={14} />
+                        </div>
+                        <input 
+                            type="text" 
+                            value={manualCustomerName}
+                            onChange={(e) => setManualCustomerName(e.target.value)}
+                            placeholder="اسم الزبون (اختياري)..."
+                            className="w-full bg-gray-800 border border-gray-600 text-white text-sm rounded-lg pr-9 pl-3 py-2 focus:border-[#FA8072] focus:ring-1 focus:ring-[#FA8072] outline-none transition-all placeholder:text-gray-600"
+                        />
+                    </div>
+                ) : (
+                    <div className="flex gap-2">
+                        <div className="relative flex-grow">
+                             <select
+                                value={selectedCustomerId}
+                                onChange={(e) => setSelectedCustomerId(e.target.value)}
+                                className={`w-full bg-gray-800 border ${!selectedCustomerId ? 'border-red-500/50 animate-pulse' : 'border-gray-600'} text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-[#FA8072]`}
+                             >
+                                 <option value="">اختر عميل الجملة...</option>
+                                 {customers.map(c => (
+                                     <option key={c.id} value={c.id}>{c.name}</option>
+                                 ))}
+                             </select>
+                        </div>
+                        <button 
+                            onClick={onOpenCustomerManager}
+                            className="bg-blue-600 hover:bg-blue-500 text-white px-3 rounded-lg"
+                            title="إضافة عميل جديد"
+                        >
+                            <UserPlus size={18} />
+                        </button>
+                    </div>
+                )}
+               
             </div>
 
             {/* Cart Items */}
@@ -283,21 +357,21 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
                                 </div>
                             </div>
                             
-                            {/* Inputs Container - Stacked Vertically */}
+                            {/* Inputs Container */}
                             <div className="flex flex-col gap-2 mt-1 bg-gray-800/50 p-2 rounded-lg">
-                                
-                                {/* Row 1: Price Editor */}
+                                {/* Price Editor */}
                                 <div className="flex items-center justify-between gap-2">
                                     <label className="text-[10px] text-gray-500 w-16">سعر الإفرادي:</label>
                                     <input 
                                         type="number"
-                                        value={item.price}
+                                        value={item.price === 0 ? '' : item.price}
+                                        onFocus={(e) => e.target.select()} // Auto-select on focus
                                         onChange={(e) => updatePriceDirectly(item.tempId, e.target.value)}
                                         className="flex-1 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-sm text-white text-center focus:border-[#FA8072] outline-none"
                                     />
                                 </div>
 
-                                {/* Row 2: Quantity Editor (Below Price) */}
+                                {/* Quantity Editor */}
                                 <div className="flex items-center justify-between gap-2">
                                     <label className="text-[10px] text-gray-500 w-16">الكمية:</label>
                                     <div className="flex items-center gap-1 flex-1">
@@ -309,7 +383,8 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
                                         </button>
                                         <input 
                                             type="number"
-                                            value={item.quantity}
+                                            value={item.quantity === 0 ? '' : item.quantity}
+                                            onFocus={(e) => e.target.select()} // Auto-select on focus
                                             onChange={(e) => updateQuantityDirectly(item.tempId, e.target.value)}
                                             className="flex-1 bg-gray-900 border border-gray-600 rounded px-1 py-1 text-sm text-white text-center focus:border-[#FA8072] outline-none h-7"
                                             step={item.unitType === 'kg' ? "0.1" : "1"}
@@ -323,7 +398,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
                                     </div>
                                 </div>
 
-                                {/* Row 3: Total Price Editor (New - Calculates Quantity) */}
+                                {/* Total Price Editor */}
                                 <div className="flex items-center justify-between gap-2 pt-2 border-t border-gray-700/50 mt-1">
                                     <div className="flex items-center gap-1 w-16">
                                         <Calculator size={10} className="text-[#FA8072]" />
@@ -331,10 +406,9 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
                                     </div>
                                     <input 
                                         type="number"
-                                        // Display rounded total if integer, or 2 decimals
                                         value={Math.round(item.price * item.quantity * 100) / 100}
+                                        onFocus={(e) => e.target.select()}
                                         onChange={(e) => updateTotalDirectly(item.tempId, e.target.value)}
-                                        placeholder="المبلغ"
                                         className="flex-1 bg-gray-900 border border-[#FA8072]/50 rounded px-2 py-1 text-sm text-[#FA8072] font-bold text-center focus:border-[#FA8072] outline-none"
                                     />
                                 </div>
@@ -355,7 +429,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({ onCompleteOrder, pro
             <div className="p-4 bg-gray-900 border-t border-gray-700 mt-auto">
                 <div className="flex justify-between items-center mb-4">
                     <span className="text-gray-400">الإجمالي المطلوب:</span>
-                    <span className="text-2xl font-bold text-white">{cartTotal.toLocaleString()} <span className="text-sm font-normal text-gray-500">ل.س</span></span>
+                    <span className="text-2xl font-bold text-white">{cartTotal.toLocaleString('en-US')} <span className="text-sm font-normal text-gray-500">ل.س</span></span>
                 </div>
                 
                 <button

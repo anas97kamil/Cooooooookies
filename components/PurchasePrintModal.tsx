@@ -1,26 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { X, Copy, Check, Download, FileSpreadsheet } from 'lucide-react';
-import { SaleItem } from '../types';
+import { X, Copy, Check, Download, FileSpreadsheet, Printer } from 'lucide-react';
+import { PurchaseInvoice } from '../types';
 import { utils, writeFile } from 'xlsx';
 
-interface InvoiceModalProps {
-  items: SaleItem[];
+interface PurchasePrintModalProps {
+  invoice: PurchaseInvoice;
   onClose: () => void;
 }
 
-export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) => {
-  const [copied, setCopied] = useState(false);
+export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice, onClose }) => {
   const [confirmPrint, setConfirmPrint] = useState(false);
   
-  const totalRevenue = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const dateStr = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY with English digits
-  const firstItem = items[0];
-  const uniqueCustomers = new Set(items.map(i => i.customerNumber));
-  const isSingleCustomer = uniqueCustomers.size === 1;
-  // Use explicit customer name if available, otherwise fallback to generic if single customer
-  const customerName = firstItem?.customerName || (isSingleCustomer ? `زبون رقم ${firstItem.customerNumber}` : 'مبيعات مجمعة');
-  const isWholesale = firstItem?.saleType === 'wholesale';
-
   useEffect(() => {
     document.body.classList.add('print-mode');
     return () => {
@@ -28,46 +18,23 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
     };
   }, []);
 
-  const getInvoiceText = () => {
-    let text = `*فاتورة - مخبز كوكيز*\n`;
-    text += `التاريخ: ${dateStr}\n`;
-    text += `العميل: ${customerName}\n`;
-    text += `------------------\n`;
-    items.forEach(item => {
-      text += `- ${item.name}: ${item.quantity} × ${item.price} = ${(item.price * item.quantity).toLocaleString('en-US')}\n`;
-    });
-    text += `------------------\n`;
-    text += `*الإجمالي: ${totalRevenue.toLocaleString('en-US')} ل.س*\n`;
-    return text;
-  };
-
-  const handleCopy = () => {
-    const text = getInvoiceText();
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
   const handleDownloadExcel = () => {
-    const rows = items.map(item => ({
+    const rows = invoice.items.map(item => ({
         "المادة": item.name,
-        "العميل": item.customerName || `زبون ${item.customerNumber}`,
         "الكمية": item.quantity,
-        "السعر": item.price,
-        "الإجمالي": item.price * item.quantity
+        "التكلفة": item.cost,
+        "الإجمالي": item.total
     }));
     rows.push({
         "المادة": "المجموع الكلي",
-        "العميل": "",
         "الكمية": 0,
-        "السعر": 0,
-        "الإجمالي": totalRevenue
+        "التكلفة": 0,
+        "الإجمالي": invoice.totalAmount
     });
     const ws = utils.json_to_sheet(rows);
     const wb = utils.book_new();
-    utils.book_append_sheet(wb, ws, "الفاتورة");
-    writeFile(wb, `فاتورة-${Date.now()}.xlsx`);
+    utils.book_append_sheet(wb, ws, "فاتورة شراء");
+    writeFile(wb, `شراء-${invoice.supplierName}-${invoice.date.replace(/\//g, '-')}.xlsx`);
   };
 
   const handlePrint = () => {
@@ -76,25 +43,29 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
       <div className="bg-gray-800 rounded-2xl w-full max-w-md shadow-2xl flex flex-col max-h-[90vh] animate-fade-up border border-gray-700">
         
         {/* Header */}
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900/50 rounded-t-2xl no-print">
-          <h3 className="font-bold text-lg text-white">معاينة الفاتورة</h3>
+          <h3 className="font-bold text-lg text-white">طباعة فاتورة مشتريات</h3>
           <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full transition-colors">
             <X size={20} className="text-gray-400" />
           </button>
         </div>
 
-        {/* Content */}
+        {/* Content - Reusing ID invoice-content for print styling */}
         <div className="p-6 overflow-y-auto flex-1 font-mono text-sm leading-relaxed text-gray-300 bg-white/5" id="invoice-content">
           <div className="text-center mb-6 border-b-2 border-gray-600 print:border-black pb-4">
             <h2 className="text-2xl font-bold mb-1 text-white print:text-black">مخبز كوكيز</h2>
-            <p className="text-gray-400 font-bold print:text-gray-600">فاتورة مبيعات {isWholesale ? '(جملة)' : '(مفرق)'}</p>
-            <p className="text-gray-500 print:text-gray-600 dir-ltr">{dateStr}</p>
+            <p className="text-gray-400 font-bold print:text-gray-600">سند استلام بضاعة / فاتورة شراء</p>
+            <p className="text-gray-500 print:text-gray-600 dir-ltr">{invoice.date}</p>
             <div className="mt-2 border border-dashed border-gray-600 print:border-black p-2 rounded">
-                <p className="text-white print:text-black font-bold text-lg">{customerName}</p>
+                <p className="text-gray-400 text-xs mb-1">المورد:</p>
+                <p className="text-white print:text-black font-bold text-lg">{invoice.supplierName}</p>
+            </div>
+            <div className="mt-2 inline-block px-3 py-1 border border-gray-600 print:border-black rounded-full">
+               <span className="font-bold print:text-black">{invoice.paymentStatus === 'paid' ? 'مدفوع نقداً' : 'آجل (ذمم)'}</span>
             </div>
           </div>
 
@@ -108,14 +79,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
                  </tr>
              </thead>
              <tbody className="divide-y divide-gray-700 print:divide-gray-300">
-                {items.map((item) => (
+                {invoice.items.map((item) => (
                   <tr key={item.id}>
                     <td className="py-2 text-gray-300 print:text-black font-medium">{item.name}</td>
                     <td className="py-2 text-center text-gray-300 print:text-black">
-                        {item.quantity} {item.unitType === 'kg' ? 'كغ' : ''}
+                        {item.quantity}
                     </td>
-                    <td className="py-2 text-gray-300 print:text-black">{item.price.toLocaleString('en-US')}</td>
-                    <td className="py-2 font-bold text-white print:text-black">{(item.price * item.quantity).toLocaleString('en-US')}</td>
+                    <td className="py-2 text-gray-300 print:text-black">{item.cost.toLocaleString('en-US')}</td>
+                    <td className="py-2 font-bold text-white print:text-black">{item.total.toLocaleString('en-US')}</td>
                   </tr>
                 ))}
              </tbody>
@@ -124,17 +95,17 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
           <div className="border-t-2 border-gray-600 print:border-black pt-4 mt-6">
             <div className="flex justify-between items-center text-xl font-bold">
                 <span className="text-white print:text-black">المجموع الكلي:</span>
-                <span className="text-[#FA8072] print:text-black">{totalRevenue.toLocaleString('en-US')} ل.س</span>
+                <span className="text-red-400 print:text-black">{invoice.totalAmount.toLocaleString('en-US')} ل.س</span>
             </div>
           </div>
 
            <div className="mt-16 hidden print:flex justify-between items-end px-8">
                <div className="text-center">
-                   <p className="mb-10 font-bold text-black text-base">المستلم</p>
+                   <p className="mb-10 font-bold text-black text-base">توقيع المورد</p>
                    <div className="w-40 border-b-2 border-black border-dotted"></div>
                </div>
                <div className="text-center">
-                   <p className="mb-10 font-bold text-black text-base">الإدارة</p>
+                   <p className="mb-10 font-bold text-black text-base">توقيع المستلم</p>
                    <div className="w-40 border-b-2 border-black border-dotted"></div>
                </div>
           </div>
@@ -145,7 +116,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
             <div className="grid grid-cols-2 gap-3">
                 {confirmPrint ? (
                     <div className="col-span-1 flex items-center gap-2">
-                        <button onClick={handlePrint} className="flex-1 bg-green-600 text-white py-2 rounded-xl font-bold text-sm">تأكيد</button>
+                        <button onClick={handlePrint} className="flex-1 bg-green-600 text-white py-2 rounded-xl font-bold text-sm">تأكيد الطباعة</button>
                         <button onClick={() => setConfirmPrint(false)} className="flex-1 bg-gray-600 text-white py-2 rounded-xl font-bold text-sm">إلغاء</button>
                     </div>
                 ) : (
@@ -153,8 +124,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
                     onClick={() => setConfirmPrint(true)}
                     className="col-span-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl font-bold transition-all text-white shadow-md bg-[#FA8072] hover:bg-[#e67365]"
                     >
-                    <Download size={18} />
-                    <span>تحميل PDF</span>
+                    <Printer size={18} />
+                    <span>طباعة PDF</span>
                     </button>
                 )}
                 
@@ -166,11 +137,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
                     <span>تصدير Excel</span>
                 </button>
             </div>
-            
-            <button onClick={handleCopy} className={`w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl font-bold transition-all text-white shadow-md ${copied ? 'bg-green-600' : 'bg-gray-700 hover:bg-gray-600'}`}>
-                {copied ? <Check size={18} /> : <Copy size={18} />}
-                <span>{copied ? 'تم النسخ' : 'نسخ نصي'}</span>
-            </button>
         </div>
       </div>
     </div>

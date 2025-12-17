@@ -1,9 +1,10 @@
-import React from 'react';
-import { FileText, History, Database, Wifi, WifiOff, RefreshCw, Clock, Calendar, Download } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, History, Database, Wifi, WifiOff, RefreshCw, Clock, Calendar, Download, Wallet } from 'lucide-react';
 
 interface HeaderProps {
   onOpenHistory: () => void;
   onOpenDataManagement: () => void;
+  onOpenExpenses: () => void;
   isOnline: boolean;
   lastSyncTime: Date;
   onManualSync: () => void;
@@ -15,6 +16,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ 
   onOpenHistory, 
   onOpenDataManagement, 
+  onOpenExpenses,
   isOnline,
   lastSyncTime,
   onManualSync,
@@ -22,6 +24,15 @@ export const Header: React.FC<HeaderProps> = ({
   installPrompt,
   onInstall
 }) => {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <header className="bg-[#1F2937] border-b border-gray-700 shadow-lg sticky top-0 z-40 no-print">
       <div className="container mx-auto px-4 py-3">
@@ -49,6 +60,14 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                      </div>
                  </div>
+
+                 {/* Mobile Clock (Visible on small screens, Right side) */}
+                 <div className="md:hidden flex flex-col items-end justify-center bg-[#FA8072]/10 border border-[#FA8072]/20 text-white px-3 py-1 rounded-xl">
+                    <div className="flex items-center gap-1.5 font-bold text-xs text-[#FA8072]">
+                         <span>{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                         <Clock size={10} />
+                    </div>
+                 </div>
             </div>
             
             {/* Left Section: Actions Toolbar */}
@@ -72,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({
                         <span className="text-[9px] text-gray-500 font-medium">آخر مزامنة</span>
                         <div className="flex items-center gap-1 text-[10px] text-gray-300 font-mono">
                             <Clock size={10} />
-                            {lastSyncTime.toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' })}
+                            {lastSyncTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                     </div>
                     <button 
@@ -89,6 +108,15 @@ export const Header: React.FC<HeaderProps> = ({
 
                  {/* Action Buttons Group */}
                  <div className="flex items-center gap-1">
+                    <button 
+                        onClick={onOpenExpenses}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors group"
+                        title="المصاريف والمشتريات"
+                    >
+                        <Wallet size={18} className="group-hover:text-red-400 transition-colors" />
+                        <span className="text-xs font-bold hidden lg:inline">المصاريف</span>
+                    </button>
+
                     <button 
                         onClick={onOpenDataManagement}
                         className="flex items-center gap-2 px-3 py-2 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors group"
@@ -108,10 +136,16 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
                  </div>
                  
-                 {/* Date Badge */}
-                 <div className="hidden sm:flex items-center gap-2 bg-[#FA8072] text-white px-3 py-2 rounded-xl shadow-md ml-1">
-                    <Calendar size={14} />
-                    <span className="text-xs font-bold">{new Date().toLocaleDateString('ar-SY')}</span>
+                 {/* Desktop Clock */}
+                 <div className="hidden md:flex flex-col items-end justify-center bg-[#FA8072] text-white px-3 py-1 rounded-xl shadow-md ml-1 min-w-[100px]">
+                    <div className="flex items-center gap-1.5 font-bold text-xs border-b border-white/20 pb-0.5 w-full justify-end">
+                         <span>{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                         <Clock size={10} />
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[10px] font-medium pt-0.5 w-full justify-end">
+                        <span>{currentTime.toLocaleDateString('en-GB')}</span>
+                        <Calendar size={10} />
+                    </div>
                  </div>
             </div>
         </div>
