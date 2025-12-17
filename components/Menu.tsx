@@ -21,14 +21,14 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
   const groupedOrders = useMemo(() => {
     const groups: { [key: string]: SaleItem[] } = {};
     items.forEach(item => {
-        const key = item.orderId || `legacy-${item.time}`;
+        const key = item.orderId || `ord-${item.customerNumber}-${item.time}`;
         if (!groups[key]) {
             groups[key] = [];
         }
         groups[key].push(item);
     });
     
-    // Sort by orderId DESC (since orderId is Date.now().toString())
+    // Sort by orderId DESC
     return Object.values(groups).sort((a, b) => {
         const idA = a[0].orderId || "0";
         const idB = b[0].orderId || "0";
@@ -42,7 +42,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
       return groupedOrders.filter(group => {
           const first = group[0];
           const name = first.customerName?.toLowerCase() || '';
-          const number = first.customerNumber.toString();
+          const number = first.customerNumber?.toString() || '';
           return name.includes(lowerTerm) || number.includes(lowerTerm);
       });
   }, [groupedOrders, searchTerm]);
@@ -63,28 +63,29 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
   if (items.length === 0) {
     return (
       <div className="bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-700 text-center flex flex-col items-center justify-center min-h-[200px] print:hidden">
-        <div className="bg-gray-700 p-4 rounded-full mb-3">
-            <ShoppingBag className="text-gray-400 w-8 h-8" />
+        <div className="bg-gray-700/50 p-4 rounded-full mb-3">
+            <ShoppingBag className="text-gray-500 w-8 h-8" />
         </div>
-        <p className="text-gray-400 font-medium">لا توجد مبيعات مسجلة اليوم حتى الآن.</p>
+        <p className="text-gray-500 font-bold text-sm">لا توجد مبيعات نشطة حالياً.</p>
+        <p className="text-gray-600 text-[10px] mt-1 font-bold uppercase tracking-widest">انتظار طلب جديد...</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-        <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row items-center gap-4 no-print">
+        <div className="bg-gray-800 p-3 rounded-xl border border-gray-700 flex flex-col md:flex-row items-center gap-3 no-print">
             <div className="relative w-full md:w-96">
-                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                 <input 
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="بحث عن فاتورة..."
-                    className="w-full bg-gray-900 border border-gray-600 text-white rounded-xl pr-10 pl-4 py-2 outline-none focus:border-[#FA8072]"
+                    className="w-full bg-gray-950 border border-gray-700 text-white rounded-lg pr-9 pl-4 py-2 text-sm outline-none focus:border-[#FA8072]"
                 />
             </div>
-            <div className="text-gray-400 text-xs font-bold">المعروض: {filteredOrders.length} فاتورة</div>
+            <div className="text-gray-500 text-[10px] font-black uppercase tracking-widest">إجمالي اليوم: {filteredOrders.length}</div>
         </div>
 
         <div className="space-y-4">
@@ -96,18 +97,18 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                 const isWholesale = firstItem.saleType === 'wholesale';
                 
                 return (
-                    <div key={orderId || index} className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden animate-fade-up">
-                        <div className="bg-gray-900/50 p-4 flex flex-wrap items-center justify-between border-b border-gray-700">
-                            <div className="flex items-center gap-4">
-                                <div className={`px-3 py-1 rounded-lg font-bold border flex items-center gap-2 ${isWholesale ? 'bg-orange-900/20 text-[#FA8072] border-orange-500/20' : 'bg-blue-900/20 text-blue-400 border-blue-500/20'}`}>
-                                    {isWholesale ? <Store size={16} /> : <User size={16} />}
+                    <div key={orderId || index} className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden shadow-xl animate-fade-up">
+                        <div className="bg-gray-900/80 p-3 flex flex-wrap items-center justify-between border-b border-gray-700">
+                            <div className="flex items-center gap-3">
+                                <div className={`px-2 py-1 rounded-lg font-bold text-xs border flex items-center gap-1.5 ${isWholesale ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                                    {isWholesale ? <Store size={14} /> : <User size={14} />}
                                     <span>{displayName}</span>
                                 </div>
-                                <span className="text-gray-400 text-xs font-bold">{firstItem.time}</span>
+                                <span className="text-gray-500 text-[10px] font-bold">{firstItem.time}</span>
                             </div>
-                            <div className="flex items-center gap-3 mt-2 md:mt-0">
-                                <span className="text-white font-bold">{orderTotal.toLocaleString()} ل.س</span>
-                                <button onClick={() => onPreviewInvoice(group)} className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-lg no-print"><Download size={16} /></button>
+                            <div className="flex items-center gap-2 mt-2 md:mt-0">
+                                <span className="text-white font-black ml-2 tabular-nums">{orderTotal.toLocaleString()} <small className="text-[9px] text-gray-500">ل.س</small></span>
+                                <button onClick={() => onPreviewInvoice(group)} className="bg-gray-700 hover:bg-green-600 text-white p-2 rounded-lg transition-colors no-print"><Download size={14} /></button>
                                 {onDeleteOrder && (
                                     confirmOrderId === orderId ? (
                                         <div className="flex gap-1">
@@ -115,28 +116,28 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                             <button onClick={() => setConfirmOrderId(null)} className="bg-gray-600 text-white px-2 py-1 rounded text-[10px] font-bold">X</button>
                                         </div>
                                     ) : (
-                                        <button onClick={() => setConfirmOrderId(orderId)} className="text-gray-500 hover:text-red-400 p-2 no-print"><Trash2 size={16} /></button>
+                                        <button onClick={() => setConfirmOrderId(orderId)} className="text-gray-600 hover:text-red-400 p-2 no-print transition-colors"><Trash2 size={14} /></button>
                                     )
                                 )}
                             </div>
                         </div>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-right text-xs">
-                                <thead className="bg-gray-700/20 text-gray-500 font-bold">
+                            <table className="w-full text-right text-[11px]">
+                                <thead className="bg-gray-900/40 text-gray-500 font-bold border-b border-gray-700/50">
                                     <tr>
-                                        <th className="p-3">المادة</th>
-                                        <th className="p-3 text-center">الكمية</th>
-                                        <th className="p-3">السعر</th>
-                                        <th className="p-3">الإجمالي</th>
-                                        <th className="p-3 w-8"></th>
+                                        <th className="p-2 pr-4">المادة</th>
+                                        <th className="p-2 text-center">الكمية</th>
+                                        <th className="p-2">السعر</th>
+                                        <th className="p-2">الإجمالي</th>
+                                        <th className="p-2 w-8"></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-700/50">
+                                <tbody className="divide-y divide-gray-700/30">
                                     {group.map(item => (
-                                        <tr key={item.id} className="hover:bg-gray-700/20">
-                                            <td className="p-3 font-bold text-gray-200">{item.name}</td>
-                                            <td className="p-3 text-center text-gray-400">{item.quantity}</td>
-                                            <td className="p-3">
+                                        <tr key={item.id} className="hover:bg-gray-700/10 transition-colors">
+                                            <td className="p-2 pr-4 font-bold text-gray-200">{item.name}</td>
+                                            <td className="p-2 text-center text-gray-400 font-mono">{item.quantity}</td>
+                                            <td className="p-2 tabular-nums">
                                                 {editingPriceId === item.id ? (
                                                     <input 
                                                         type="number" 
@@ -144,15 +145,15 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                                         onChange={e => setTempPrice(e.target.value)} 
                                                         onBlur={() => savePrice(item.id)}
                                                         onKeyDown={e => e.key === 'Enter' && savePrice(item.id)}
-                                                        className="w-16 bg-gray-900 border border-[#FA8072] text-white rounded px-1"
+                                                        className="w-16 bg-gray-950 border border-[#FA8072] text-white rounded px-1 py-0.5"
                                                         autoFocus
                                                     />
                                                 ) : (
-                                                    <span onClick={() => startEditPrice(item)} className="cursor-pointer hover:text-[#FA8072] transition-colors">{item.price.toLocaleString()}</span>
+                                                    <span onClick={() => startEditPrice(item)} className="cursor-pointer hover:text-[#FA8072] border-b border-dashed border-gray-700">{item.price.toLocaleString()}</span>
                                                 )}
                                             </td>
-                                            <td className="p-3 text-[#FA8072] font-bold">{(item.price * item.quantity).toLocaleString()}</td>
-                                            <td className="p-3"><button onClick={() => onDeleteItem(item.id)} className="text-gray-600 hover:text-red-500"><Trash2 size={12}/></button></td>
+                                            <td className="p-2 text-[#FA8072] font-black tabular-nums">{(item.price * item.quantity).toLocaleString()}</td>
+                                            <td className="p-2"><button onClick={() => onDeleteItem(item.id)} className="text-gray-700 hover:text-red-500 transition-colors"><Trash2 size={12}/></button></td>
                                         </tr>
                                     ))}
                                 </tbody>

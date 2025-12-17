@@ -311,7 +311,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                   className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${!isCheckoutDisabled ? 'bg-green-600 text-white hover:bg-green-500 shadow-lg shadow-green-900/40' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
                 >
                   <CheckCircle size={22} /> 
-                  تأكيد وعرض الفاتورة
+                  تأكيد الطلب
                 </button>
             </div>
         </div>
