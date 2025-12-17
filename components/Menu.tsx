@@ -13,16 +13,11 @@ interface SalesTableProps {
 
 export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onDeleteOrder, onPreviewInvoice, onUpdateItemPrice }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
-  
-  // State for inline deletion confirmation
   const [confirmItemId, setConfirmItemId] = useState<string | null>(null);
   const [confirmOrderId, setConfirmOrderId] = useState<string | null>(null);
-  
-  // State for price editing
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [tempPrice, setTempPrice] = useState<string>('');
 
-  // Group items by orderId
   const groupedOrders = useMemo(() => {
     const groups: { [key: string]: SaleItem[] } = {};
     items.forEach(item => {
@@ -33,15 +28,14 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
         groups[key].push(item);
     });
     
-    // Sort orders by time (newest first)
+    // Sort by orderId DESC (since orderId is Date.now().toString())
     return Object.values(groups).sort((a, b) => {
-        const timeA = a[0].time;
-        const timeB = b[0].time;
-        return timeB.localeCompare(timeA);
+        const idA = a[0].orderId || "0";
+        const idB = b[0].orderId || "0";
+        return idB.localeCompare(idA);
     });
   }, [items]);
 
-  // Filter logic for Search
   const filteredOrders = useMemo(() => {
       if (!searchTerm) return groupedOrders;
       const lowerTerm = searchTerm.toLowerCase();
@@ -79,7 +73,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
 
   return (
     <div className="space-y-4">
-        {/* Search Bar */}
         <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 flex flex-col md:flex-row items-center gap-4 no-print">
             <div className="relative w-full md:w-96">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
@@ -87,17 +80,13 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="بحث عن فاتورة (اسم الزبون أو رقمه)..."
+                    placeholder="بحث عن فاتورة..."
                     className="w-full bg-gray-900 border border-gray-600 text-white rounded-xl pr-10 pl-4 py-2 outline-none focus:border-[#FA8072]"
                 />
             </div>
-            
-            <div className="text-gray-400 text-xs">
-                عدد الفواتير المعروضة: {filteredOrders.length}
-            </div>
+            <div className="text-gray-400 text-xs font-bold">المعروض: {filteredOrders.length} فاتورة</div>
         </div>
 
-        {/* Orders List */}
         <div className="space-y-4">
             {filteredOrders.map((group, index) => {
                 const firstItem = group[0];
@@ -108,117 +97,62 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                 
                 return (
                     <div key={orderId || index} className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden animate-fade-up">
-                        {/* Order Header */}
                         <div className="bg-gray-900/50 p-4 flex flex-wrap items-center justify-between border-b border-gray-700">
                             <div className="flex items-center gap-4">
-                                <div className={`px-3 py-1 rounded-lg font-bold border flex items-center gap-2 ${isWholesale ? 'bg-orange-900/20 text-orange-400 border-orange-500/20' : 'bg-blue-900/20 text-blue-400 border-blue-500/20'}`}>
+                                <div className={`px-3 py-1 rounded-lg font-bold border flex items-center gap-2 ${isWholesale ? 'bg-orange-900/20 text-[#FA8072] border-orange-500/20' : 'bg-blue-900/20 text-blue-400 border-blue-500/20'}`}>
                                     {isWholesale ? <Store size={16} /> : <User size={16} />}
-                                    <span>
-                                        {displayName}
-                                        {firstItem.customerName && <span className="text-xs opacity-70 mr-2">#{firstItem.customerNumber}</span>}
-                                    </span>
+                                    <span>{displayName}</span>
                                 </div>
-                                <span className="text-gray-400 text-sm font-mono">{firstItem.time}</span>
+                                <span className="text-gray-400 text-xs font-bold">{firstItem.time}</span>
                             </div>
-                            
-                            <div className="flex items-center gap-4 mt-2 md:mt-0">
-                                <div className="text-white font-bold">
-                                    <span className="text-gray-400 text-sm font-normal ml-2">الإجمالي:</span>
-                                    {orderTotal.toLocaleString('en-US')} ل.س
-                                </div>
-                                
-                                <button 
-                                    onClick={() => onPreviewInvoice(group)}
-                                    className="flex items-center gap-1 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors no-print ml-2"
-                                >
-                                    <Download size={14} />
-                                    تحميل PDF
-                                </button>
-
+                            <div className="flex items-center gap-3 mt-2 md:mt-0">
+                                <span className="text-white font-bold">{orderTotal.toLocaleString()} ل.س</span>
+                                <button onClick={() => onPreviewInvoice(group)} className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-lg no-print"><Download size={16} /></button>
                                 {onDeleteOrder && (
                                     confirmOrderId === orderId ? (
-                                        <div className="flex items-center gap-2 no-print">
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onDeleteOrder(orderId);
-                                                    setConfirmOrderId(null);
-                                                }}
-                                                className="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
-                                            >
-                                                نعم
-                                            </button>
-                                            <button onClick={() => setConfirmOrderId(null)} className="bg-gray-600 text-white px-2 py-1 rounded text-xs">إلغاء</button>
+                                        <div className="flex gap-1">
+                                            <button onClick={() => onDeleteOrder(orderId)} className="bg-red-500 text-white px-2 py-1 rounded text-[10px] font-bold">تأكيد</button>
+                                            <button onClick={() => setConfirmOrderId(null)} className="bg-gray-600 text-white px-2 py-1 rounded text-[10px] font-bold">X</button>
                                         </div>
                                     ) : (
-                                        <button onClick={() => setConfirmOrderId(orderId)} className="text-red-400 hover:bg-red-400/10 p-2 rounded-lg transition-colors no-print">
-                                            <Trash2 size={18} />
-                                        </button>
+                                        <button onClick={() => setConfirmOrderId(orderId)} className="text-gray-500 hover:text-red-400 p-2 no-print"><Trash2 size={16} /></button>
                                     )
                                 )}
                             </div>
                         </div>
-
-                        {/* Order Items Table */}
                         <div className="overflow-x-auto">
-                            <table className="w-full text-right">
-                                <thead className="bg-gray-700/20 text-xs text-gray-400">
+                            <table className="w-full text-right text-xs">
+                                <thead className="bg-gray-700/20 text-gray-500 font-bold">
                                     <tr>
-                                        <th className="py-2 px-4">المادة</th>
-                                        <th className="py-2 px-4 text-center">الكمية</th>
-                                        <th className="py-2 px-4">السعر</th>
-                                        <th className="py-2 px-4">الإجمالي</th>
-                                        <th className="py-2 px-4 w-10"></th>
+                                        <th className="p-3">المادة</th>
+                                        <th className="p-3 text-center">الكمية</th>
+                                        <th className="p-3">السعر</th>
+                                        <th className="p-3">الإجمالي</th>
+                                        <th className="p-3 w-8"></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-700/50 text-sm">
+                                <tbody className="divide-y divide-gray-700/50">
                                     {group.map(item => (
-                                        <tr key={item.id} className="hover:bg-gray-700/20 transition-colors">
-                                            <td className="py-2 px-4 font-medium text-gray-200">{item.name}</td>
-                                            <td className="py-2 px-4 text-center">
-                                                <span className="bg-gray-700 text-gray-300 px-2 py-0.5 rounded text-xs">
-                                                    {item.quantity} {item.unitType === 'kg' ? 'كغ' : 'قطعة'}
-                                                </span>
-                                            </td>
-                                            <td className="py-2 px-4 text-gray-400">
+                                        <tr key={item.id} className="hover:bg-gray-700/20">
+                                            <td className="p-3 font-bold text-gray-200">{item.name}</td>
+                                            <td className="p-3 text-center text-gray-400">{item.quantity}</td>
+                                            <td className="p-3">
                                                 {editingPriceId === item.id ? (
-                                                    <div className="flex items-center gap-1">
-                                                        <input 
-                                                            type="number" 
-                                                            value={tempPrice} 
-                                                            onChange={e => setTempPrice(e.target.value)} 
-                                                            onKeyDown={e => {
-                                                                if(e.key === 'Enter') savePrice(item.id);
-                                                                if(e.key === 'Escape') setEditingPriceId(null);
-                                                            }}
-                                                            className="w-20 bg-gray-900 border border-[#FA8072] text-white text-xs rounded px-1 py-0.5 outline-none font-bold"
-                                                            autoFocus
-                                                        />
-                                                        <button onClick={() => savePrice(item.id)} className="text-green-500 hover:text-green-400 transition-colors"><Check size={14}/></button>
-                                                        <button onClick={() => setEditingPriceId(null)} className="text-gray-500 hover:text-white transition-colors"><X size={14}/></button>
-                                                    </div>
+                                                    <input 
+                                                        type="number" 
+                                                        value={tempPrice} 
+                                                        onChange={e => setTempPrice(e.target.value)} 
+                                                        onBlur={() => savePrice(item.id)}
+                                                        onKeyDown={e => e.key === 'Enter' && savePrice(item.id)}
+                                                        className="w-16 bg-gray-900 border border-[#FA8072] text-white rounded px-1"
+                                                        autoFocus
+                                                    />
                                                 ) : (
-                                                    <div className="flex items-center gap-2 group/price cursor-pointer" onClick={() => startEditPrice(item)} title="انقر لتعديل السعر">
-                                                        <span className="font-mono">{item.price.toLocaleString('en-US')}</span>
-                                                        <Edit3 size={12} className="opacity-30 group-hover/price:opacity-100 transition-opacity text-[#FA8072]" />
-                                                    </div>
+                                                    <span onClick={() => startEditPrice(item)} className="cursor-pointer hover:text-[#FA8072] transition-colors">{item.price.toLocaleString()}</span>
                                                 )}
                                             </td>
-                                            <td className="py-2 px-4 text-[#FA8072] font-bold">
-                                                {(item.price * item.quantity).toLocaleString('en-US')}
-                                            </td>
-                                            <td className="py-2 px-4 text-left">
-                                                {confirmItemId === item.id ? (
-                                                    <div className="flex items-center gap-1">
-                                                        <button onClick={() => { onDeleteItem(item.id); setConfirmItemId(null); }} className="text-red-500 text-xs font-bold underline">تأكيد</button>
-                                                        <button onClick={() => setConfirmItemId(null)} className="text-gray-400 text-xs">إلغاء</button>
-                                                    </div>
-                                                ) : (
-                                                    <button onClick={() => setConfirmItemId(item.id)} className="text-gray-600 hover:text-red-400 transition-colors no-print">
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                )}
-                                            </td>
+                                            <td className="p-3 text-[#FA8072] font-bold">{(item.price * item.quantity).toLocaleString()}</td>
+                                            <td className="p-3"><button onClick={() => onDeleteItem(item.id)} className="text-gray-600 hover:text-red-500"><Trash2 size={12}/></button></td>
                                         </tr>
                                     ))}
                                 </tbody>

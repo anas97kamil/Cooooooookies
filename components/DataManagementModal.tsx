@@ -1,6 +1,6 @@
 
 import React, { useRef, useState } from 'react';
-import { X, Download, Upload, Database, AlertTriangle, FileJson, Check, Trash2, Cloud, Share2, MessageCircle } from 'lucide-react';
+import { X, Download, Upload, Database, AlertTriangle, FileJson, Check, Trash2, MessageCircle, Lock } from 'lucide-react';
 
 interface DataManagementModalProps {
   onExport: () => void;
@@ -12,22 +12,31 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isSharing, setIsSharing] = useState(false);
+  const [showPassField, setShowPassField] = useState(false);
+  const [restorePass, setRestorePass] = useState('');
+  const [passError, setPassError] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) setSelectedFile(file);
     if (e.target) e.target.value = '';
+    setShowPassField(false);
   };
 
-  const handleConfirmImport = () => {
-    if (!selectedFile) return;
-    onImport(selectedFile);
-    onClose();
+  const handleConfirmRestore = () => {
+    if (restorePass === '1997') {
+      if (!selectedFile) return;
+      onImport(selectedFile);
+      onClose();
+    } else {
+      setPassError(true);
+      setRestorePass('');
+    }
   };
 
   const prepareBackupFile = () => {
     const backup = {
-      version: '1.4',
+      version: '1.5',
       timestamp: Date.now(),
       backupDate: new Date().toLocaleDateString('ar-SY'),
       sales: JSON.parse(localStorage.getItem('dailySales') || '[]'),
@@ -46,8 +55,6 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
     setIsSharing(true);
     try {
       const file = prepareBackupFile();
-
-      // Check if native sharing is available (Mobile/Advanced Browsers)
       if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
@@ -55,16 +62,11 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
           text: `النسخة الاحتياطية لمخبز كوكيز بتاريخ ${new Date().toLocaleDateString('ar-SY')}`,
         });
       } else {
-        // Immediate fallback: Download and inform
         onExport();
-        alert('المشاركة المباشرة غير مدعومة على هذا المتصفح. تم تحميل الملف تلقائياً، يمكنك الآن إرساله يدوياً عبر واتساب.');
+        alert('المشاركة المباشرة غير مدعومة. تم تحميل الملف يدوياً.');
       }
     } catch (error) {
-      console.error('Error sharing:', error);
-      // AbortError means user cancelled, so we ignore it
-      if ((error as Error).name !== 'AbortError') {
-        onExport();
-      }
+      if ((error as Error).name !== 'AbortError') onExport();
     } finally {
       setIsSharing(false);
     }
@@ -93,21 +95,13 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <button 
-                        onClick={handleShareToWhatsApp} 
-                        disabled={isSharing}
-                        className="bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50 ring-2 ring-green-500/20"
-                    >
+                    <button onClick={handleShareToWhatsApp} disabled={isSharing} className="bg-green-600 hover:bg-green-500 text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 disabled:opacity-50 ring-2 ring-green-500/20">
                         <MessageCircle size={20} className={isSharing ? "animate-spin" : ""} />
                         {isSharing ? 'جاري التحضير...' : 'مشاركة عبر واتساب'}
                     </button>
-                    
-                    <button 
-                        onClick={onExport} 
-                        className="bg-gray-700 hover:bg-gray-600 text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border border-gray-600 active:scale-95"
-                    >
+                    <button onClick={onExport} className="bg-gray-700 hover:bg-gray-600 text-white py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all border border-gray-600 active:scale-95">
                         <Download size={18} />
-                        تحميل يدوي (JSON)
+                        تحميل يدوي
                     </button>
                 </div>
             </div>
@@ -142,10 +136,28 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                             </div>
                             <button onClick={() => setSelectedFile(null)} className="text-red-400 p-2 hover:bg-red-400/10 rounded-lg transition-colors"><Trash2 size={18} /></button>
                         </div>
-                        <button onClick={handleConfirmImport} className="w-full bg-green-600 hover:bg-green-500 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-green-900/20 active:scale-95">
-                            <Check size={18} />
-                            تأكيد الاستعادة الفورية
-                        </button>
+                        
+                        {!showPassField ? (
+                           <button onClick={() => setShowPassField(true)} className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg active:scale-95">
+                                <Check size={18} /> المتابعة للاستعادة
+                           </button>
+                        ) : (
+                           <div className="space-y-3 p-3 bg-gray-900 rounded-xl border border-gray-600">
+                               <div className="relative">
+                                   <Lock className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                                   <input 
+                                       type="password" 
+                                       value={restorePass} 
+                                       onChange={e => {setRestorePass(e.target.value); setPassError(false);}} 
+                                       placeholder="أدخل كلمة السر للتأكيد" 
+                                       className={`w-full bg-gray-800 border ${passError ? 'border-red-500' : 'border-gray-700'} text-white rounded-lg py-2 pr-10 pl-3 text-center outline-none focus:border-[#FA8072]`}
+                                       autoFocus
+                                   />
+                               </div>
+                               {passError && <p className="text-red-500 text-[10px] text-center font-bold">كلمة السر خاطئة!</p>}
+                               <button onClick={handleConfirmRestore} className="w-full bg-red-600 text-white py-2 rounded-lg font-bold text-sm">تأكيد الاستعادة والمسح</button>
+                           </div>
+                        )}
                     </div>
                 )}
             </div>
