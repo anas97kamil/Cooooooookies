@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { X, Calendar, ChevronDown, ChevronUp, Download, Store, User, Search, Receipt, Package, ArrowRight, Folder, CalendarDays, TrendingDown, TrendingUp, Wallet, BadgeDollarSign, Edit3, Save, Trash2 } from 'lucide-react';
-import { ArchivedDay, SaleItem } from '../types';
+import { X, Calendar, ChevronDown, ChevronUp, Download, Store, User, Search, Receipt, Package, ArrowRight, Folder, CalendarDays, TrendingDown, TrendingUp, Wallet, BadgeDollarSign, Edit3, Save, Trash2, Filter } from 'lucide-react';
+import { ArchivedDay, SaleItem, SaleType } from '../types';
 
 interface HistoryModalProps {
   history: ArchivedDay[];
@@ -13,6 +13,7 @@ interface HistoryModalProps {
 
 type NavStep = 'years' | 'months' | 'days';
 type ViewMode = 'invoices' | 'items' | 'profit';
+type SaleFilter = 'all' | 'retail' | 'wholesale';
 
 export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, onClearHistory, onPreviewInvoice, onUpdateOrder }) => {
   const [step, setStep] = useState<NavStep>('years');
@@ -21,6 +22,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
   const [searchTerm, setSearchTerm] = useState('');
   
   const [viewMode, setViewMode] = useState<ViewMode>('invoices');
+  const [saleFilter, setSaleFilter] = useState<SaleFilter>('all');
   const [expandedDayId, setExpandedDayId] = useState<string | null>(null);
   
   const [editingOrder, setEditingOrder] = useState<{ date: string, orderId: string, items: SaleItem[] } | null>(null);
@@ -71,13 +73,27 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
     return Array.from(uniqueMonths).sort((a, b) => b - a);
   }, [history, selectedYear]);
 
+  // Main data filtering logic for day view
   const currentDaysData = useMemo(() => {
     if (!selectedYear || selectedMonth === -1) return [];
+    
     return history.filter(day => {
       const d = new Date(day.timestamp);
       return d.getFullYear().toString() === selectedYear && d.getMonth() === selectedMonth;
-    });
-  }, [history, selectedYear, selectedMonth]);
+    }).map(day => {
+        // Apply sale type filter to items within each day
+        const filteredItems = day.items.filter(item => 
+            saleFilter === 'all' || item.saleType === saleFilter
+        );
+        
+        return {
+            ...day,
+            items: filteredItems,
+            totalRevenue: filteredItems.reduce((s, i) => s + (i.price * i.quantity), 0),
+            totalItems: filteredItems.reduce((s, i) => s + i.quantity, 0)
+        };
+    }).filter(day => day.items.length > 0); // Only keep days that have items after filtering
+  }, [history, selectedYear, selectedMonth, saleFilter]);
 
   const aggregatedItems = useMemo(() => {
       const itemMap = new Map<string, { name: string; quantity: number; revenue: number; cost: number; unitType: string }>();
@@ -172,7 +188,15 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
                     {searchResults.map((inv, idx) => (
                          <div key={idx} className="bg-gray-800 border border-gray-700 rounded-xl p-4">
                              <div className="flex justify-between items-start">
-                                 <div><span className="font-bold text-white block">{inv.customerName}</span><span className="text-xs text-gray-500">{inv.date}</span></div>
+                                 <div>
+                                     <span className="font-bold text-white block">{inv.customerName}</span>
+                                     <div className="flex items-center gap-2">
+                                        <span className="text-xs text-gray-500">{inv.date}</span>
+                                        <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${inv.saleType === 'wholesale' ? 'bg-[#FA8072]/20 text-[#FA8072]' : 'bg-blue-400/20 text-blue-400'}`}>
+                                            {inv.saleType === 'wholesale' ? 'جملة' : 'مفرق'}
+                                        </span>
+                                     </div>
+                                 </div>
                                  <div className="flex items-center gap-3">
                                      <span className="font-bold text-[#FA8072]">{inv.total.toLocaleString()}</span>
                                      <button onClick={() => setEditingOrder({ date: inv.date, orderId: inv.orderId, items: inv.items })} className="bg-blue-600/20 text-blue-400 p-2 rounded-lg"><Edit3 size={16} /></button>
@@ -210,16 +234,27 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
 
     if (step === 'days') return (
         <div className="flex flex-col gap-4 animate-fade-up h-full">
+            
+            {/* Main Tabs (Invoices, Items, Profit) */}
             <div className="flex bg-gray-700 p-1 rounded-xl shrink-0">
                 <button onClick={() => setViewMode('invoices')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'invoices' ? 'bg-white text-black' : 'text-gray-400'}`}><Receipt size={16} /> الفواتير</button>
                 <button onClick={() => setViewMode('items')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'items' ? 'bg-[#FA8072] text-white' : 'text-gray-400'}`}><Package size={16} /> المواد</button>
                 <button onClick={() => setViewMode('profit')} className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'profit' ? 'bg-green-600 text-white' : 'text-gray-400'}`}><BadgeDollarSign size={16} /> الأرباح</button>
             </div>
+
+            {/* Sale Type Sub-filter */}
+            <div className="flex items-center gap-2 bg-gray-800/50 p-1 rounded-xl border border-gray-700 shrink-0">
+                <span className="text-[10px] font-bold text-gray-500 mr-2 flex items-center gap-1"><Filter size={10} /> نوع البيع:</span>
+                <button onClick={() => setSaleFilter('all')} className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-colors ${saleFilter === 'all' ? 'bg-gray-600 text-white' : 'text-gray-500 hover:bg-gray-700'}`}>الكل</button>
+                <button onClick={() => setSaleFilter('retail')} className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-colors ${saleFilter === 'retail' ? 'bg-blue-600/30 text-blue-400 border border-blue-500/20' : 'text-gray-500 hover:bg-gray-700'}`}>مفرق</button>
+                <button onClick={() => setSaleFilter('wholesale')} className={`flex-1 py-1 text-[10px] font-bold rounded-lg transition-colors ${saleFilter === 'wholesale' ? 'bg-[#FA8072]/30 text-[#FA8072] border border-[#FA8072]/20' : 'text-gray-500 hover:bg-gray-700'}`}>جملة</button>
+            </div>
+
             <div className="flex-1 overflow-y-auto bg-gray-900/30 rounded-xl border border-gray-700/50 p-2">
                 {viewMode === 'profit' ? (
                     <div className="animate-fade-up space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                            <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center"><span className="text-[10px] text-gray-500 font-bold block mb-1 uppercase tracking-wider">الإيراد</span><span className="text-xl font-bold text-white">{totalRevenueForPeriod.toLocaleString()}</span></div>
+                            <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center"><span className="text-[10px] text-gray-500 font-bold block mb-1 uppercase tracking-wider">الإيراد ({saleFilter === 'all' ? 'كلي' : saleFilter === 'retail' ? 'مفرق' : 'جملة'})</span><span className="text-xl font-bold text-white">{totalRevenueForPeriod.toLocaleString()}</span></div>
                             <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center"><span className="text-[10px] text-gray-500 font-bold block mb-1 uppercase tracking-wider">التكلفة</span><span className="text-xl font-bold text-red-400">{totalCostForPeriod.toLocaleString()}</span></div>
                             <div className="bg-green-900/20 p-4 rounded-xl border border-green-800 text-center"><span className="text-[10px] text-green-600 font-bold block mb-1 uppercase tracking-wider">الربح الصافي</span><span className="text-2xl font-black text-green-400">{totalProfitForPeriod.toLocaleString()}</span></div>
                         </div>
@@ -227,7 +262,9 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
                     </div>
                 ) : viewMode === 'items' ? (
                     <div className="space-y-3">
-                        {aggregatedItems.map((item, idx) => (
+                        {aggregatedItems.length === 0 ? (
+                            <div className="text-center py-10 text-gray-600 text-sm">لا توجد مبيعات بهذا النوع في الفترة المحددة</div>
+                        ) : aggregatedItems.map((item, idx) => (
                             <div key={idx} className="bg-gray-800 p-3 rounded-xl border border-gray-700 flex justify-between items-center">
                                 <div><span className="text-white font-bold block">{item.name}</span><span className="text-xs text-gray-500">{item.quantity} مبيع</span></div>
                                 <span className="text-[#FA8072] font-bold">{item.revenue.toLocaleString()}</span>
@@ -236,21 +273,30 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {currentDaysData.map(day => {
+                        {currentDaysData.length === 0 ? (
+                             <div className="text-center py-10 text-gray-600 text-sm">لا توجد فواتير بهذا النوع في الفترة المحددة</div>
+                        ) : currentDaysData.map(day => {
                             const dayOrders = new Map<string, SaleItem[]>();
                             day.items.forEach(i => { const key = i.orderId || i.time; if(!dayOrders.has(key)) dayOrders.set(key, []); dayOrders.get(key)!.push(i); });
                             return (
                                 <div key={day.id} className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
                                     <div onClick={() => setExpandedDayId(expandedDayId === day.id ? null : day.id)} className="p-4 flex justify-between items-center cursor-pointer bg-gray-900/50">
                                         <div className="flex items-center gap-2">{expandedDayId === day.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}<span className="text-white font-bold">{day.date}</span></div>
-                                        <span className="text-[#FA8072] font-bold">{day.totalRevenue.toLocaleString()}</span>
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-xs text-gray-500">{day.items.length} مادة</span>
+                                            <span className="text-[#FA8072] font-bold">{day.totalRevenue.toLocaleString()}</span>
+                                        </div>
                                     </div>
                                     {expandedDayId === day.id && (
                                         <div className="p-3 bg-gray-900/20 border-t border-gray-700 space-y-2">
                                             {Array.from(dayOrders.entries()).map(([oid, items]) => (
-                                                <div key={oid} className="bg-gray-700/30 p-2 rounded flex justify-between items-center">
-                                                    <span className="text-xs text-gray-300 font-medium truncate max-w-[150px]">{items[0].customerName || `زبون ${items[0].customerNumber}`}</span>
+                                                <div key={oid} className={`p-2 rounded flex justify-between items-center border ${items[0].saleType === 'wholesale' ? 'bg-[#FA8072]/5 border-[#FA8072]/20' : 'bg-blue-400/5 border-blue-400/20'}`}>
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs text-gray-300 font-bold truncate max-w-[150px]">{items[0].customerName || `زبون ${items[0].customerNumber}`}</span>
+                                                        <span className={`text-[8px] font-bold ${items[0].saleType === 'wholesale' ? 'text-[#FA8072]' : 'text-blue-400'}`}>{items[0].saleType === 'wholesale' ? 'جملة' : 'مفرق'}</span>
+                                                    </div>
                                                     <div className="flex gap-2">
+                                                        <span className="text-xs font-bold text-white mr-2 self-center">{items.reduce((s, i) => s + (i.price * i.quantity), 0).toLocaleString()}</span>
                                                         <button onClick={() => setEditingOrder({ date: day.date, orderId: oid, items })} className="text-blue-400 p-1"><Edit3 size={14} /></button>
                                                         <button onClick={() => onPreviewInvoice(items)} className="text-white p-1"><Download size={14} /></button>
                                                     </div>
@@ -276,7 +322,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
                 {step !== 'years' && <button onClick={handleBack} className="bg-gray-700 p-2 rounded-full text-white"><ArrowRight size={20} /></button>}
                 <h3 className="font-bold text-lg text-white">سجل المبيعات والتحليل</h3>
             </div>
-            <div className="flex-grow max-w-xs mx-4"><div className="relative"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={14}/><input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="بحث..." className="w-full bg-gray-900 border border-gray-700 text-white py-1.5 pr-8 pl-4 rounded-lg text-xs outline-none focus:border-[#FA8072]"/></div></div>
+            <div className="flex-grow max-w-xs mx-4"><div className="relative"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={14}/><input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="بحث عن زبون..." className="w-full bg-gray-900 border border-gray-700 text-white py-1.5 pr-8 pl-4 rounded-lg text-xs outline-none focus:border-[#FA8072]"/></div></div>
             <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full text-gray-400"><X size={24} /></button>
         </div>
         <div className="p-4 flex-1 overflow-hidden bg-gray-900/20">{renderContent()}</div>
