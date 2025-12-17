@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DollarSign, Lock, Eye, EyeOff, X, TrendingUp } from 'lucide-react';
 import { SaleItem } from '../types';
@@ -64,11 +65,11 @@ export const Summary: React.FC<SummaryProps> = ({ items, onPreview }) => {
         )}
 
         <div className="mb-6 print-break-inside-avoid">
-             {/* Full Width Sales Card */}
-            <div className="bg-gray-800 text-white p-6 rounded-2xl shadow-lg border border-gray-700 relative overflow-hidden flex items-center justify-between">
+             {/* Main Sales Card - Full Width */}
+            <div className="bg-gray-800 text-white p-5 rounded-2xl shadow-lg border border-gray-700 relative overflow-hidden flex items-center justify-between">
                 <div>
-                    <div className="flex items-center gap-2 mb-2">
-                        <p className="text-gray-400 text-sm font-medium">إجمالي المبيعات اليومية</p>
+                    <div className="flex items-center gap-2 mb-1">
+                        <p className="text-gray-400 text-xs font-medium">إجمالي المبيعات اليومية</p>
                         {showRevenue ? (
                             <button onClick={() => setShowRevenue(false)} className="text-gray-500 hover:text-white print:hidden" title="إخفاء">
                                 <EyeOff size={14} />
@@ -79,17 +80,17 @@ export const Summary: React.FC<SummaryProps> = ({ items, onPreview }) => {
                     </div>
                     
                     <div className="relative">
-                        <h3 className={`text-4xl font-bold text-[#FA8072] transition-all duration-500 ${showRevenue ? '' : 'blur-md select-none opacity-40'}`}>
+                        <h3 className={`text-3xl font-black text-[#FA8072] transition-all duration-500 ${showRevenue ? '' : 'blur-md select-none opacity-40'}`}>
                             {totalRevenue.toLocaleString('en-US')} 
-                            <span className="text-sm text-gray-500 font-normal"> ل.س</span>
+                            <span className="text-sm text-gray-500 font-normal mr-1"> ل.س</span>
                         </h3>
                         {!showRevenue && (
-                            <button onClick={() => setShowModal(true)} className="absolute inset-0 w-full h-full z-10 outline-none cursor-pointer"></button>
+                            <button onClick={() => setShowModal(true)} className="absolute inset-0 w-full h-full z-10 outline-none cursor-pointer bg-transparent border-none"></button>
                         )}
                     </div>
                 </div>
-                <div className="hidden md:block bg-[#FA8072]/10 p-4 rounded-full">
-                    <TrendingUp size={32} className="text-[#FA8072]" />
+                <div className="bg-[#FA8072]/10 p-3 rounded-2xl">
+                    <TrendingUp size={28} className="text-[#FA8072]" />
                 </div>
             </div>
         </div>

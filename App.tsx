@@ -6,7 +6,7 @@ import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
 import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
 const ProductManager = React.lazy(() => import('./components/ProductManager').then(m => ({ default: m.ProductManager })));
@@ -94,10 +94,13 @@ const App: React.FC = () => {
         onOpenHistory={() => handleOpenProtected('history')} 
         onOpenDataManagement={() => handleOpenProtected('data')} 
         onOpenExpenses={() => handleOpenProtected('expenses')}
-        onOpenAnalytics={() => setModals(m => ({...m, analytics: true}))}
+        onOpenAnalytics={() => handleOpenProtected('analytics')}
         isOnline={navigator.onLine} 
         lastSyncTime={lastSyncTime} 
-        onManualSync={() => setIsSyncing(true)} 
+        onManualSync={() => {
+            setIsSyncing(true);
+            setTimeout(() => setIsSyncing(false), 1000);
+        }} 
         onQuickBackup={() => {}} 
         isSyncing={isSyncing}
       />
@@ -123,7 +126,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="mt-12 py-8 border-t border-gray-800/50 text-center no-print">
-         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest">نظام المبيعات v1.7 • 2026</button>
+         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v1.8 • 2026</button>
       </footer>
 
       <Suspense fallback={<ModalLoader />}>
@@ -149,12 +152,40 @@ const App: React.FC = () => {
       </Suspense>
 
       {showLock && (
-        <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4">
-          <div className="bg-gray-800 border border-gray-700 p-6 rounded-2xl w-full max-w-xs shadow-2xl">
-            <h3 className="text-white font-bold mb-4">القسم محمي</h3>
-            <input type="password" value={lockPass} onChange={e => setLockPass(e.target.value)} placeholder="أدخل كلمة المرور" className="w-full bg-gray-900 border border-gray-700 text-white p-3 rounded-xl mb-3 text-center outline-none focus:border-[#FA8072]" autoFocus onKeyDown={e => e.key === 'Enter' && verifyLock()} />
-            {lockError && <p className="text-red-500 text-xs text-center mb-3">كلمة مرور خاطئة</p>}
-            <button onClick={verifyLock} className="w-full bg-[#FA8072] text-white py-3 rounded-xl font-bold">تأكيد الدخول</button>
+        <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-gray-800 border border-gray-700 p-6 rounded-3xl w-full max-w-xs shadow-2xl animate-fade-up relative">
+            <button 
+                onClick={() => { setShowLock(null); setLockPass(''); setLockError(false); }} 
+                className="absolute top-4 left-4 text-gray-500 hover:text-white transition-colors"
+            >
+                <X size={20} />
+            </button>
+            <div className="text-center mb-6">
+                <div className="w-12 h-12 bg-[#FA8072]/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Loader2 className="text-[#FA8072] animate-pulse" size={24} />
+                </div>
+                <h3 className="text-white font-black text-lg">القسم محمي</h3>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">يرجى إدخال رمز التحقق</p>
+            </div>
+            
+            <input 
+                type="password" 
+                value={lockPass} 
+                onChange={e => setLockPass(e.target.value)} 
+                placeholder="رمز الدخول" 
+                className={`w-full bg-gray-900 border ${lockError ? 'border-red-500' : 'border-gray-700'} text-white p-4 rounded-2xl mb-4 text-center outline-none focus:border-[#FA8072] text-xl tracking-widest`} 
+                autoFocus 
+                onKeyDown={e => e.key === 'Enter' && verifyLock()} 
+            />
+            
+            {lockError && <p className="text-red-500 text-[10px] text-center mb-4 font-bold animate-pulse">رمز الدخول غير صحيح!</p>}
+            
+            <button 
+                onClick={verifyLock} 
+                className="w-full bg-gradient-to-r from-[#FA8072] to-orange-600 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-orange-900/20 active:scale-95 transition-all"
+            >
+                دخول آمن
+            </button>
           </div>
         </div>
       )}
