@@ -1,28 +1,28 @@
-const CACHE_NAME = 'cookies-bakery-offline-pro-v3';
 
-// 1. Assets that MUST be cached immediately on install
-// Note: We include the root '/' and index.html explicitly.
+const CACHE_NAME = 'cookies-bakery-offline-pro-v6';
+
+// Assets that MUST be cached immediately on install
 const PRECACHE_URLS = [
-  './',
-  './index.html',
-  './logo.png',
-  './manifest.json',
-  '/index.tsx'
+  '/',
+  '/index.html',
+  '/logo.png',
+  '/manifest.json',
+  '/index.tsx',
+  'https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap'
 ];
 
-// 2. Domains that host our external libraries (CDNs).
-// We will dynamically cache anything fetched from these domains.
+// Domains that host our external libraries (CDNs)
 const EXTERNAL_DOMAINS = [
   'cdn.tailwindcss.com',
   'aistudiocdn.com',
   'fonts.googleapis.com',
   'fonts.gstatic.com',
-  'cdn.jsdelivr.net'
+  'cdn.jsdelivr.net',
+  'esm.sh'
 ];
 
-// Install Event: Cache core files immediately
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // Force this SW to become active immediately
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[ServiceWorker] Pre-caching core assets');
@@ -31,7 +31,6 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate Event: Clean up old caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -43,47 +42,36 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
-    }).then(() => self.clients.claim()) // Take control of all clients immediately
+    }).then(() => self.clients.claim())
   );
 });
 
-// Fetch Event: The Brain of Offline Mode
 self.addEventListener('fetch', (event) => {
-  // Only handle GET requests
   if (event.request.method !== 'GET') return;
 
   const url = new URL(event.request.url);
-
-  // Check if the request is for one of our external CDNs or our own origin
   const isExternalAsset = EXTERNAL_DOMAINS.some(domain => url.hostname.includes(domain));
   const isLocalAsset = url.origin === self.location.origin;
 
   if (isExternalAsset || isLocalAsset) {
     event.respondWith(
-      caches.open(CACHE_NAME).then((cache) => {
-        return cache.match(event.request).then((cachedResponse) => {
-          
-          // STRATEGY: Stale-While-Revalidate
-          // 1. Return cached response immediately if available (Fast & Offline works)
-          // 2. Fetch from network in background to update cache for next time
-          
-          const fetchPromise = fetch(event.request)
-            .then((networkResponse) => {
-              // Validate response before caching
-              if (networkResponse && networkResponse.status === 200) {
-                cache.put(event.request, networkResponse.clone());
-              }
-              return networkResponse;
-            })
-            .catch((err) => {
-              // Network failed. If we don't have a cached response, we are in trouble.
-              // But if we returned cachedResponse below, the user is fine.
-              console.log('[ServiceWorker] Network fetch failed (offline mode active)');
-            });
+      caches.match(event.request).then((cachedResponse) => {
+        const fetchPromise = fetch(event.request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const cacheClone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(event.request, cacheClone);
+              });
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            // Silence network errors if we have a cache hit
+            return cachedResponse;
+          });
 
-          // Return cached response if we have it, otherwise wait for network
-          return cachedResponse || fetchPromise;
-        });
+        return cachedResponse || fetchPromise;
       })
     );
   }
