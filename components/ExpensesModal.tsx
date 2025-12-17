@@ -135,7 +135,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
 
         <div className="flex border-b border-gray-700 bg-gray-700/20">
             <button onClick={() => {setActiveTab('new'); setEditingInvoice(null);}} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'new' && !editingInvoice ? 'bg-[#FA8072] text-white' : 'text-gray-400 hover:bg-gray-700'}`}>جديدة</button>
-            <button onClick={() => {setActiveTab('history'); setEditingInvoice(null);}} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'history' && !editingInvoice ? 'bg-[#FA8072] text-white' : 'text-gray-400 hover:bg-gray-700'}`}>الأرشيف</button>
+            <button onClick={() => {setActiveTab('history'); setEditingInvoice(null);}} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'history' && !editingInvoice ? 'bg-[#FA8072] text-white' : 'text-gray-400 hover:bg-gray-700'}`}>سجل المشتريات</button>
             <button onClick={() => {setActiveTab('suppliers'); setEditingInvoice(null);}} className={`flex-1 py-3 text-sm font-bold ${activeTab === 'suppliers' && !editingInvoice ? 'bg-[#FA8072] text-white' : 'text-gray-400 hover:bg-gray-700'}`}>الموردين</button>
         </div>
 

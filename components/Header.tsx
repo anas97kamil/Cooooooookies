@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { FileText, History, Database, Wifi, WifiOff, RefreshCw, Clock, Calendar, Download, Wallet } from 'lucide-react';
 
@@ -61,7 +62,7 @@ export const Header: React.FC<HeaderProps> = ({
                      </div>
                  </div>
 
-                 {/* Mobile Clock (Visible on small screens, Right side) */}
+                 {/* Mobile Clock */}
                  <div className="md:hidden flex flex-col items-end justify-center bg-[#FA8072]/10 border border-[#FA8072]/20 text-white px-3 py-1 rounded-xl">
                     <div className="flex items-center gap-1.5 font-bold text-xs text-[#FA8072]">
                          <span>{currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
@@ -73,12 +74,11 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Left Section: Actions Toolbar */}
             <div className="flex items-center gap-2 w-full md:w-auto justify-between md:justify-end bg-gray-800/50 p-1.5 rounded-2xl border border-gray-700/50 backdrop-blur-sm">
                  
-                 {/* Install Button (PWA) - Only shows if available */}
+                 {/* Install Button */}
                  {installPrompt && onInstall && (
                     <button
                         onClick={onInstall}
                         className="flex items-center gap-1 bg-[#FA8072] hover:bg-[#e67365] text-white px-3 py-1.5 rounded-xl transition-all shadow-md mr-1 animate-pulse"
-                        title="تثبيت التطبيق على الجهاز"
                     >
                         <Download size={14} />
                         <span className="text-xs font-bold">تثبيت التطبيق</span>
@@ -98,7 +98,6 @@ export const Header: React.FC<HeaderProps> = ({
                         onClick={onManualSync}
                         disabled={isSyncing}
                         className={`p-2 rounded-lg transition-all ${isSyncing ? 'bg-orange-500/20 text-orange-400' : 'bg-gray-700 hover:bg-gray-600 text-white hover:text-[#FA8072]'} active:scale-95`}
-                        title="تحديث البيانات (مزامنة)"
                     >
                         <RefreshCw size={16} className={isSyncing ? "animate-spin" : ""} />
                     </button>
@@ -132,7 +131,7 @@ export const Header: React.FC<HeaderProps> = ({
                         title="سجل المبيعات"
                     >
                         <History size={18} className="group-hover:text-purple-400 transition-colors" />
-                        <span className="text-xs font-bold hidden lg:inline">الأرشيف</span>
+                        <span className="text-xs font-bold hidden lg:inline">المبيعات</span>
                     </button>
                  </div>
                  

@@ -135,14 +135,10 @@ const App: React.FC = () => {
           const oldName = productToUpdate.name;
           const newName = updates.name;
 
-          // GLOBAL SYNC: If product name is changing, update all records in current sales and history
           if (newName && newName !== oldName) {
-              // Update Current Daily Sales
               setSales(prevSales => prevSales.map(item => 
                   item.name === oldName ? { ...item, name: newName } : item
               ));
-              
-              // Update History/Archive
               setHistory(prevHistory => prevHistory.map(day => ({
                   ...day,
                   items: day.items.map(item => 
@@ -217,8 +213,22 @@ const App: React.FC = () => {
   const completeOrder = useCallback((items: any[], name?: string, id?: string, type: SaleType = 'retail') => {
       const orderId = Date.now().toString();
       const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      const customerNumber = sales.length ? Math.max(...sales.map(s => s.customerNumber)) + 1 : 1;
-      const finalItems = items.map(i => ({ ...i, id: Math.random().toString(36).substr(2,9), orderId, customerNumber, customerName: name, customerId: id, saleType: type, time }));
+      
+      // Robust customer number calculation to avoid NaN
+      const currentCustomerNumbers = sales.map(s => Number(s.customerNumber)).filter(n => !isNaN(n));
+      const nextCustomerNumber = currentCustomerNumbers.length > 0 ? Math.max(...currentCustomerNumbers) + 1 : 1;
+      
+      const finalItems = items.map(i => ({ 
+        ...i, 
+        id: Math.random().toString(36).substring(2, 11), 
+        orderId, 
+        customerNumber: nextCustomerNumber, 
+        customerName: name || '', 
+        customerId: id || '', 
+        saleType: type, 
+        time 
+      }));
+      
       setSales(prev => [...prev, ...finalItems]);
   }, [sales]);
 

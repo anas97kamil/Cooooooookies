@@ -274,7 +274,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ history, onClose, on
         <div className="p-4 border-b border-gray-700 bg-gray-900/50 rounded-t-2xl flex justify-between items-center">
             <div className="flex items-center gap-3">
                 {step !== 'years' && <button onClick={handleBack} className="bg-gray-700 p-2 rounded-full text-white"><ArrowRight size={20} /></button>}
-                <h3 className="font-bold text-lg text-white">الأرشيف وتحليل الأرباح</h3>
+                <h3 className="font-bold text-lg text-white">سجل المبيعات والتحليل</h3>
             </div>
             <div className="flex-grow max-w-xs mx-4"><div className="relative"><Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={14}/><input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="بحث..." className="w-full bg-gray-900 border border-gray-700 text-white py-1.5 pr-8 pl-4 rounded-lg text-xs outline-none focus:border-[#FA8072]"/></div></div>
             <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full text-gray-400"><X size={24} /></button>
