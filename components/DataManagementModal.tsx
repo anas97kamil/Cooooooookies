@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, Upload, Database, AlertTriangle, FileJson, Check, Trash2, Share2, Cloud } from 'lucide-react';
+import { X, Download, Upload, Database, AlertTriangle, FileJson, Check, Trash2, Share2, Cloud, ExternalLink } from 'lucide-react';
 
 interface DataManagementModalProps {
   onExport: () => void;
@@ -10,13 +10,13 @@ interface DataManagementModalProps {
 export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExport, onImport, onClose }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedFile(file);
     }
-    // Reset value to allow selecting the same file again if user cancels and retries
     if (e.target) e.target.value = '';
   };
 
@@ -31,33 +31,55 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
   };
 
   const handleShareToDrive = async () => {
-      // 1. Create the data payload
-      const sales = JSON.parse(localStorage.getItem('dailySales') || '[]');
-      const history = JSON.parse(localStorage.getItem('salesHistory') || '[]');
-      const products = JSON.parse(localStorage.getItem('products') || '[]');
-      const customers = JSON.parse(localStorage.getItem('customers') || '[]');
-      
-      const data = { appVersion: '1.1', timestamp: Date.now(), sales, history, products, customers };
-      const fileName = `cookies-bakery-backup-${new Date().toLocaleDateString('ar-SY').replace(/\//g, '-')}.json`;
-      
-      const file = new File([JSON.stringify(data, null, 2)], fileName, {
-          type: 'application/json',
-      });
+      setIsSharing(true);
+      try {
+          const sales = JSON.parse(localStorage.getItem('dailySales') || '[]');
+          const invoices = JSON.parse(localStorage.getItem('dailyPurchaseInvoices') || '[]');
+          const history = JSON.parse(localStorage.getItem('salesHistory') || '[]');
+          const products = JSON.parse(localStorage.getItem('products') || '[]');
+          const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+          const suppliers = JSON.parse(localStorage.getItem('suppliers') || '[]');
+          
+          const data = { 
+              appVersion: '1.3', 
+              timestamp: Date.now(), 
+              sales, 
+              purchaseInvoices: invoices, 
+              history, 
+              products, 
+              customers, 
+              suppliers 
+          };
+          
+          const dateStr = new Date().toLocaleDateString('en-GB').replace(/\//g, '-');
+          const fileName = `cookies-bakery-backup-${dateStr}.json`;
+          
+          const jsonString = JSON.stringify(data, null, 2);
+          const file = new File([jsonString], fileName, { type: 'application/json' });
 
-      // 2. Use Web Share API
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          try {
+          // Check for Share API
+          if (navigator.canShare && navigator.canShare({ files: [file] })) {
               await navigator.share({
                   files: [file],
                   title: 'نسخة احتياطية - مخبز كوكيز',
-                  text: 'ملف النسخة الاحتياطية لنظام المبيعات',
+                  text: `نسخة بتاريخ ${dateStr}`,
               });
-              // Note: User should select "Drive" from the share sheet
-          } catch (error) {
-              console.log('Error sharing:', error);
+              alert('تم فتح قائمة المشاركة. اختر تطبيق Drive لحفظ النسخة سحابياً.');
+          } else {
+              // Fallback to instructions + download
+              if (confirm('متصفحك لا يدعم المشاركة المباشرة. سيتم تحميل الملف لجهازك أولاً، هل تريد فتحه في صفحة Google Drive لرفعه يدوياً؟')) {
+                  onExport();
+                  window.open('https://drive.google.com/drive/u/0/my-drive', '_blank');
+              }
           }
-      } else {
-          alert('المشاركة المباشرة غير مدعومة في هذا المتصفح. يرجى استخدام زر "تحميل ملف البيانات" ثم رفعه يدوياً.');
+      } catch (error) {
+          console.error('Error sharing:', error);
+          if (error instanceof Error && error.name !== 'AbortError') {
+              alert('عذراً، حدث خطأ أثناء المزامنة. يمكنك تحميل الملف يدوياً ورفعه للدرايف.');
+              onExport();
+          }
+      } finally {
+          setIsSharing(false);
       }
   };
 
@@ -87,9 +109,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                     </div>
                     <div>
                         <h4 className="text-white font-bold text-sm">تصدير نسخة احتياطية</h4>
-                        <p className="text-gray-400 text-xs mt-1">
-                            حفظ البيانات على جهازك أو رفعها إلى السحابة.
-                        </p>
+                        <p className="text-gray-400 text-xs mt-1">حفظ البيانات على جهازك أو رفعها إلى السحابة.</p>
                     </div>
                 </div>
                 
@@ -104,15 +124,19 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                     
                     <button 
                         onClick={handleShareToDrive}
-                        className="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-2"
+                        disabled={isSharing}
+                        className="bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold text-xs transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                        <Cloud size={16} />
-                        Google Drive
+                        {isSharing ? <Check size={16} className="animate-pulse" /> : <Cloud size={16} />}
+                        {isSharing ? 'جاري الفتح...' : 'Google Drive'}
                     </button>
                 </div>
-                 <p className="text-[10px] text-gray-500 mt-2 text-center">
-                    * لمزامنة جوجل درايف: اضغط الزر الأخضر ثم اختر تطبيق "Drive" من القائمة.
-                </p>
+                 <div className="mt-3 p-2 bg-gray-900/50 rounded-lg flex items-start gap-2 border border-gray-700">
+                    <ExternalLink size={12} className="text-gray-500 shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-gray-500 font-bold leading-relaxed">
+                        ملاحظة: زر Google Drive يقوم بفتح قائمة المشاركة في هاتفك؛ اختر "Drive" وسيتم رفع الملف تلقائياً إلى حسابك.
+                    </p>
+                 </div>
             </div>
 
             {/* Import Section */}
@@ -123,67 +147,40 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                     </div>
                     <div>
                         <h4 className="text-white font-bold text-sm">استيراد بيانات (Restore)</h4>
-                        <p className="text-gray-400 text-xs mt-1">
-                            استرجاع البيانات من ملف محفوظ مسبقاً.
-                        </p>
+                        <p className="text-gray-400 text-xs mt-1">استرجاع البيانات من ملف محفوظ مسبقاً.</p>
                     </div>
                 </div>
                 
                 <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4 flex items-start gap-2">
                     <AlertTriangle size={16} className="text-yellow-500 shrink-0 mt-0.5" />
-                    <p className="text-[10px] text-yellow-200 leading-relaxed">
-                        تحذير: هذه العملية ستقوم بمسح جميع البيانات الحالية واستبدالها بالبيانات الموجودة في الملف الذي ستختاره.
+                    <p className="text-[10px] text-yellow-200 leading-relaxed font-bold">
+                        تحذير: هذه العملية ستقوم باستبدال جميع البيانات الحالية ببيانات الملف المختار.
                     </p>
                 </div>
 
-                <input 
-                    type="file" 
-                    ref={fileInputRef}
-                    onChange={handleFileChange}
-                    accept=".json"
-                    className="hidden"
-                />
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
 
                 {!selectedFile ? (
                     <button 
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full bg-gray-600 hover:bg-gray-500 text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 border border-gray-500 border-dashed hover:border-solid"
+                        className="w-full bg-gray-600 hover:bg-gray-500 text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 border border-gray-500 border-dashed"
                     >
                         <Upload size={18} />
-                        اضغط هنا لاختيار ملف النسخة الاحتياطية
+                        اختيار ملف النسخة الاحتياطية
                     </button>
                 ) : (
                     <div className="space-y-3 animate-fade-up">
                         <div className="bg-gray-800 p-3 rounded-lg border border-gray-600 flex items-center justify-between">
                             <div className="flex items-center gap-3 overflow-hidden">
-                                <div className="bg-green-900/50 p-2 rounded">
-                                    <FileJson className="text-green-400" size={24} />
-                                </div>
-                                <div className="flex flex-col overflow-hidden">
-                                    <span className="text-sm text-white font-medium truncate dir-ltr text-left">
-                                        {selectedFile.name}
-                                    </span>
-                                    <span className="text-[10px] text-gray-400">
-                                        {(selectedFile.size / 1024).toFixed(2)} KB
-                                    </span>
+                                <div className="bg-green-900/50 p-2 rounded"><FileJson className="text-green-400" size={24} /></div>
+                                <div className="flex flex-col overflow-hidden text-right">
+                                    <span className="text-sm text-white font-medium truncate">{selectedFile.name}</span>
+                                    <span className="text-[10px] text-gray-400">{(selectedFile.size / 1024).toFixed(2)} KB</span>
                                 </div>
                             </div>
-                            <button 
-                                onClick={clearSelection}
-                                className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-colors"
-                                title="إلغاء الملف"
-                            >
-                                <Trash2 size={18} />
-                            </button>
+                            <button onClick={clearSelection} className="p-2 hover:bg-red-500/20 text-red-400 rounded-lg"><Trash2 size={18} /></button>
                         </div>
-
-                        <button 
-                            onClick={handleConfirmImport}
-                            className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 shadow-lg shadow-green-900/20"
-                        >
-                            <Check size={18} />
-                            تأكيد واستعادة البيانات الآن
-                        </button>
+                        <button onClick={handleConfirmImport} className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold text-sm flex items-center justify-center gap-2 shadow-lg"><Check size={18} /> تأكيد واستعادة البيانات</button>
                     </div>
                 )}
             </div>

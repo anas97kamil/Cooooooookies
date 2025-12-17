@@ -11,6 +11,8 @@ export interface Customer {
 export interface Supplier {
   id: string;
   name: string;
+  phone?: string;
+  notes?: string;
 }
 
 export interface SaleItem {
@@ -18,16 +20,16 @@ export interface SaleItem {
   orderId: string;
   customerNumber: number;
   customerName?: string; 
-  customerId?: string; // Link to specific customer in DB
-  saleType: SaleType; // Retail or Wholesale
+  customerId?: string; 
+  saleType: SaleType; 
   name: string;
   price: number;
+  costPrice: number; // Added for profit calculation
   quantity: number;
   unitType: UnitType;
   time: string;
 }
 
-// Purchase Types
 export interface PurchaseItem {
   id: string;
   name: string;
@@ -43,13 +45,14 @@ export interface PurchaseInvoice {
   timestamp: number;
   items: PurchaseItem[];
   totalAmount: number;
-  paymentStatus: PaymentStatus; // New field for Paid vs Credit
+  paymentStatus: PaymentStatus; 
 }
 
 export interface Product {
   id: string;
   name: string;
   price: number;
+  costPrice: number; // Added for profit calculation
   unitType: UnitType;
 }
 
@@ -66,5 +69,5 @@ export interface ArchivedDay {
   totalExpenses: number; 
   totalItems: number;
   items: SaleItem[];
-  purchaseInvoices: PurchaseInvoice[]; // Changed from expenses to purchaseInvoices
+  purchaseInvoices: PurchaseInvoice[];
 }
