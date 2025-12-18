@@ -61,7 +61,9 @@ export const Header: React.FC<HeaderProps> = ({
                     <div className="flex items-center gap-1.5 px-2 border-l border-gray-700/50">
                         <button onClick={onQuickBackup} className="text-gray-400"><DownloadCloud size={12} /></button>
                         <button onClick={onManualSync} disabled={isSyncing} className={`text-blue-400 ${isSyncing ? 'animate-spin' : ''}`}><RefreshCw size={12} /></button>
-                        <div className={isOnline ? 'text-green-500' : 'text-red-500 animate-pulse'}>{isOnline ? <Wifi size={12} /> : <WifiOff size={12} />}</div>
+                        <div className={isOnline ? 'text-green-500' : 'text-red-500 animate-pulse'}>
+                          {isOnline ? <Wifi size={12} /> : <WifiOff size={12} />}
+                        </div>
                     </div>
                     <span className="text-[10px] font-black text-white px-1 tabular-nums">
                         {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
@@ -112,7 +114,7 @@ export const Header: React.FC<HeaderProps> = ({
                         >
                             <RefreshCw size={14} />
                         </button>
-                        <div className={`${isOnline ? 'text-green-500/80' : 'text-red-500/80 animate-pulse'}`} title={isOnline ? 'متصل' : 'غير متصل'}>
+                        <div className={isOnline ? 'text-green-500/80' : 'text-red-600 animate-pulse'} title={isOnline ? 'متصل' : 'غير متصل'}>
                             {isOnline ? <Wifi size={15} /> : <WifiOff size={15} />}
                         </div>
                     </div>

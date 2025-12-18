@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { POSInterface } from './components/RecipeGenerator';
 import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
 import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
-import { Loader2, X, ShieldCheck, Wifi, CloudDownload, CheckCircle2 } from 'lucide-react';
+import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, Database, AlertCircle, Download } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
 const ProductManager = React.lazy(() => import('./components/ProductManager').then(m => ({ default: m.ProductManager })));
@@ -20,8 +20,14 @@ const ModalLoader = () => <div className="fixed inset-0 bg-black/50 z-[60] flex 
 
 const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -32,7 +38,12 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
         return prev + 5;
       });
     }, 100);
-    return () => clearInterval(timer);
+    
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      clearInterval(timer);
+    };
   }, [onComplete]);
 
   return (
@@ -61,9 +72,15 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
           <div className="h-full bg-gradient-to-r from-[#FA8072] to-orange-500 rounded-full transition-all duration-300 ease-out shadow-lg shadow-orange-500/30" style={{ width: `${progress}%` }}></div>
         </div>
         <div className="flex justify-between items-center px-1">
-          <div className="flex items-center gap-2 text-gray-500">
-             <Wifi size={14} className={progress < 100 ? "animate-pulse" : "text-green-500"} />
-             <span className="text-[10px] font-black uppercase tracking-widest">OFFLINE READY</span>
+          <div className="flex items-center gap-2">
+             {isOnline ? (
+               <Wifi size={14} className={progress < 100 ? "animate-pulse text-blue-400" : "text-green-500"} />
+             ) : (
+               <WifiOff size={14} className="text-red-500 animate-pulse" />
+             )}
+             <span className={`text-[10px] font-black uppercase tracking-widest ${isOnline ? 'text-gray-500' : 'text-red-500'}`}>
+               {isOnline ? 'OFFLINE READY' : 'WORKING OFFLINE'}
+             </span>
           </div>
           <span className="text-[#FA8072] font-black tabular-nums">{progress}%</span>
         </div>
@@ -85,6 +102,10 @@ const App: React.FC = () => {
   const [lockPass, setLockPass] = useState('');
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Backup reminder state
+  const [showBackupReminder, setShowBackupReminder] = useState(false);
+  const lastBackupTimestamp = useRef<number>(Date.now());
 
   const [sales, setSales] = useState<SaleItem[]>(() => JSON.parse(localStorage.getItem('dailySales') || '[]'));
   const [purchaseInvoices, setPurchaseInvoices] = useState<PurchaseInvoice[]>(() => JSON.parse(localStorage.getItem('dailyPurchaseInvoices') || '[]'));
@@ -105,6 +126,23 @@ const App: React.FC = () => {
     setIsInitializing(false);
     setIsAuthenticated(true);
   };
+
+  // Backup Reminder Logic
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const CHECK_INTERVAL = 60 * 1000; // Check every minute
+    const REMINDER_INTERVAL = 60 * 60 * 1000; // 1 Hour
+
+    const intervalId = setInterval(() => {
+      const now = Date.now();
+      if (now - lastBackupTimestamp.current >= REMINDER_INTERVAL) {
+        setShowBackupReminder(true);
+      }
+    }, CHECK_INTERVAL);
+
+    return () => clearInterval(intervalId);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -127,32 +165,24 @@ const App: React.FC = () => {
     setLastSyncTime(new Date());
   }, [sales, purchaseInvoices, history, products, customers, suppliers]);
 
-  // منطق تحديث المنتج تلقائياً في كل مكان
   const handleUpdateProduct = (id: string, updatedFields: Partial<Product>) => {
     const oldProduct = products.find(p => p.id === id);
     if (!oldProduct) return;
 
-    // تحديث قائمة المنتجات
     setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedFields } : p));
 
-    // إذا تغير الاسم، نقوم بتحديثه في كل الفواتير
     if (updatedFields.name && updatedFields.name !== oldProduct.name) {
       const oldName = oldProduct.name;
       const newName = updatedFields.name;
 
-      // 1. المبيعات الحالية
       setSales(prev => prev.map(item => item.name === oldName ? { ...item, name: newName } : item));
-
-      // 2. المشتريات الحالية
       setPurchaseInvoices(prev => prev.map(inv => ({
         ...inv,
         items: inv.items.map(item => item.name === oldName ? { ...item, name: newName } : item)
       })));
-
-      // 3. الأرشيف
       setHistory(prev => prev.map(day => ({
         ...day,
-        items: day.items.map(item => item.name === oldName ? { ...item, name: newName } : item),
+        items: day.items.map(item => item.orderId === oldName ? { ...item, name: newName } : item),
         purchaseInvoices: (day.purchaseInvoices || []).map(inv => ({
           ...inv,
           items: inv.items.map(item => item.name === oldName ? { ...item, name: newName } : item)
@@ -213,6 +243,10 @@ const App: React.FC = () => {
     link.download = `cookies-backup-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.json`;
     link.click();
     URL.revokeObjectURL(url);
+    
+    // Reset reminder
+    lastBackupTimestamp.current = Date.now();
+    setShowBackupReminder(false);
   };
 
   const handleImportData = (file: File) => {
@@ -236,7 +270,7 @@ const App: React.FC = () => {
   if (!isAuthenticated) return <Login onLogin={handleLoginSuccess} />;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-900 print:bg-white">
+    <div className="min-h-screen flex flex-col bg-gray-900 print:bg-white relative">
       <Header 
         onOpenHistory={() => handleOpenProtected('history')} 
         onOpenDataManagement={() => handleOpenProtected('data')} 
@@ -256,6 +290,37 @@ const App: React.FC = () => {
             <SalesTable items={sales} onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id, p) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
         </div>
       </main>
+      
+      {/* Backup Reminder Toast */}
+      {showBackupReminder && (
+        <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-80 bg-gray-800 border border-orange-500/50 p-5 rounded-[2rem] shadow-2xl z-[150] animate-fade-up flex flex-col gap-4 no-print">
+            <div className="flex items-start gap-4">
+                <div className="bg-orange-500/20 p-3 rounded-2xl text-orange-500 shrink-0">
+                    <AlertCircle size={24} />
+                </div>
+                <div className="flex-1">
+                    <h4 className="text-white font-black text-sm">تذكير أمان البيانات</h4>
+                    <p className="text-gray-400 text-[10px] font-bold mt-1 leading-relaxed">لقد مر أكثر من ساعة منذ آخر عملية نسخ احتياطي. يرجى حفظ نسخة لضمان عدم فقدان البيانات.</p>
+                </div>
+                <button onClick={() => setShowBackupReminder(false)} className="text-gray-500 hover:text-white"><X size={18} /></button>
+            </div>
+            <div className="flex gap-2">
+                <button 
+                  onClick={handleExportData} 
+                  className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all"
+                >
+                  <Download size={14} /> نسخ الآن
+                </button>
+                <button 
+                  onClick={() => setShowBackupReminder(false)} 
+                  className="bg-gray-700 text-gray-400 px-4 py-3 rounded-xl font-black text-[10px]"
+                >
+                  لاحقاً
+                </button>
+            </div>
+        </div>
+      )}
+
       <footer className="mt-12 py-8 border-t border-gray-800/50 text-center no-print">
          <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.5 • 2026</button>
       </footer>
@@ -275,7 +340,7 @@ const App: React.FC = () => {
             <div className="text-center mb-6">
                 <div className="w-12 h-12 bg-[#FA8072]/20 rounded-full flex items-center justify-center mx-auto mb-3"><Loader2 className="text-[#FA8072] animate-pulse" size={24} /></div>
                 <h3 className="text-white font-black text-lg">تأكيد الإجراء</h3>
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">يرجى إدخال رمز التحقق (1997)</p>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">يرجى إدخل رمز التحقق (1997)</p>
             </div>
             <input type="password" value={lockPass} onChange={e => setLockPass(e.target.value)} placeholder="رمز الدخول" className={`w-full bg-gray-900 border ${lockError ? 'border-red-500' : 'border-gray-700'} text-white p-4 rounded-2xl mb-4 text-center outline-none focus:border-[#FA8072] text-xl tracking-widest`} autoFocus onKeyDown={e => e.key === 'Enter' && verifyLock()} />
             {lockError && <p className="text-red-500 text-[10px] text-center mb-4 font-bold animate-pulse">رمز الدخول غير صحيح!</p>}
