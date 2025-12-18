@@ -3,8 +3,13 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>محاسبة مخبز كوكيز</title>
+    <meta name="theme-color" content="#1F2937" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" type="image/png" href="/logo.png" />
     
     <link rel="preconnect" href="https://cdn.tailwindcss.com">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,6 +19,7 @@
         font-family: 'Cairo', sans-serif;
         background-color: #111827;
         color: #F3F4F6;
+        -webkit-tap-highlight-color: transparent;
       }
       
       .animate-fade-up {
@@ -24,24 +30,31 @@
         to { opacity: 1; transform: translateY(0); }
       }
 
+      /* Custom scrollbar for better look */
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #374151;
+        border-radius: 10px;
+      }
+
       @media print {
         .no-print {
           display: none !important;
         }
-
-        /* Fix blank page issue: Don't hide root, just ensure container is visible */
         body {
           background-color: white !important;
           color: black !important;
           margin: 0 !important;
           padding: 0 !important;
         }
-
         #root {
           background-color: white !important;
         }
-
-        /* Ensure invoice content takes full width and is visible */
         #invoice-content {
           display: block !important;
           width: 100% !important;
@@ -53,7 +66,6 @@
           padding: 10mm !important;
           z-index: 9999 !important;
         }
-
         #invoice-content * {
           color: black !important;
         }

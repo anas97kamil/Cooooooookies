@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { FileText, History, Database, Wifi, WifiOff, RefreshCw, Clock, Calendar, DownloadCloud, BarChart3, Wallet } from 'lucide-react';
+import { FileText, History, Database, Wifi, WifiOff, RefreshCw, Clock, DownloadCloud, BarChart3, Wallet, LogOut } from 'lucide-react';
 
 interface HeaderProps {
   onOpenHistory: () => void;
   onOpenDataManagement: () => void;
   onOpenExpenses: () => void;
   onOpenAnalytics: () => void;
+  onLogout: () => void;
   isOnline: boolean;
   lastSyncTime: Date;
   onManualSync: () => void;
@@ -21,13 +22,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDataManagement, 
   onOpenExpenses,
   onOpenAnalytics,
+  onLogout,
   isOnline,
   lastSyncTime,
   onManualSync,
   onQuickBackup,
   isSyncing,
-  installPrompt,
-  onInstall
 }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -47,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="container mx-auto px-4 py-1.5">
         <div className="flex flex-col md:flex-row items-center justify-between gap-2">
             
-            {/* Right: Brand */}
+            {/* Right Side: Brand & Mobile Status */}
             <div className="flex items-center justify-between w-full md:w-auto">
                  <div className="flex items-center gap-2">
                      <div className="bg-gradient-to-br from-[#FA8072] to-orange-600 p-1.5 rounded-lg shadow-lg">
@@ -56,30 +56,20 @@ export const Header: React.FC<HeaderProps> = ({
                      <h1 className="font-bold text-sm text-white leading-tight">نظام المبيعات</h1>
                  </div>
 
-                 {/* Mobile Android-Style Status Bar (Merged) */}
-                 <div className="md:hidden flex items-center gap-2.5 bg-black/30 px-3.5 py-1.5 rounded-full border border-gray-700 shadow-inner">
-                    <div className="flex items-center gap-2 border-l border-gray-700/50 pl-2">
-                        <button 
-                            onClick={onManualSync} 
-                            disabled={isSyncing} 
-                            className={`text-blue-400 ${isSyncing ? 'animate-spin' : ''}`}
-                        >
-                            <RefreshCw size={12} />
-                        </button>
-                        <button onClick={onQuickBackup} className="text-gray-400 hover:text-white">
-                            <DownloadCloud size={12} />
-                        </button>
-                        <div className={isOnline ? 'text-green-500' : 'text-red-500'}>
-                            {isOnline ? <Wifi size={12} /> : <WifiOff size={12} />}
-                        </div>
+                 {/* Mobile Android-style Status Bar */}
+                 <div className="md:hidden flex items-center gap-2 bg-black/40 px-3 py-1 rounded-full border border-gray-700">
+                    <div className="flex items-center gap-1.5 px-2 border-l border-gray-700/50">
+                        <button onClick={onQuickBackup} className="text-gray-400"><DownloadCloud size={12} /></button>
+                        <button onClick={onManualSync} disabled={isSyncing} className={`text-blue-400 ${isSyncing ? 'animate-spin' : ''}`}><RefreshCw size={12} /></button>
+                        <div className={isOnline ? 'text-green-500' : 'text-red-500 animate-pulse'}>{isOnline ? <Wifi size={12} /> : <WifiOff size={12} />}</div>
                     </div>
-                    <span className="text-[11px] font-black text-white tabular-nums">
-                        {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    <span className="text-[10px] font-black text-white px-1 tabular-nums">
+                        {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
                     </span>
                  </div>
             </div>
             
-            {/* Center: Navigation */}
+            {/* Center: Navigation Buttons */}
             <div className="flex items-center gap-0.5 bg-gray-900/40 p-1 rounded-xl border border-gray-800/50">
                 <button onClick={onOpenAnalytics} className="flex flex-col items-center justify-center w-12 h-10 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all group">
                     <BarChart3 size={16} className="group-hover:text-green-400" />
@@ -91,44 +81,48 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
                 <button onClick={onOpenHistory} className="flex flex-col items-center justify-center w-12 h-10 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all group">
                     <History size={16} className="group-hover:text-purple-400" />
-                    <span className="text-[8px] font-bold mt-0.5">الأرشيف</span>
+                    <span className="text-[8px] font-bold mt-0.5">المبيعات</span>
                 </button>
                 <button onClick={onOpenDataManagement} className="flex flex-col items-center justify-center w-12 h-10 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all group">
                     <Database size={16} className="group-hover:text-blue-400" />
                     <span className="text-[8px] font-bold mt-0.5">البيانات</span>
                 </button>
+                <button onClick={onLogout} className="flex flex-col items-center justify-center w-12 h-10 rounded-lg text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-all group">
+                    <LogOut size={16} />
+                    <span className="text-[8px] font-bold mt-0.5">خروج</span>
+                </button>
             </div>
 
-            {/* Left: Desktop Android-Style Status Bar (Merged Icons + Time) */}
+            {/* Left Side: Desktop Android-style Status Bar */}
             <div className="hidden md:flex items-center">
-                 <div className="flex items-center bg-gray-950 px-4 py-1.5 rounded-full border border-gray-800 shadow-2xl gap-4">
-                    <div className="flex items-center gap-4 border-l border-gray-800/80 pl-4">
+                 <div className="flex items-center bg-gray-950 px-3 py-1 rounded-full border border-gray-800 shadow-2xl gap-3">
+                    <div className="flex items-center gap-3 px-3 border-l border-gray-800/80">
+                        <button 
+                            onClick={onQuickBackup} 
+                            className="text-gray-500 hover:text-white transition-colors"
+                            title="نسخة سريعة"
+                        >
+                            <DownloadCloud size={14} />
+                        </button>
                         <button 
                             onClick={onManualSync} 
                             disabled={isSyncing} 
                             className={`text-blue-400 hover:text-blue-300 transition-colors ${isSyncing ? 'animate-spin' : ''}`}
                             title={`آخر مزامنة: ${formatLastSync(lastSyncTime)}`}
                         >
-                            <RefreshCw size={13} />
+                            <RefreshCw size={14} />
                         </button>
-                        <button 
-                            onClick={onQuickBackup} 
-                            className="text-gray-400 hover:text-white transition-colors"
-                            title="نسخة سريعة"
-                        >
-                            <DownloadCloud size={13} />
-                        </button>
-                        <div className={isOnline ? 'text-green-500/80' : 'text-red-500/80'}>
-                             {isOnline ? <Wifi size={14} /> : <WifiOff size={14} />}
+                        <div className={`${isOnline ? 'text-green-500/80' : 'text-red-500/80 animate-pulse'}`} title={isOnline ? 'متصل' : 'غير متصل'}>
+                            {isOnline ? <Wifi size={15} /> : <WifiOff size={15} />}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2 pr-1">
                         <div className="flex flex-col items-end leading-none">
-                            <span className="font-black text-[12px] text-white tracking-tighter tabular-nums">
-                                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                            <span className="font-black text-[12px] text-white tracking-tight tabular-nums">
+                                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
                             </span>
-                            <span className="text-[7px] font-bold text-gray-500 mt-0.5">
+                            <span className="text-[7px] font-bold text-gray-500">
                                 {currentTime.toLocaleDateString('en-GB')}
                             </span>
                         </div>

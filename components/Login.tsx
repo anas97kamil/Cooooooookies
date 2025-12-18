@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Lock, User, LogIn, AlertCircle } from 'lucide-react';
+import { LogIn, AlertCircle, ShieldCheck } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -13,78 +13,67 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Credentials as requested: Admin / 1997
     if (username === 'Admin' && password === '1997') {
-      setError('');
       onLogin();
     } else {
-      setError('اسم المستخدم أو كلمة المرور غير صحيحة');
+      setError('بيانات الدخول غير صحيحة');
       setPassword('');
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 p-4 font-['Cairo']" dir="rtl">
-      <div className="bg-[#111827] w-full max-w-md p-10 md:p-14 rounded-[2.5rem] shadow-2xl border border-gray-800 animate-fade-up relative overflow-hidden">
-        
-        {/* Simplified Header */}
-        <div className="text-center mb-12 relative">
-          <h1 className="text-3xl font-black text-white mb-2">الرجاء تسجيل الدخول</h1>
-          <div className="h-1 w-16 bg-[#FA8072] mx-auto rounded-full mt-4 opacity-50"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4 font-['Cairo'] relative overflow-hidden">
+      {/* Dynamic Background Effects */}
+      <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#FA8072]/10 rounded-full blur-[120px] animate-pulse"></div>
+      <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+      <div className="bg-gray-800/40 backdrop-blur-2xl w-full max-w-md p-10 rounded-[3rem] shadow-2xl border border-gray-700/50 animate-fade-up relative z-10">
+        <div className="text-center mb-10">
+          <div className="w-20 h-20 bg-gradient-to-tr from-[#FA8072] to-orange-600 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-orange-500/30 rotate-3 transition-transform hover:rotate-6">
+            <ShieldCheck className="text-white" size={40} />
+          </div>
+          <h1 className="text-3xl font-black text-white mb-2 tracking-tight">مخبز كوكيز</h1>
+          <p className="text-gray-400 text-sm font-bold opacity-70">نظام المحاسبة الموحد</p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6 relative">
-          
-          <div className="space-y-2">
-            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2 pr-2">
-              اسم المستخدم
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-gray-900/50 border border-gray-800 text-white rounded-2xl px-6 py-4 outline-none focus:border-[#FA8072] focus:ring-1 focus:ring-[#FA8072]/20 transition-all text-left dir-ltr placeholder:text-right placeholder:text-gray-700"
-              placeholder="Username"
-              required
-              autoFocus
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[11px] font-black text-gray-500 uppercase tracking-[0.2em] flex items-center gap-2 pr-2">
-              كلمة المرور
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-gray-900/50 border border-gray-800 text-white rounded-2xl px-6 py-4 outline-none focus:border-[#FA8072] focus:ring-1 focus:ring-[#FA8072]/20 transition-all text-left dir-ltr placeholder:text-right placeholder:text-gray-700"
-              placeholder="••••"
-              required
-            />
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-4">
+              <input 
+                type="text" 
+                value={username} 
+                onChange={e => setUsername(e.target.value)} 
+                className="w-full bg-gray-900/60 border border-gray-700 text-white rounded-2xl px-6 py-4 outline-none focus:border-[#FA8072] focus:ring-4 focus:ring-[#FA8072]/10 transition-all text-center font-bold placeholder:text-gray-600" 
+                placeholder="اسم المستخدم" 
+                required 
+              />
+              <input 
+                type="password" 
+                value={password} 
+                onChange={e => setPassword(e.target.value)} 
+                className="w-full bg-gray-900/60 border border-gray-700 text-white rounded-2xl px-6 py-4 outline-none focus:border-[#FA8072] focus:ring-4 focus:ring-[#FA8072]/10 transition-all text-center font-bold tracking-widest placeholder:text-gray-600" 
+                placeholder="••••" 
+                required 
+              />
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-[10px] font-bold flex items-center gap-2 animate-shake">
-              <AlertCircle size={14} />
-              {error}
+            <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-2xl text-[10px] font-black flex items-center justify-center gap-2 animate-bounce">
+              <AlertCircle size={14} /> {error}
             </div>
           )}
 
-          <button
-            type="submit"
-            className="w-full bg-gradient-to-br from-gray-800 to-gray-900 hover:from-[#FA8072] hover:to-orange-600 text-white font-black py-4.5 rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl active:scale-[0.98] mt-6 border border-gray-700 hover:border-orange-500/50"
+          <button 
+            type="submit" 
+            className="w-full bg-gradient-to-r from-[#FA8072] to-orange-600 text-white font-black py-5 rounded-2xl transition-all shadow-xl shadow-orange-500/20 active:scale-95 flex items-center justify-center gap-3"
           >
             <LogIn size={20} />
-            دخول للنظام
+            تـسـجـيـل الـدخـول
           </button>
         </form>
 
-        <div className="mt-12 text-center text-[9px] text-gray-700 font-bold uppercase tracking-[0.3em] opacity-40">
-          SECURE ACCESS • SYSTEM V2.2
-        </div>
+        <p className="mt-12 text-center text-[8px] text-gray-500 font-black uppercase tracking-[0.3em] opacity-40">
+          Cookie Accounting System • SECURED
+        </p>
       </div>
     </div>
   );

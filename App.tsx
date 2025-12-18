@@ -6,7 +6,7 @@ import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
 import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
-import { Loader2, X, Archive } from 'lucide-react';
+import { Loader2, X, ShieldCheck, Wifi, CloudDownload, CheckCircle2 } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
 const ProductManager = React.lazy(() => import('./components/ProductManager').then(m => ({ default: m.ProductManager })));
@@ -18,15 +18,84 @@ const AnalyticsModal = React.lazy(() => import('./components/AnalyticsModal').th
 
 const ModalLoader = () => <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center"><div className="bg-gray-800 p-4 rounded-full border border-gray-700"><Loader2 className="animate-spin text-[#FA8072]" size={32} /></div></div>;
 
+const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          setTimeout(onComplete, 500);
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 100);
+    return () => clearInterval(timer);
+  }, [onComplete]);
+
+  return (
+    <div className="fixed inset-0 bg-gray-900 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#FA8072]/10 rounded-full blur-[100px] animate-pulse"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse"></div>
+
+      <div className="relative z-10 max-w-sm w-full">
+        <div className="mb-8 relative">
+           <div className="w-24 h-24 bg-gradient-to-tr from-[#FA8072] to-orange-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-orange-500/20 animate-bounce">
+              <ShieldCheck className="text-white" size={48} />
+           </div>
+           {progress === 100 && (
+             <div className="absolute -right-2 -bottom-2 bg-green-500 text-white p-1 rounded-full animate-fade-up">
+                <CheckCircle2 size={24} />
+             </div>
+           )}
+        </div>
+
+        <h2 className="text-2xl font-black text-white mb-2 animate-fade-up">أهلاً بك في مخبز كوكيز</h2>
+        <p className="text-gray-400 text-sm font-bold mb-8 h-10">
+          {progress < 40 && "جاري الاتصال بقاعدة البيانات المحلية..."}
+          {progress >= 40 && progress < 80 && "تأمين الملفات للعمل بوضعية الأوفلاين..."}
+          {progress >= 80 && progress < 100 && "مزامنة البيانات السحابية..."}
+          {progress === 100 && "النظام جاهز للعمل الآن"}
+        </p>
+
+        <div className="w-full bg-gray-800 h-3 rounded-full overflow-hidden border border-gray-700 mb-4 p-0.5">
+          <div 
+            className="h-full bg-gradient-to-r from-[#FA8072] to-orange-500 rounded-full transition-all duration-300 ease-out shadow-lg shadow-orange-500/30"
+            style={{ width: `${progress}%` }}
+          ></div>
+        </div>
+
+        <div className="flex justify-between items-center px-1">
+          <div className="flex items-center gap-2 text-gray-500">
+             <Wifi size={14} className={progress < 100 ? "animate-pulse" : "text-green-500"} />
+             <span className="text-[10px] font-black uppercase tracking-widest">OFFLINE READY</span>
+          </div>
+          <span className="text-[#FA8072] font-black tabular-nums">{progress}%</span>
+        </div>
+      </div>
+      
+      <div className="absolute bottom-10 flex items-center gap-2 text-gray-600">
+          <CloudDownload size={14} />
+          <span className="text-[8px] font-black uppercase tracking-[0.3em]">Downloading System Assets</span>
+      </div>
+    </div>
+  );
+};
+
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('isAuth') === 'true');
+  const [isInitializing, setIsInitializing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(() => new Date());
   const [showLock, setShowLock] = useState<{ target: string } | null>(null);
   const [lockPass, setLockPass] = useState('');
   const [lockError, setLockError] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Core Data States with initializers from LocalStorage
+  // Core Data States
   const [sales, setSales] = useState<SaleItem[]>(() => JSON.parse(localStorage.getItem('dailySales') || '[]'));
   const [purchaseInvoices, setPurchaseInvoices] = useState<PurchaseInvoice[]>(() => JSON.parse(localStorage.getItem('dailyPurchaseInvoices') || '[]'));
   const [history, setHistory] = useState<ArchivedDay[]>(() => JSON.parse(localStorage.getItem('salesHistory') || '[]'));
@@ -37,7 +106,30 @@ const App: React.FC = () => {
   const [invoiceItems, setInvoiceItems] = useState<SaleItem[] | null>(null);
   const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false, analytics: false });
 
-  // Persistence logic - Sync state to LocalStorage whenever it changes
+  // Handle successful login transition
+  const handleLoginSuccess = () => {
+    sessionStorage.setItem('isAuth', 'true');
+    setIsInitializing(true);
+  };
+
+  const finalizeLogin = () => {
+    setIsInitializing(false);
+    setIsAuthenticated(true);
+  };
+
+  // Monitor Online Status
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Persistence logic - Immediate sync to localStorage
   useEffect(() => {
     localStorage.setItem('dailySales', JSON.stringify(sales));
     localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
@@ -50,13 +142,16 @@ const App: React.FC = () => {
 
   const handleOpenProtected = (target: string) => setShowLock({ target });
 
+  const handleLogout = () => {
+    sessionStorage.removeItem('isAuth');
+    setIsAuthenticated(false);
+  };
+
   const verifyLock = () => {
     if (lockPass === '1997') {
       if (showLock?.target === 'full_reset') {
           localStorage.clear();
           window.location.reload();
-      } else if (showLock?.target === 'archive_day') {
-          handleArchiveDay();
       } else if (showLock) {
           setModals(m => ({ ...m, [showLock.target]: true }));
       }
@@ -72,8 +167,6 @@ const App: React.FC = () => {
       const orderId = Date.now().toString();
       const now = new Date();
       const time = now.toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' });
-      
-      // Calculate next customer number based on existing daily sales
       const nextNum = sales.length > 0 ? Math.max(...sales.map(s => s.customerNumber || 0)) + 1 : 1;
       
       const finalItems: SaleItem[] = items.map(i => ({ 
@@ -87,35 +180,9 @@ const App: React.FC = () => {
         time 
       }));
 
-      // Update state - This triggers LocalStorage sync via useEffect
       setSales(prev => [...prev, ...finalItems]);
-      
-      // Notify user without showing modal as requested
-      // Optional: alert('تم تسجيل الطلب بنجاح');
   }, [sales]);
 
-  const handleArchiveDay = () => {
-    if (sales.length === 0 && purchaseInvoices.length === 0) return;
-    
-    const today = new Date().toLocaleDateString('ar-SY');
-    const newArchive: ArchivedDay = {
-        id: Date.now().toString(),
-        date: today,
-        timestamp: Date.now(),
-        totalRevenue: sales.reduce((s, i) => s + (i.price * i.quantity), 0),
-        totalExpenses: purchaseInvoices.reduce((s, i) => s + i.totalAmount, 0),
-        totalItems: sales.length,
-        items: [...sales],
-        purchaseInvoices: [...purchaseInvoices]
-    };
-
-    setHistory(prev => [...prev, newArchive]);
-    setSales([]);
-    setPurchaseInvoices([]);
-    alert('تم إنهاء اليوم وأرشفة البيانات بنجاح');
-  };
-
-  // Improved Backup Export
   const handleExportData = () => {
     const backup = {
       dailySales: sales,
@@ -135,7 +202,6 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Improved Backup Import
   const handleImportData = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -147,15 +213,17 @@ const App: React.FC = () => {
         if (data.products) setProducts(data.products);
         if (data.customers) setCustomers(data.customers);
         if (data.suppliers) setSuppliers(data.suppliers);
-        alert('تمت استعادة البيانات بنجاح');
+        
+        alert('تمت استعادة البيانات بنجاح.');
       } catch (err) {
-        alert('خطأ في قراءة ملف النسخة الاحتياطية');
+        alert('خطأ في قراءة ملف النسخة الاحتياطية.');
       }
     };
     reader.readAsText(file);
   };
 
-  if (!isAuthenticated) return <Login onLogin={() => { sessionStorage.setItem('isAuth', 'true'); setIsAuthenticated(true); }} />;
+  if (isInitializing) return <WelcomeLoader onComplete={finalizeLogin} />;
+  if (!isAuthenticated) return <Login onLogin={handleLoginSuccess} />;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-900 print:bg-white">
@@ -164,11 +232,12 @@ const App: React.FC = () => {
         onOpenDataManagement={() => handleOpenProtected('data')} 
         onOpenExpenses={() => handleOpenProtected('expenses')}
         onOpenAnalytics={() => handleOpenProtected('analytics')}
-        isOnline={navigator.onLine} 
+        onLogout={handleLogout}
+        isOnline={isOnline} 
         lastSyncTime={lastSyncTime} 
         onManualSync={() => {
             setIsSyncing(true);
-            setTimeout(() => setIsSyncing(false), 1000);
+            setTimeout(() => setIsSyncing(false), 800);
         }} 
         onQuickBackup={handleExportData} 
         isSyncing={isSyncing}
@@ -177,17 +246,6 @@ const App: React.FC = () => {
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl">
         <Summary items={sales} onPreview={() => setInvoiceItems(sales)} />
         
-        <div className="flex justify-end mb-4 no-print">
-            <button 
-                onClick={() => handleOpenProtected('archive_day')}
-                className="bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20 px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all"
-                title="نقل مبيعات اليوم إلى الأرشيف الدائم"
-            >
-                <Archive size={14} />
-                إنهاء اليوم والأرشفة
-            </button>
-        </div>
-
         <POSInterface 
             onCompleteOrder={completeOrder} 
             products={products} 
@@ -208,7 +266,7 @@ const App: React.FC = () => {
       </main>
 
       <footer className="mt-12 py-8 border-t border-gray-800/50 text-center no-print">
-         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.2 • 2026</button>
+         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.5 • 2026</button>
       </footer>
 
       <Suspense fallback={<ModalLoader />}>
@@ -226,7 +284,16 @@ const App: React.FC = () => {
                 onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} 
             />
         )}
-        {modals.history && <HistoryModal history={history} onClose={() => setModals(m => ({...m, history: false}))} onClearHistory={() => setHistory([])} onPreviewInvoice={setInvoiceItems} onUpdateOrder={(d, o, i) => setHistory(h => h.map(day => day.date === d ? {...day, items: day.items.map(item => item.orderId === o ? i.find(x => x.id === item.id) || item : item)} : day))} />}
+        {modals.history && (
+            <HistoryModal 
+                history={history} 
+                currentSales={sales} 
+                onClose={() => setModals(m => ({...m, history: false}))} 
+                onClearHistory={() => setHistory([])} 
+                onPreviewInvoice={setInvoiceItems} 
+                onUpdateOrder={(d, o, i) => setHistory(h => h.map(day => day.date === d ? {...day, items: day.items.map(item => item.orderId === o ? i.find(x => x.id === item.id) || item : item)} : day))} 
+            />
+        )}
         {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={(id, u) => setProducts(s => s.map(p => p.id === id ? {...p, ...u} : p))} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
         {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} />}
@@ -236,38 +303,15 @@ const App: React.FC = () => {
       {showLock && (
         <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-gray-800 border border-gray-700 p-6 rounded-3xl w-full max-w-xs shadow-2xl animate-fade-up relative">
-            <button 
-                onClick={() => { setShowLock(null); setLockPass(''); setLockError(false); }} 
-                className="absolute top-4 left-4 text-gray-500 hover:text-white transition-colors"
-            >
-                <X size={20} />
-            </button>
+            <button onClick={() => { setShowLock(null); setLockPass(''); setLockError(false); }} className="absolute top-4 left-4 text-gray-500 hover:text-white transition-colors"><X size={20} /></button>
             <div className="text-center mb-6">
-                <div className="w-12 h-12 bg-[#FA8072]/20 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Loader2 className="text-[#FA8072] animate-pulse" size={24} />
-                </div>
+                <div className="w-12 h-12 bg-[#FA8072]/20 rounded-full flex items-center justify-center mx-auto mb-3"><Loader2 className="text-[#FA8072] animate-pulse" size={24} /></div>
                 <h3 className="text-white font-black text-lg">تأكيد الإجراء</h3>
                 <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">يرجى إدخال رمز التحقق (1997)</p>
             </div>
-            
-            <input 
-                type="password" 
-                value={lockPass} 
-                onChange={e => setLockPass(e.target.value)} 
-                placeholder="رمز الدخول" 
-                className={`w-full bg-gray-900 border ${lockError ? 'border-red-500' : 'border-gray-700'} text-white p-4 rounded-2xl mb-4 text-center outline-none focus:border-[#FA8072] text-xl tracking-widest`} 
-                autoFocus 
-                onKeyDown={e => e.key === 'Enter' && verifyLock()} 
-            />
-            
+            <input type="password" value={lockPass} onChange={e => setLockPass(e.target.value)} placeholder="رمز الدخول" className={`w-full bg-gray-900 border ${lockError ? 'border-red-500' : 'border-gray-700'} text-white p-4 rounded-2xl mb-4 text-center outline-none focus:border-[#FA8072] text-xl tracking-widest`} autoFocus onKeyDown={e => e.key === 'Enter' && verifyLock()} />
             {lockError && <p className="text-red-500 text-[10px] text-center mb-4 font-bold animate-pulse">رمز الدخول غير صحيح!</p>}
-            
-            <button 
-                onClick={verifyLock} 
-                className="w-full bg-gradient-to-r from-[#FA8072] to-orange-600 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-orange-900/20 active:scale-95 transition-all"
-            >
-                تأكيد الإجراء
-            </button>
+            <button onClick={verifyLock} className="w-full bg-gradient-to-r from-[#FA8072] to-orange-600 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-orange-900/20 active:scale-95 transition-all">تأكيد الإجراء</button>
           </div>
         </div>
       )}

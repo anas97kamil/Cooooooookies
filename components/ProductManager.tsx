@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Settings, X, Scale, Box, Edit2, Check, RotateCcw, Store } from 'lucide-react';
+import { Plus, Trash2, Settings, X, Scale, Box, Edit2, Check, RotateCcw, Store, TrendingUp } from 'lucide-react';
 import { Product, UnitType } from '../types';
 
 interface ProductManagerProps {
@@ -30,6 +30,11 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
   const [editForm, setEditForm] = useState({ name: '', price: '', wholesalePrice: '', costPrice: '', unitType: 'piece' as UnitType });
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const calculateMargin = (sell: number, cost: number) => {
+    if (!sell || sell === 0) return 0;
+    return ((sell - cost) / sell) * 100;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -180,33 +185,50 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
           <div className="space-y-2">
             <h4 className="text-sm font-bold text-gray-400 mb-2">قائمة المنتجات ({products.length})</h4>
             <div className="grid gap-2">
-                {products.map(product => (
-                  <div key={product.id} className="flex justify-between items-center bg-gray-700 p-3 rounded-xl border border-gray-600 group">
-                    <div className="flex-grow">
-                      <div className="flex items-center gap-2">
-                          <span className="text-white font-bold">{product.name}</span>
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded text-black font-bold ${product.unitType === 'kg' ? 'bg-yellow-400' : 'bg-blue-300'}`}>{product.unitType === 'kg' ? 'كغ' : 'قطعة'}</span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1.5">
-                          <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">التكلفة:</span><span className="text-red-400 text-xs font-bold">{product.costPrice.toLocaleString()}</span></div>
-                          <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">المفرق:</span><span className="text-green-400 text-xs font-bold">{product.price.toLocaleString()}</span></div>
-                          <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">الجملة:</span><span className="text-blue-400 text-xs font-bold">{(product.wholesalePrice || product.price).toLocaleString()}</span></div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-1">
-                        <button onClick={() => startEdit(product)} className="text-gray-400 hover:text-blue-400 p-2"><Edit2 size={18} /></button>
-                        {confirmDeleteId === product.id ? (
-                            <div className="flex items-center gap-1">
-                                <button onClick={() => { onDeleteProduct(product.id); setConfirmDeleteId(null); }} className="bg-red-500 text-white px-2 py-1 rounded text-xs">تأكيد</button>
-                                <button onClick={() => setConfirmDeleteId(null)} className="text-gray-400 text-xs">إلغاء</button>
+                {products.map(product => {
+                  const retailMargin = calculateMargin(product.price, product.costPrice);
+                  const wholesaleMargin = calculateMargin(product.wholesalePrice || product.price, product.costPrice);
+                  
+                  return (
+                    <div key={product.id} className="flex justify-between items-center bg-gray-700 p-3 rounded-xl border border-gray-600 group">
+                      <div className="flex-grow">
+                        <div className="flex items-center gap-2">
+                            <span className="text-white font-bold">{product.name}</span>
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded text-black font-bold ${product.unitType === 'kg' ? 'bg-yellow-400' : 'bg-blue-300'}`}>{product.unitType === 'kg' ? 'كغ' : 'قطعة'}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
+                            <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">التكلفة:</span><span className="text-red-400 text-xs font-bold">{product.costPrice.toLocaleString()}</span></div>
+                            <div className="flex flex-col">
+                                <span className="text-[9px] text-gray-500 uppercase">المفرق:</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-green-400 text-xs font-bold">{product.price.toLocaleString()}</span>
+                                    <span className="text-[10px] text-green-500/80 bg-green-500/10 px-1 rounded flex items-center gap-0.5"><TrendingUp size={8}/>{retailMargin.toFixed(0)}%</span>
+                                </div>
                             </div>
-                        ) : (
-                            <button onClick={() => setConfirmDeleteId(product.id)} className="text-gray-500 hover:text-red-400 p-2"><Trash2 size={18} /></button>
-                        )}
+                            <div className="flex flex-col">
+                                <span className="text-[9px] text-gray-500 uppercase">الجملة:</span>
+                                <div className="flex items-center gap-1.5">
+                                    <span className="text-blue-400 text-xs font-bold">{(product.wholesalePrice || product.price).toLocaleString()}</span>
+                                    <span className="text-[10px] text-blue-500/80 bg-blue-500/10 px-1 rounded flex items-center gap-0.5"><TrendingUp size={8}/>{wholesaleMargin.toFixed(0)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                          <button onClick={() => startEdit(product)} className="text-gray-400 hover:text-blue-400 p-2"><Edit2 size={18} /></button>
+                          {confirmDeleteId === product.id ? (
+                              <div className="flex items-center gap-1">
+                                  <button onClick={() => { onDeleteProduct(product.id); setConfirmDeleteId(null); }} className="bg-red-500 text-white px-2 py-1 rounded text-xs">تأكيد</button>
+                                  <button onClick={() => setConfirmDeleteId(null)} className="text-gray-400 text-xs">إلغاء</button>
+                              </div>
+                          ) : (
+                              <button onClick={() => setConfirmDeleteId(product.id)} className="text-gray-500 hover:text-red-400 p-2"><Trash2 size={18} /></button>
+                          )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
             </div>
           </div>
         </div>
