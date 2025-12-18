@@ -283,7 +283,7 @@ const App: React.FC = () => {
         onQuickBackup={handleExportData} 
         isSyncing={isSyncing}
       />
-      <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl">
+      <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl no-print">
         <Summary items={sales} onPreview={() => setInvoiceItems(sales)} />
         <POSInterface products={products} customers={customers} onCompleteOrder={completeOrder} onOpenProductManager={() => setModals(m => ({...m, products: true}))} onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} />
         <div className="mt-8">
@@ -334,7 +334,7 @@ const App: React.FC = () => {
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
       </Suspense>
       {showLock && (
-        <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm no-print">
           <div className="bg-gray-800 border border-gray-700 p-6 rounded-3xl w-full max-w-xs shadow-2xl animate-fade-up relative">
             <button onClick={() => { setShowLock(null); setLockPass(''); setLockError(false); }} className="absolute top-4 left-4 text-gray-500 hover:text-white transition-colors"><X size={20} /></button>
             <div className="text-center mb-6">

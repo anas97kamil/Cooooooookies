@@ -41,53 +41,68 @@
         border-radius: 10px;
       }
 
+      /* نظام الطباعة المطور - حل مشكلة الصفحة البيضاء */
       @media print {
-        /* إخفاء كل العناصر التي تحمل كلاس no-print */
+        /* 1. إخفاء كل العناصر التي تحمل كلاس no-print */
         .no-print, .no-print * {
           display: none !important;
-        }
-        
-        /* إخفاء خلفية المودال الداكنة والحدود عند الطباعة */
-        .fixed.inset-0 {
-          background: white !important;
-          position: static !important;
+          height: 0 !important;
+          margin: 0 !important;
           padding: 0 !important;
         }
         
-        .bg-gray-800, .bg-gray-900 {
+        /* 2. تحويل الحاوية الثابتة للمودال إلى وضع طبيعي للطباعة */
+        .fixed.inset-0 {
+          position: absolute !important;
+          top: 0 !important;
+          left: 0 !important;
+          width: 100% !important;
+          height: auto !important;
           background: white !important;
-          border: none !important;
-          box-shadow: none !important;
+          display: block !important;
+          z-index: 9999 !important;
         }
 
-        /* تنسيق محتوى الفاتورة للطباعة */
-        #invoice-content {
-          visibility: visible !important;
-          display: block !important;
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
-          width: 100% !important;
-          margin: 0 !important;
-          padding: 5mm !important;
+        /* 3. تنظيف حاوية الفاتورة من أي خلفيات داكنة أو حدود */
+        .bg-gray-800, .bg-gray-900, .bg-gray-950, .bg-black {
           background: white !important;
           color: black !important;
+          border: none !important;
+          box-shadow: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100% !important;
+          max-width: none !important;
         }
 
-        /* إخفاء كل شيء آخر في الصفحة لضمان عدم وجود مساحات فارغة */
-        body > *:not(.fixed) {
-           display: none !important;
+        /* 4. إلغاء الـ Scroll في وضع الطباعة لمنع قص الصفحات */
+        .overflow-hidden, .overflow-y-auto {
+          overflow: visible !important;
+          height: auto !important;
         }
-        
+
+        /* 5. تخصيص محتوى الفاتورة الفعلي */
+        #invoice-content {
+          background: white !important;
+          color: black !important;
+          padding: 10mm !important;
+          margin: 0 !important;
+          width: 100% !important;
+          display: block !important;
+          visibility: visible !important;
+        }
+
         html, body {
           background: white !important;
           height: auto !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
       }
       
       @page {
         size: A4;
-        margin: 0;
+        margin: 10mm;
       }
     </style>
   <script type="importmap">

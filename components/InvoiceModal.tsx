@@ -42,13 +42,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
   };
 
   const handlePrint = () => {
+    // نطلب الطباعة مباشرة، الـ CSS في index.html سيهتم بالباقي
     window.print();
     setConfirmPrint(false);
   };
 
   return (
     <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-      <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-xl shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-xl shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col max-h-[90vh] print:max-h-none print:shadow-none print:border-none">
         
         {/* Header - Hidden on Print */}
         <div className="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-900/50 no-print">
@@ -60,8 +61,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
         </div>
 
         {/* Invoice Body */}
-        <div className="flex-1 overflow-y-auto bg-white">
-           <div id="invoice-content" className="bg-white text-black p-8 sm:p-12 min-h-full">
+        <div className="flex-1 overflow-y-auto bg-white print:overflow-visible">
+           <div id="invoice-content" className="bg-white text-black p-8 sm:p-12 min-h-full print:p-0">
             {/* Logo & Info */}
             <div className="text-center mb-8 border-b-2 border-black pb-4">
               <h2 className="text-3xl font-black mb-1">مخبز كوكيز</h2>
