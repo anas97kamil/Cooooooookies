@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { X, ChevronDown, ChevronUp, ArrowRight, Folder, CalendarDays, ShoppingBag, Zap, Store, User, Filter, TrendingUp, PieChart, Info, Clock, Download, Search, Trash2, Edit3, Check } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, ArrowRight, Folder, CalendarDays, ShoppingBag, Zap, Store, User, Filter, TrendingUp, PieChart, Info, Clock, Download, Search, Trash2, Edit3, Check, Save } from 'lucide-react';
 import { ArchivedDay, SaleItem, SaleType } from '../types';
 
 interface HistoryModalProps {
@@ -9,7 +9,7 @@ interface HistoryModalProps {
   onClose: () => void;
   onClearHistory: () => void;
   onPreviewInvoice: (items: SaleItem[]) => void;
-  onUpdateOrder: (dayId: string, orderId: string, updatedItems: SaleItem[]) => void;
+  onUpdateOrder: (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => void;
   onDeleteArchivedOrder: (dayId: string, orderId: string) => void;
 }
 
@@ -28,10 +28,10 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // حالات التعديل المباشر
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editPrice, setEditPrice] = useState('');
-  const [editQty, setEditQty] = useState('');
+  // حالات التعديل الجديدة - للفاتورة بالكامل
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editCustomerName, setEditCustomerName] = useState('');
+  const [editOrderItems, setEditOrderItems] = useState<SaleItem[]>([]);
 
   const fullHistory = useMemo(() => {
       const merged = [...history];
@@ -127,20 +127,28 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
       return orderList.sort((a, b) => b[0].orderId.localeCompare(a[0].orderId));
   };
 
-  const handleStartEdit = (item: SaleItem) => {
-    setEditingItemId(item.id);
-    setEditPrice(item.price.toString());
-    setEditQty(item.quantity.toString());
+  // معالجة بدء تعديل الفاتورة بالكامل
+  const handleStartOrderEdit = (orderItems: SaleItem[]) => {
+      setEditingOrderId(orderItems[0].orderId);
+      setEditCustomerName(orderItems[0].customerName || '');
+      setEditOrderItems([...orderItems]);
   };
 
-  const handleSaveEdit = (dayId: string, orderItems: SaleItem[], targetItem: SaleItem) => {
-    const updated = orderItems.map(it => it.id === targetItem.id ? { 
-      ...it, 
-      price: parseFloat(editPrice) || it.price, 
-      quantity: parseFloat(editQty) || it.quantity 
-    } : it);
-    onUpdateOrder(dayId, targetItem.orderId, updated);
-    setEditingItemId(null);
+  // معالجة تغيير قيم المواد في وضع التعديل
+  const handleEditItemChange = (itemId: string, field: 'price' | 'quantity', value: string) => {
+      setEditOrderItems(prev => prev.map(item => {
+          if (item.id === itemId) {
+              return { ...item, [field]: parseFloat(value) || 0 };
+          }
+          return item;
+      }));
+  };
+
+  // حفظ التعديلات الشاملة للفاتورة
+  const handleSaveOrderEdit = (dayId: string) => {
+      if (!editingOrderId) return;
+      onUpdateOrder(dayId, editingOrderId, editOrderItems, editCustomerName);
+      setEditingOrderId(null);
   };
 
   const renderArchive = () => {
@@ -214,44 +222,83 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                 <div className="p-4 bg-gray-900/30 border-t border-gray-700 animate-fade-up space-y-4">
                                     {groupedOrders.map((orderItems, oIdx) => {
                                         const first = orderItems[0];
-                                        const orderTotal = orderItems.reduce((s, i) => s + (i.price * i.quantity), 0);
+                                        const isEditing = editingOrderId === first.orderId;
+                                        const orderTotal = (isEditing ? editOrderItems : orderItems).reduce((s, i) => s + (i.price * i.quantity), 0);
+                                        
                                         return (
-                                            <div key={oIdx} className="bg-gray-800/80 rounded-2xl border border-gray-700 overflow-hidden shadow-inner">
-                                                <div className="bg-gray-900/50 p-3 flex justify-between items-center border-b border-gray-700/50">
+                                            <div key={oIdx} className={`bg-gray-800/80 rounded-2xl border overflow-hidden shadow-inner transition-all ${isEditing ? 'border-[#FA8072] ring-2 ring-[#FA8072]/20' : 'border-gray-700'}`}>
+                                                <div className={`p-3 flex justify-between items-center border-b ${isEditing ? 'bg-[#FA8072]/10 border-[#FA8072]/20' : 'bg-gray-900/50 border-gray-700/50'}`}>
                                                     <div className="flex items-center gap-2">
                                                         {first.saleType === 'wholesale' ? <Store size={14} className="text-orange-400" /> : <User size={14} className="text-blue-400" />}
-                                                        <span className="text-white text-xs font-black">{first.customerName || 'زبون عام'}</span>
+                                                        
+                                                        {isEditing ? (
+                                                            <input 
+                                                              type="text" 
+                                                              value={editCustomerName} 
+                                                              onChange={e => setEditCustomerName(e.target.value)}
+                                                              className="bg-gray-900 border border-[#FA8072] text-white text-xs px-2 py-1 rounded-lg outline-none focus:ring-1 focus:ring-[#FA8072]"
+                                                              placeholder="اسم الزبون..."
+                                                            />
+                                                        ) : (
+                                                            <span className="text-white text-xs font-black">{first.customerName || 'زبون عام'}</span>
+                                                        )}
                                                         <span className="text-[9px] bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded font-bold tabular-nums">#{first.orderId.slice(-4)}</span>
                                                     </div>
+                                                    
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex items-center gap-1 text-[9px] text-gray-500 font-bold"><Clock size={10} />{first.time}</div>
                                                         <span className="text-green-400 font-black text-sm">{orderTotal.toLocaleString()}</span>
+                                                        
                                                         <div className="flex gap-2">
-                                                           <button onClick={() => onPreviewInvoice(orderItems)} className="text-gray-500 hover:text-white transition-colors" title="طباعة"><Download size={14}/></button>
-                                                           <button onClick={() => { if(window.confirm('هل أنت متأكد من حذف هذه الفاتورة من الأرشيف؟')){ onDeleteArchivedOrder(day.id, first.orderId); } }} className="text-gray-500 hover:text-red-400 transition-colors" title="حذف الفاتورة"><Trash2 size={14}/></button>
+                                                           {isEditing ? (
+                                                               <>
+                                                                 <button onClick={() => handleSaveOrderEdit(day.id)} className="bg-green-600 hover:bg-green-500 text-white p-1.5 rounded-lg flex items-center gap-1 transition-colors">
+                                                                    <Save size={14} />
+                                                                 </button>
+                                                                 <button onClick={() => setEditingOrderId(null)} className="bg-gray-700 hover:bg-gray-600 text-white p-1.5 rounded-lg transition-colors">
+                                                                    <X size={14} />
+                                                                 </button>
+                                                               </>
+                                                           ) : (
+                                                               <>
+                                                                 <button onClick={() => onPreviewInvoice(orderItems)} className="text-gray-500 hover:text-white transition-colors" title="طباعة"><Download size={14}/></button>
+                                                                 <button onClick={() => handleStartOrderEdit(orderItems)} className="text-gray-500 hover:text-[#FA8072] transition-colors" title="تعديل الفاتورة"><Edit3 size={14}/></button>
+                                                                 <button onClick={() => { if(window.confirm('هل أنت متأكد من حذف هذه الفاتورة من الأرشيف؟')){ onDeleteArchivedOrder(day.id, first.orderId); } }} className="text-gray-500 hover:text-red-400 transition-colors" title="حذف الفاتورة"><Trash2 size={14}/></button>
+                                                               </>
+                                                           )}
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="p-2 space-y-1">
-                                                    {orderItems.map((item, iIdx) => (
-                                                        <div key={iIdx} className="flex justify-between items-center text-[10px] px-2 py-1 bg-gray-900/20 rounded group/row">
-                                                            {editingItemId === item.id ? (
-                                                              <div className="flex items-center gap-2 w-full">
-                                                                <span className="text-gray-300 font-bold min-w-[60px]">{item.name}</span>
-                                                                <input type="number" value={editQty} onChange={e => setEditQty(e.target.value)} className="w-12 bg-gray-950 border border-gray-700 text-white rounded px-1 text-center" />
-                                                                <input type="number" value={editPrice} onChange={e => setEditPrice(e.target.value)} className="w-16 bg-gray-950 border border-gray-700 text-[#FA8072] rounded px-1 text-center" />
-                                                                <button onClick={() => handleSaveEdit(day.id, orderItems, item)} className="text-green-400 hover:text-green-300"><Check size={14} /></button>
-                                                                <button onClick={() => setEditingItemId(null)} className="text-gray-500 hover:text-white"><X size={14} /></button>
-                                                              </div>
-                                                            ) : (
-                                                              <>
-                                                                <div className="flex items-center gap-2">
-                                                                  <span className="text-gray-300 font-bold">{item.name} <span className="text-gray-500 font-normal">({item.quantity} {item.unitType === 'kg' ? 'كغ' : 'قطعة'})</span></span>
-                                                                  <button onClick={() => handleStartEdit(item)} className="opacity-0 group-hover/row:opacity-100 text-[#FA8072] transition-opacity"><Edit3 size={10} /></button>
-                                                                </div>
-                                                                <span className="text-gray-400 tabular-nums">{(item.price * item.quantity).toLocaleString()}</span>
-                                                              </>
-                                                            )}
+                                                    {(isEditing ? editOrderItems : orderItems).map((item, iIdx) => (
+                                                        <div key={iIdx} className="flex justify-between items-center text-[10px] px-2 py-1.5 bg-gray-900/20 rounded group/row">
+                                                            <div className="flex items-center gap-2 flex-1">
+                                                                <span className="text-gray-300 font-bold min-w-[80px]">{item.name}</span>
+                                                                {isEditing && (
+                                                                    <div className="flex items-center gap-2">
+                                                                      <div className="flex flex-col">
+                                                                        <label className="text-[7px] text-gray-500 font-bold uppercase">الكمية</label>
+                                                                        <input 
+                                                                          type="number" 
+                                                                          value={item.quantity} 
+                                                                          onChange={e => handleEditItemChange(item.id, 'quantity', e.target.value)} 
+                                                                          className="w-14 bg-gray-950 border border-gray-700 text-white rounded px-1 text-center py-0.5 outline-none focus:border-[#FA8072]" 
+                                                                        />
+                                                                      </div>
+                                                                      <div className="flex flex-col">
+                                                                        <label className="text-[7px] text-gray-500 font-bold uppercase">السعر</label>
+                                                                        <input 
+                                                                          type="number" 
+                                                                          value={item.price} 
+                                                                          onChange={e => handleEditItemChange(item.id, 'price', e.target.value)} 
+                                                                          className="w-20 bg-gray-950 border border-gray-700 text-[#FA8072] rounded px-1 text-center py-0.5 outline-none focus:border-[#FA8072]" 
+                                                                        />
+                                                                      </div>
+                                                                    </div>
+                                                                )}
+                                                                {!isEditing && <span className="text-gray-500 font-normal">({item.quantity} {item.unitType === 'kg' ? 'كغ' : 'قطعة'})</span>}
+                                                            </div>
+                                                            <span className={`tabular-nums font-bold ${isEditing ? 'text-green-400' : 'text-gray-400'}`}>{(item.price * item.quantity).toLocaleString()}</span>
                                                         </div>
                                                     ))}
                                                 </div>

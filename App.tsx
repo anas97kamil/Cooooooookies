@@ -266,15 +266,17 @@ const App: React.FC = () => {
     reader.readAsText(file);
   };
 
-  // وظيفة تحديث الأرشيف (تعديل وحذف)
-  const handleUpdateArchivedOrder = (dayId: string, orderId: string, updatedItems: SaleItem[]) => {
+  // وظيفة تحديث الأرشيف (تعديل وحذف) المطورة
+  const handleUpdateArchivedOrder = (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => {
     setHistory(prev => prev.map(day => {
-      if (day.id === dayId) {
+      if (day.id === dayId || (dayId === 'today-active' && day.id === 'today-active')) {
         // تحديث المواد في الفاتورة المحددة
         const newItems = day.items.map(item => {
           if (item.orderId === orderId) {
             const updated = updatedItems.find(ui => ui.id === item.id);
-            return updated ? updated : item;
+            const base = updated ? updated : item;
+            // إذا تم تغيير اسم الزبون، نقوم بتحديثه في جميع بنود الفاتورة
+            return newCustomerName !== undefined ? { ...base, customerName: newCustomerName } : base;
           }
           return item;
         });
@@ -290,11 +292,23 @@ const App: React.FC = () => {
       }
       return day;
     }));
+
+    // إذا كانت الفاتورة من مبيعات اليوم النشطة، نقوم بتحديثها هناك أيضاً
+    if (dayId === 'today-active') {
+        setSales(prev => prev.map(item => {
+            if (item.orderId === orderId) {
+                const updated = updatedItems.find(ui => ui.id === item.id);
+                const base = updated ? updated : item;
+                return newCustomerName !== undefined ? { ...base, customerName: newCustomerName } : base;
+            }
+            return item;
+        }));
+    }
   };
 
   const handleDeleteArchivedOrder = (dayId: string, orderId: string) => {
     setHistory(prev => prev.map(day => {
-      if (day.id === dayId) {
+      if (day.id === dayId || (dayId === 'today-active' && day.id === 'today-active')) {
         const newItems = day.items.filter(item => item.orderId !== orderId);
         const newTotal = newItems.reduce((s, i) => s + (i.price * i.quantity), 0);
         return {
@@ -305,6 +319,10 @@ const App: React.FC = () => {
       }
       return day;
     }).filter(day => day.items.length > 0 || (day.purchaseInvoices && day.purchaseInvoices.length > 0)));
+
+    if (dayId === 'today-active') {
+        setSales(prev => prev.filter(item => item.orderId !== orderId));
+    }
   };
 
   if (isInitializing) return <WelcomeLoader onComplete={finalizeLogin} />;
