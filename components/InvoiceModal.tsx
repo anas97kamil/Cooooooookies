@@ -1,8 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Copy, Check, Download, FileSpreadsheet, Printer } from 'lucide-react';
+import { X, Copy, Check, Download, FileSpreadsheet, Printer, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { SaleItem } from '../types';
 import { utils, writeFile } from 'xlsx';
+import * as htmlToImage from 'html-to-image';
 
 interface InvoiceModalProps {
   items: SaleItem[];
@@ -12,6 +13,7 @@ interface InvoiceModalProps {
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) => {
   const [copied, setCopied] = useState(false);
   const [confirmPrint, setConfirmPrint] = useState(false);
+  const [isCapturing, setIsCapturing] = useState(false);
   
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const timeStr = items[0]?.time || new Date().toLocaleTimeString('ar-SY');
@@ -46,6 +48,34 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
     setConfirmPrint(false);
   };
 
+  const handleSaveImage = async () => {
+    const node = document.getElementById('invoice-content');
+    if (!node) return;
+    
+    setIsCapturing(true);
+    try {
+      // إعدادات الصورة لضمان جودة عالية وخلفية بيضاء
+      const dataUrl = await htmlToImage.toPng(node, { 
+        backgroundColor: '#ffffff',
+        pixelRatio: 2, // جودة مضاعفة
+        style: {
+          margin: '0',
+          padding: '40px'
+        }
+      });
+      
+      const link = document.createElement('a');
+      link.download = `فاتورة-${customerName}-${dayDate}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('فشل في حفظ الصورة:', err);
+      alert('حدث خطأ أثناء محاولة حفظ الصورة.');
+    } finally {
+      setIsCapturing(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
       <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-xl shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col max-h-[90vh]">
@@ -59,7 +89,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
         </div>
 
-        {/* Invoice Body - This is the only part that will show during print thanks to the id */}
+        {/* Invoice Body */}
         <div className="flex-1 overflow-y-auto bg-white">
            <div id="invoice-content" className="bg-white text-black p-8 sm:p-12 min-h-full">
             {/* Logo & Info */}
@@ -114,7 +144,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
               </div>
             </div>
 
-            {/* Signature Area - Visible only on print */}
+            {/* Signature Area */}
             <div className="mt-20 flex justify-between items-end px-4 opacity-0 print:opacity-100">
                <div className="text-center">
                    <p className="mb-10 font-bold text-black text-xs">توقيع المستلم</p>
@@ -133,22 +163,39 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
         </div>
 
         {/* Actions - Hidden on Print */}
-        <div className="p-6 bg-gray-900/80 border-t border-gray-700 grid grid-cols-1 sm:grid-cols-4 gap-3 no-print">
-            {confirmPrint ? (
-                <div className="sm:col-span-2 flex items-center gap-2">
-                    <button onClick={handlePrint} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-3.5 rounded-2xl font-black text-xs transition-all shadow-xl active:scale-95">تأكيد الطباعة</button>
-                    <button onClick={() => setConfirmPrint(false)} className="flex-1 bg-gray-700 text-white py-3.5 rounded-2xl font-black text-xs">إلغاء</button>
-                </div>
-            ) : (
-                <button onClick={() => setConfirmPrint(true)} className="sm:col-span-2 bg-[#FA8072] hover:bg-orange-500 text-white py-3.5 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95">
-                    <Printer size={18} /> طباعة الفاتورة
+        <div className="p-6 bg-gray-900/80 border-t border-gray-700 no-print">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+                {confirmPrint ? (
+                    <div className="col-span-2 flex items-center gap-2">
+                        <button onClick={handlePrint} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-3.5 rounded-2xl font-black text-[10px] transition-all shadow-xl active:scale-95">تأكيد الطباعة</button>
+                        <button onClick={() => setConfirmPrint(false)} className="flex-1 bg-gray-700 text-white py-3.5 rounded-2xl font-black text-[10px]">إلغاء</button>
+                    </div>
+                ) : (
+                    <button onClick={() => setConfirmPrint(true)} className="col-span-2 bg-[#FA8072] hover:bg-orange-500 text-white py-3.5 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95">
+                        <Printer size={16} /> طباعة PDF
+                    </button>
+                )}
+                
+                <button 
+                  onClick={handleSaveImage} 
+                  disabled={isCapturing}
+                  className="bg-blue-600 hover:bg-blue-500 text-white py-3.5 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95 disabled:opacity-50"
+                >
+                    {isCapturing ? <Loader2 size={16} className="animate-spin" /> : <ImageIcon size={16} />}
+                    حفظ كصورة
                 </button>
-            )}
-            <button onClick={handleDownloadExcel} className="bg-green-700 hover:bg-green-600 text-white py-3.5 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95">
-                <FileSpreadsheet size={18} /> Excel
-            </button>
-            <button onClick={handleCopy} className={`py-3.5 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all border border-gray-700 ${copied ? 'bg-blue-600 text-white border-blue-500' : 'bg-gray-800 text-gray-400 hover:text-white'}`}>
-                {copied ? <Check size={18} /> : <Copy size={18} />} {copied ? 'تم النسخ' : 'نصي'}
+
+                <button onClick={handleDownloadExcel} className="bg-green-700 hover:bg-green-600 text-white py-3.5 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95">
+                    <FileSpreadsheet size={16} /> ملف Excel
+                </button>
+            </div>
+            
+            <button 
+                onClick={handleCopy} 
+                className={`w-full py-3.5 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 transition-all border border-gray-700 ${copied ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
+            >
+                {copied ? <Check size={16} /> : <Copy size={16} />} 
+                {copied ? 'تم نسخ بيانات الفاتورة' : 'نسخ الفاتورة كنص'}
             </button>
         </div>
       </div>
