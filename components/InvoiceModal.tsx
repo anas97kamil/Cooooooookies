@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Copy, Check, Download, FileSpreadsheet, Printer, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { SaleItem } from '../types';
 import { utils, writeFile } from 'xlsx';
+// @ts-ignore
 import * as htmlToImage from 'html-to-image';
 
 interface InvoiceModalProps {
