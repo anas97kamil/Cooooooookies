@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Settings, Edit3, Trash2, CheckCircle, Plus, Minus, UserPlus, X, Check } from 'lucide-react';
+import { ShoppingCart, Settings, Edit3, Trash2, CheckCircle, Plus, Minus, UserPlus, X, Check, Calculator } from 'lucide-react';
 import { Product, UnitType, SaleType, Customer } from '../types';
 
 interface POSInterfaceProps {
@@ -22,7 +22,8 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
   const [customForm, setCustomForm] = useState({ name: '', price: '', cost: '', unit: 'piece' as UnitType });
   
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
-  const [tempPrice, setTempPrice] = useState<string>('');
+  const [editingTotalId, setEditingTotalId] = useState<string | null>(null);
+  const [tempValue, setTempValue] = useState<string>('');
 
   useEffect(() => {
     setCart(prev => prev.map(item => {
@@ -44,7 +45,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
       
       if (idx > -1) {
         const next = [...prev];
-        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1, price: activePrice };
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + (p.unitType === 'kg' ? 0.1 : 1), price: activePrice };
         return next;
       }
       return [...prev, { 
@@ -52,7 +53,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
         name: p.name, 
         price: activePrice, 
         costPrice: p.costPrice || 0, 
-        quantity: 1, 
+        quantity: p.unitType === 'kg' ? 1 : 1, 
         unitType: p.unitType 
       }];
     });
@@ -73,7 +74,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
   };
 
   const updateQty = (id: string, delta: number) => {
-    setCart(prev => prev.map(i => i.tempId === id ? { ...i, quantity: Math.max(0.1, parseFloat((i.quantity + delta * (i.unitType === 'kg' ? 0.1 : 1)).toFixed(2))) } : i));
+    setCart(prev => prev.map(i => i.tempId === id ? { ...i, quantity: Math.max(0, parseFloat((i.quantity + delta * (i.unitType === 'kg' ? 0.1 : 1)).toFixed(3))) } : i));
   };
 
   const handleManualQtyChange = (id: string, value: string) => {
@@ -85,35 +86,40 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
     }
   };
 
-  const handleStartEditPrice = (item: any) => {
+  // تعديل سعر الوحدة (سعر الكيلو أو سعر القطعة)
+  const handleStartEditUnitPrice = (item: any) => {
     setEditingPriceId(item.tempId);
-    // إذا كان وزن، نظهر الإجمالي الحالي لتسهيل التعديل
-    if (item.unitType === 'kg') {
-      setTempPrice((item.price * item.quantity).toString());
-    } else {
-      setTempPrice(item.price.toString());
-    }
+    setEditingTotalId(null);
+    setTempValue(item.price.toString());
   };
 
-  const handleSavePrice = (tempId: string) => {
-    const enteredValue = parseFloat(tempPrice);
-    if (!isNaN(enteredValue) && enteredValue >= 0) {
+  // تعديل إجمالي المبلغ (لحساب الوزن)
+  const handleStartEditTotalAmount = (item: any) => {
+    if (item.unitType !== 'kg') return; // هذه الميزة مفيدة للكيلو فقط
+    setEditingTotalId(item.tempId);
+    setEditingPriceId(null);
+    setTempValue((item.price * item.quantity).toString());
+  };
+
+  const handleSaveEdit = (tempId: string) => {
+    const val = parseFloat(tempValue);
+    if (!isNaN(val) && val >= 0) {
       setCart(prev => prev.map(i => {
         if (i.tempId === tempId) {
-          if (i.unitType === 'kg') {
-            // الميزة المطلوبة: تعديل الوزن بناءً على المبلغ المدخل
-            // الكمية = المبلغ الإجمالي / سعر الكيلو
-            const newQty = parseFloat((enteredValue / i.price).toFixed(3));
+          if (editingTotalId) {
+            // الميزة المطلوبة: تعديل الوزن بناءً على إجمالي المبلغ المدخل
+            const newQty = parseFloat((val / i.price).toFixed(3));
             return { ...i, quantity: newQty };
           } else {
-            // المواد بالقطعة: تعديل سعر القطعة بشكل مباشر
-            return { ...i, price: enteredValue };
+            // تعديل سعر الوحدة بشكل طبيعي
+            return { ...i, price: val };
           }
         }
         return i;
       }));
     }
     setEditingPriceId(null);
+    setEditingTotalId(null);
   };
 
   const isCheckoutDisabled = cart.length === 0 || (saleType === 'wholesale' && !selectedCustomerId);
@@ -206,17 +212,17 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                                         <div className="flex items-center gap-1 mt-1">
                                             <input 
                                                 type="number" 
-                                                value={tempPrice} 
-                                                onChange={e => setTempPrice(e.target.value)} 
-                                                onBlur={() => handleSavePrice(i.tempId)} 
-                                                onKeyDown={e => e.key === 'Enter' && handleSavePrice(i.tempId)} 
+                                                value={tempValue} 
+                                                onChange={e => setTempValue(e.target.value)} 
+                                                onBlur={() => handleSaveEdit(i.tempId)} 
+                                                onKeyDown={e => e.key === 'Enter' && handleSaveEdit(i.tempId)} 
                                                 className="w-24 bg-gray-900 border border-[#FA8072] text-white text-xs px-2 py-1 rounded-lg" 
                                                 autoFocus 
                                             />
-                                            <span className="text-[10px] text-gray-500">{i.unitType === 'kg' ? '(المبلغ الكلي)' : '(سعر القطعة)'}</span>
+                                            <span className="text-[10px] text-gray-500 font-bold">ل.س</span>
                                         </div>
                                     ) : (
-                                        <div className="mt-1 flex items-center gap-1.5 cursor-pointer group/price" onClick={() => handleStartEditPrice(i)}>
+                                        <div className="mt-1 flex items-center gap-1.5 cursor-pointer group/price" onClick={() => handleStartEditUnitPrice(i)}>
                                             <span className="text-[10px] text-gray-500">
                                               {i.unitType === 'kg' ? 'سعر الكيلو: ' : 'السعر: '}
                                               <span className="text-gray-300 font-bold tabular-nums">{i.price.toLocaleString()}</span>
@@ -235,15 +241,37 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                                         type="number" 
                                         value={i.quantity} 
                                         onChange={(e) => handleManualQtyChange(i.tempId, e.target.value)}
-                                        className="w-14 bg-transparent text-white text-sm font-black text-center outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                                        step={i.unitType === 'kg' ? '0.1' : '1'}
+                                        className="w-16 bg-transparent text-white text-sm font-black text-center outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        step={i.unitType === 'kg' ? '0.001' : '1'}
                                     />
                                     <button onClick={() => updateQty(i.tempId, 1)} className="text-gray-500 hover:text-white transition-colors p-1"><Plus size={14} /></button>
                                 </div>
                                 
                                 <div className="flex flex-col items-end">
-                                    <span className="text-[#FA8072] font-black text-lg tabular-nums">{(i.price * i.quantity).toLocaleString()}</span>
-                                    <span className="text-[8px] text-gray-600 font-bold uppercase">إجمالي المادة</span>
+                                    {editingTotalId === i.tempId ? (
+                                        <div className="flex items-center gap-1">
+                                            <input 
+                                                type="number" 
+                                                value={tempValue} 
+                                                onChange={e => setTempValue(e.target.value)} 
+                                                onBlur={() => handleSaveEdit(i.tempId)} 
+                                                onKeyDown={e => e.key === 'Enter' && handleSaveEdit(i.tempId)} 
+                                                className="w-20 bg-gray-950 border border-green-500 text-white text-xs px-2 py-1 rounded-lg text-center font-black" 
+                                                autoFocus 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div 
+                                          onClick={() => handleStartEditTotalAmount(i)}
+                                          className={`flex flex-col items-end group/total ${i.unitType === 'kg' ? 'cursor-pointer' : ''}`}
+                                        >
+                                            <div className="flex items-center gap-1">
+                                              {i.unitType === 'kg' && <Calculator size={10} className="text-[#FA8072] opacity-0 group-hover/total:opacity-100 transition-opacity" />}
+                                              <span className="text-[#FA8072] font-black text-lg tabular-nums">{(i.price * i.quantity).toLocaleString()}</span>
+                                            </div>
+                                            <span className="text-[8px] text-gray-600 font-bold uppercase">{i.unitType === 'kg' ? 'انقر لطلب مبلغ محدد' : 'إجمالي المادة'}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
