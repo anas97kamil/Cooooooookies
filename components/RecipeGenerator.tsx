@@ -23,8 +23,6 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
   
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [tempPrice, setTempPrice] = useState<string>('');
-  const [editingQtyId, setEditingQtyId] = useState<string | null>(null);
-  const [tempQty, setTempQty] = useState<string>('');
 
   useEffect(() => {
     setCart(prev => prev.map(item => {
@@ -78,6 +76,15 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
     setCart(prev => prev.map(i => i.tempId === id ? { ...i, quantity: Math.max(0.1, parseFloat((i.quantity + delta * (i.unitType === 'kg' ? 0.1 : 1)).toFixed(2))) } : i));
   };
 
+  const handleManualQtyChange = (id: string, value: string) => {
+    const newQty = parseFloat(value);
+    if (!isNaN(newQty)) {
+        setCart(prev => prev.map(i => i.tempId === id ? { ...i, quantity: newQty } : i));
+    } else if (value === '') {
+        setCart(prev => prev.map(i => i.tempId === id ? { ...i, quantity: 0 } : i));
+    }
+  };
+
   const handleStartEditPrice = (item: any) => {
     setEditingPriceId(item.tempId);
     setTempPrice(item.price.toString());
@@ -89,19 +96,6 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
       setCart(prev => prev.map(i => i.tempId === tempId ? { ...i, price: newPrice } : i));
     }
     setEditingPriceId(null);
-  };
-
-  const handleStartEditQty = (item: any) => {
-    setEditingQtyId(item.tempId);
-    setTempQty(item.quantity.toString());
-  };
-
-  const handleSaveQty = (tempId: string) => {
-    const newQty = parseFloat(tempQty);
-    if (!isNaN(newQty) && newQty > 0) {
-      setCart(prev => prev.map(i => i.tempId === tempId ? { ...i, quantity: newQty } : i));
-    }
-    setEditingQtyId(null);
   };
 
   const isCheckoutDisabled = cart.length === 0 || (saleType === 'wholesale' && !selectedCustomerId);
@@ -153,75 +147,103 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
       </div>
 
       <div className="lg:col-span-1">
-        <div className="bg-gray-800 rounded-2xl border border-gray-700 shadow-xl overflow-hidden flex flex-col h-full min-h-[500px]">
-            <div className="bg-gray-900/80 p-4 border-b border-gray-700 space-y-3">
+        <div className="bg-gray-800 rounded-[2rem] border border-gray-700 shadow-2xl overflow-hidden flex flex-col h-full min-h-[550px]">
+            <div className="bg-gray-900/80 p-5 border-b border-gray-700 space-y-4">
                 <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-white flex items-center gap-2"><ShoppingCart size={20} className="text-[#FA8072]" /> سلة المبيعات</h3>
-                    {cart.length > 0 && <button onClick={() => setCart([])} className="text-xs text-red-400 underline">إلغاء السلة</button>}
+                    <h3 className="font-black text-white flex items-center gap-2"><ShoppingCart size={22} className="text-[#FA8072]" /> سلة المبيعات</h3>
+                    {cart.length > 0 && <button onClick={() => setCart([])} className="text-[10px] font-black text-red-400 hover:underline">تفريغ السلة</button>}
                 </div>
-                <div className="grid grid-cols-2 bg-gray-700 p-1 rounded-lg">
-                    <button onClick={() => setSaleType('retail')} className={`py-1.5 text-xs font-bold rounded-md transition-colors ${saleType === 'retail' ? 'bg-white text-black' : 'text-gray-400'}`}>مفرق</button>
-                    <button onClick={() => setSaleType('wholesale')} className={`py-1.5 text-xs font-bold rounded-md transition-colors ${saleType === 'wholesale' ? 'bg-[#FA8072] text-white' : 'text-gray-400'}`}>جملة</button>
+                <div className="grid grid-cols-2 bg-gray-700 p-1 rounded-xl">
+                    <button onClick={() => setSaleType('retail')} className={`py-2 text-xs font-black rounded-lg transition-all ${saleType === 'retail' ? 'bg-white text-black shadow-sm' : 'text-gray-400'}`}>مفرق</button>
+                    <button onClick={() => setSaleType('wholesale')} className={`py-2 text-xs font-black rounded-lg transition-all ${saleType === 'wholesale' ? 'bg-[#FA8072] text-white shadow-sm' : 'text-gray-400'}`}>جملة</button>
                 </div>
                 {saleType === 'retail' ? (
-                     <input type="text" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="الاسم (اختياري)..." className="w-full bg-gray-800 border border-gray-600 text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-[#FA8072]" />
+                     <input type="text" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="اسم الزبون (اختياري)..." className="w-full bg-gray-800 border border-gray-700 text-white text-sm rounded-xl px-4 py-2.5 outline-none focus:border-[#FA8072]" />
                 ) : (
                     <div className="flex gap-2">
-                         <select value={selectedCustomerId} onChange={e => setSelectedCustomerId(e.target.value)} className={`w-full bg-gray-800 border text-white text-sm rounded-lg px-3 py-2 outline-none transition-all ${!selectedCustomerId && cart.length > 0 ? 'border-orange-500 animate-pulse' : 'border-gray-600 focus:border-[#FA8072]'}`}>
-                            <option value="">اختر العميل...</option>
+                         <select value={selectedCustomerId} onChange={e => setSelectedCustomerId(e.target.value)} className={`w-full bg-gray-800 border text-white text-sm rounded-xl px-4 py-2.5 outline-none transition-all ${!selectedCustomerId && cart.length > 0 ? 'border-orange-500 animate-pulse' : 'border-gray-700 focus:border-[#FA8072]'}`}>
+                            <option value="">اختر عميل الجملة...</option>
                             {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                          </select>
-                        <button onClick={onOpenCustomerManager} className="bg-blue-600 text-white px-3 rounded-lg hover:bg-blue-500 transition-colors"><UserPlus size={18} /></button>
+                        <button onClick={onOpenCustomerManager} className="bg-blue-600 text-white px-4 rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/20"><UserPlus size={18} /></button>
                     </div>
                 )}
             </div>
 
-            <div className="flex-grow p-3 overflow-y-auto space-y-2">
+            <div className="flex-grow p-4 overflow-y-auto space-y-3 custom-scrollbar">
                 {!cart.length ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-500 opacity-50 py-10"><ShoppingCart size={48} className="mb-2" /><p>سلة المبيعات فارغة</p></div>
+                    <div className="h-full flex flex-col items-center justify-center text-gray-700 py-10">
+                        <div className="bg-gray-700/20 p-6 rounded-full mb-4">
+                            <ShoppingCart size={48} className="opacity-20" />
+                        </div>
+                        <p className="font-bold">السلة فارغة</p>
+                    </div>
                 ) : (
                     cart.map(i => (
-                        <div key={i.tempId} className="bg-gray-700/50 p-3 rounded-xl flex flex-col gap-2 border border-gray-700 relative group/item hover:border-gray-500 transition-colors">
+                        <div key={i.tempId} className="bg-gray-700/30 p-4 rounded-2xl flex flex-col gap-3 border border-gray-700/50 hover:border-[#FA8072]/30 transition-all">
                             <div className="flex justify-between items-start">
                                 <div className="flex flex-col flex-1">
-                                    <span className="text-white font-bold text-sm">{i.name}</span>
+                                    <span className="text-white font-black text-sm">{i.name}</span>
                                     {editingPriceId === i.tempId ? (
                                         <div className="flex items-center gap-1 mt-1">
-                                            <input type="number" value={tempPrice} onChange={e => setTempPrice(e.target.value)} onBlur={() => handleSavePrice(i.tempId)} onKeyDown={e => e.key === 'Enter' && handleSavePrice(i.tempId)} className="w-20 bg-gray-900 border border-[#FA8072] text-white text-xs px-1 rounded" autoFocus />
+                                            <input 
+                                                type="number" 
+                                                value={tempPrice} 
+                                                onChange={e => setTempPrice(e.target.value)} 
+                                                onBlur={() => handleSavePrice(i.tempId)} 
+                                                onKeyDown={e => e.key === 'Enter' && handleSavePrice(i.tempId)} 
+                                                className="w-20 bg-gray-900 border border-[#FA8072] text-white text-xs px-2 py-1 rounded-lg" 
+                                                autoFocus 
+                                            />
                                         </div>
                                     ) : (
                                         <div className="mt-1 flex items-center gap-1.5 cursor-pointer group/price" onClick={() => handleStartEditPrice(i)}>
-                                            <span className="text-[10px] text-gray-400">السعر: <span className="text-gray-300 font-bold">{i.price.toLocaleString()}</span></span>
-                                            <Edit3 size={11} className="text-[#FA8072] opacity-30 group-hover/price:opacity-100" />
+                                            <span className="text-[10px] text-gray-500">السعر: <span className="text-gray-300 font-bold tabular-nums">{i.price.toLocaleString()}</span></span>
+                                            <Edit3 size={10} className="text-[#FA8072] opacity-30 group-hover/price:opacity-100" />
                                         </div>
                                     )}
                                 </div>
-                                <button onClick={() => setCart(p => p.filter(it => it.tempId !== i.tempId))} className="text-gray-500 hover:text-red-500 transition-colors p-1"><Trash2 size={16} /></button>
+                                <button onClick={() => setCart(p => p.filter(it => it.tempId !== i.tempId))} className="text-gray-600 hover:text-red-500 transition-colors p-1"><Trash2 size={16} /></button>
                             </div>
-                            <div className="flex items-center justify-between mt-1">
-                                <div className="flex items-center gap-1 bg-gray-900 rounded-lg px-2 py-1 border border-gray-700">
-                                    <button onClick={() => updateQty(i.tempId, -1)} className="text-gray-400 hover:text-white transition-colors p-0.5"><Minus size={12} /></button>
-                                    <span onClick={() => handleStartEditQty(i)} className="text-white text-sm font-bold min-w-[35px] text-center cursor-pointer">{i.quantity}</span>
-                                    <button onClick={() => updateQty(i.tempId, 1)} className="text-gray-400 hover:text-white transition-colors p-0.5"><Plus size={12} /></button>
+
+                            <div className="flex items-center justify-between">
+                                {/* Enhanced Quantity Control with Input Field */}
+                                <div className="flex items-center gap-1 bg-gray-900/50 rounded-xl px-2 py-1.5 border border-gray-700">
+                                    <button onClick={() => updateQty(i.tempId, -1)} className="text-gray-500 hover:text-white transition-colors p-1"><Minus size={14} /></button>
+                                    <input 
+                                        type="number" 
+                                        value={i.quantity} 
+                                        onChange={(e) => handleManualQtyChange(i.tempId, e.target.value)}
+                                        className="w-14 bg-transparent text-white text-sm font-black text-center outline-none border-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        step={i.unitType === 'kg' ? '0.1' : '1'}
+                                    />
+                                    <button onClick={() => updateQty(i.tempId, 1)} className="text-gray-500 hover:text-white transition-colors p-1"><Plus size={14} /></button>
                                 </div>
-                                <span className="text-[#FA8072] font-bold text-base">{(i.price * i.quantity).toLocaleString()} <span className="text-[10px] opacity-70">ل.س</span></span>
+                                
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[#FA8072] font-black text-lg tabular-nums">{(i.price * i.quantity).toLocaleString()}</span>
+                                    <span className="text-[8px] text-gray-600 font-bold uppercase">المجموع</span>
+                                </div>
                             </div>
                         </div>
                     ))
                 )}
             </div>
 
-            <div className="p-4 bg-gray-900 border-t border-gray-700 shrink-0">
-                <div className="flex justify-between items-center mb-4">
-                    <span className="text-gray-400 font-bold">المجموع:</span>
-                    <span className="text-2xl font-bold text-white tracking-tight">{total.toLocaleString()} <span className="text-xs text-gray-500 font-normal">ل.س</span></span>
+            <div className="p-6 bg-gray-900/90 border-t border-gray-700 shrink-0">
+                <div className="flex justify-between items-center mb-5">
+                    <span className="text-gray-500 font-black text-xs uppercase tracking-widest">إجمالي السلة</span>
+                    <div className="text-right">
+                        <span className="text-3xl font-black text-white tabular-nums">{total.toLocaleString()}</span>
+                        <span className="text-[10px] text-gray-500 font-bold mr-1">ل.س</span>
+                    </div>
                 </div>
                 <button 
                   onClick={handleCheckout} 
                   disabled={isCheckoutDisabled} 
-                  className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] ${!isCheckoutDisabled ? 'bg-green-600 text-white hover:bg-green-500 shadow-lg' : 'bg-gray-700 text-gray-500 cursor-not-allowed'}`}
+                  className={`w-full py-4 rounded-[1.5rem] font-black text-lg flex items-center justify-center gap-3 transition-all active:scale-[0.98] shadow-2xl ${!isCheckoutDisabled ? 'bg-green-600 text-white hover:bg-green-500 shadow-green-900/20' : 'bg-gray-700 text-gray-500 cursor-not-allowed opacity-50'}`}
                 >
-                  <CheckCircle size={22} /> تأكيد الطلب
+                  <CheckCircle size={24} /> تأكيد وحفظ الفاتورة
                 </button>
             </div>
         </div>
