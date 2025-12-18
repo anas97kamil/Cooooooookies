@@ -37,10 +37,8 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 
   return (
     <div className="fixed inset-0 bg-gray-900 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-      {/* Background Decor */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#FA8072]/10 rounded-full blur-[100px] animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse"></div>
-
       <div className="relative z-10 max-w-sm w-full">
         <div className="mb-8 relative">
            <div className="w-24 h-24 bg-gradient-to-tr from-[#FA8072] to-orange-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-orange-500/20 animate-bounce">
@@ -52,7 +50,6 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
              </div>
            )}
         </div>
-
         <h2 className="text-2xl font-black text-white mb-2 animate-fade-up">أهلاً بك في مخبز كوكيز</h2>
         <p className="text-gray-400 text-sm font-bold mb-8 h-10">
           {progress < 40 && "جاري الاتصال بقاعدة البيانات المحلية..."}
@@ -60,14 +57,9 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
           {progress >= 80 && progress < 100 && "مزامنة البيانات السحابية..."}
           {progress === 100 && "النظام جاهز للعمل الآن"}
         </p>
-
         <div className="w-full bg-gray-800 h-3 rounded-full overflow-hidden border border-gray-700 mb-4 p-0.5">
-          <div 
-            className="h-full bg-gradient-to-r from-[#FA8072] to-orange-500 rounded-full transition-all duration-300 ease-out shadow-lg shadow-orange-500/30"
-            style={{ width: `${progress}%` }}
-          ></div>
+          <div className="h-full bg-gradient-to-r from-[#FA8072] to-orange-500 rounded-full transition-all duration-300 ease-out shadow-lg shadow-orange-500/30" style={{ width: `${progress}%` }}></div>
         </div>
-
         <div className="flex justify-between items-center px-1">
           <div className="flex items-center gap-2 text-gray-500">
              <Wifi size={14} className={progress < 100 ? "animate-pulse" : "text-green-500"} />
@@ -76,7 +68,6 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
           <span className="text-[#FA8072] font-black tabular-nums">{progress}%</span>
         </div>
       </div>
-      
       <div className="absolute bottom-10 flex items-center gap-2 text-gray-600">
           <CloudDownload size={14} />
           <span className="text-[8px] font-black uppercase tracking-[0.3em]">Downloading System Assets</span>
@@ -95,7 +86,6 @@ const App: React.FC = () => {
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Core Data States
   const [sales, setSales] = useState<SaleItem[]>(() => JSON.parse(localStorage.getItem('dailySales') || '[]'));
   const [purchaseInvoices, setPurchaseInvoices] = useState<PurchaseInvoice[]>(() => JSON.parse(localStorage.getItem('dailyPurchaseInvoices') || '[]'));
   const [history, setHistory] = useState<ArchivedDay[]>(() => JSON.parse(localStorage.getItem('salesHistory') || '[]'));
@@ -106,7 +96,6 @@ const App: React.FC = () => {
   const [invoiceItems, setInvoiceItems] = useState<SaleItem[] | null>(null);
   const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false, analytics: false });
 
-  // Handle successful login transition
   const handleLoginSuccess = () => {
     sessionStorage.setItem('isAuth', 'true');
     setIsInitializing(true);
@@ -117,7 +106,6 @@ const App: React.FC = () => {
     setIsAuthenticated(true);
   };
 
-  // Monitor Online Status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -129,7 +117,6 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Persistence logic - Immediate sync to localStorage
   useEffect(() => {
     localStorage.setItem('dailySales', JSON.stringify(sales));
     localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
@@ -139,6 +126,40 @@ const App: React.FC = () => {
     localStorage.setItem('suppliers', JSON.stringify(suppliers));
     setLastSyncTime(new Date());
   }, [sales, purchaseInvoices, history, products, customers, suppliers]);
+
+  // منطق تحديث المنتج تلقائياً في كل مكان
+  const handleUpdateProduct = (id: string, updatedFields: Partial<Product>) => {
+    const oldProduct = products.find(p => p.id === id);
+    if (!oldProduct) return;
+
+    // تحديث قائمة المنتجات
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedFields } : p));
+
+    // إذا تغير الاسم، نقوم بتحديثه في كل الفواتير
+    if (updatedFields.name && updatedFields.name !== oldProduct.name) {
+      const oldName = oldProduct.name;
+      const newName = updatedFields.name;
+
+      // 1. المبيعات الحالية
+      setSales(prev => prev.map(item => item.name === oldName ? { ...item, name: newName } : item));
+
+      // 2. المشتريات الحالية
+      setPurchaseInvoices(prev => prev.map(inv => ({
+        ...inv,
+        items: inv.items.map(item => item.name === oldName ? { ...item, name: newName } : item)
+      })));
+
+      // 3. الأرشيف
+      setHistory(prev => prev.map(day => ({
+        ...day,
+        items: day.items.map(item => item.name === oldName ? { ...item, name: newName } : item),
+        purchaseInvoices: (day.purchaseInvoices || []).map(inv => ({
+          ...inv,
+          items: inv.items.map(item => item.name === oldName ? { ...item, name: newName } : item)
+        }))
+      })));
+    }
+  };
 
   const handleOpenProtected = (target: string) => setShowLock({ target });
 
@@ -184,15 +205,7 @@ const App: React.FC = () => {
   }, [sales]);
 
   const handleExportData = () => {
-    const backup = {
-      dailySales: sales,
-      dailyPurchaseInvoices: purchaseInvoices,
-      salesHistory: history,
-      products: products,
-      customers: customers,
-      suppliers: suppliers,
-      exportDate: new Date().toISOString()
-    };
+    const backup = { dailySales: sales, dailyPurchaseInvoices: purchaseInvoices, salesHistory: history, products, customers, suppliers, exportDate: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -213,11 +226,8 @@ const App: React.FC = () => {
         if (data.products) setProducts(data.products);
         if (data.customers) setCustomers(data.customers);
         if (data.suppliers) setSuppliers(data.suppliers);
-        
         alert('تمت استعادة البيانات بنجاح.');
-      } catch (err) {
-        alert('خطأ في قراءة ملف النسخة الاحتياطية.');
-      }
+      } catch (err) { alert('خطأ في قراءة ملف النسخة الاحتياطية.'); }
     };
     reader.readAsText(file);
   };
@@ -235,72 +245,29 @@ const App: React.FC = () => {
         onLogout={handleLogout}
         isOnline={isOnline} 
         lastSyncTime={lastSyncTime} 
-        onManualSync={() => {
-            setIsSyncing(true);
-            setTimeout(() => setIsSyncing(false), 800);
-        }} 
+        onManualSync={() => { setIsSyncing(true); setTimeout(() => setIsSyncing(false), 800); }} 
         onQuickBackup={handleExportData} 
         isSyncing={isSyncing}
       />
-      
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl">
         <Summary items={sales} onPreview={() => setInvoiceItems(sales)} />
-        
-        <POSInterface 
-            onCompleteOrder={completeOrder} 
-            products={products} 
-            customers={customers} 
-            onOpenProductManager={() => setModals(m => ({...m, products: true}))} 
-            onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} 
-        />
-        
+        <POSInterface products={products} customers={customers} onCompleteOrder={completeOrder} onOpenProductManager={() => setModals(m => ({...m, products: true}))} onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} />
         <div className="mt-8">
-            <SalesTable 
-                items={sales} 
-                onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} 
-                onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} 
-                onPreviewInvoice={setInvoiceItems}
-                onUpdateItemPrice={(id, p) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))}
-            />
+            <SalesTable items={sales} onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id, p) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
         </div>
       </main>
-
       <footer className="mt-12 py-8 border-t border-gray-800/50 text-center no-print">
          <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.5 • 2026</button>
       </footer>
-
       <Suspense fallback={<ModalLoader />}>
         {modals.analytics && <AnalyticsModal history={history} currentSales={sales} currentPurchases={purchaseInvoices} onClose={() => setModals(m => ({ ...m, analytics: false }))} />}
-        {modals.expenses && (
-            <ExpensesModal 
-                isOpen={modals.expenses} 
-                onClose={() => setModals(m => ({...m, expenses: false}))} 
-                currentPurchases={purchaseInvoices} 
-                archivedHistory={history} 
-                onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} 
-                onUpdateInvoice={v => setPurchaseInvoices(p => p.map(inv => inv.id === v.id ? v : inv))}
-                onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} 
-                suppliers={suppliers} 
-                onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} 
-                onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} 
-            />
-        )}
-        {modals.history && (
-            <HistoryModal 
-                history={history} 
-                currentSales={sales} 
-                onClose={() => setModals(m => ({...m, history: false}))} 
-                onClearHistory={() => setHistory([])} 
-                onPreviewInvoice={setInvoiceItems} 
-                onUpdateOrder={(d, o, i) => setHistory(h => h.map(day => day.date === d ? {...day, items: day.items.map(item => item.orderId === o ? i.find(x => x.id === item.id) || item : item)} : day))} 
-            />
-        )}
-        {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={(id, u) => setProducts(s => s.map(p => p.id === id ? {...p, ...u} : p))} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
+        {modals.expenses && <ExpensesModal isOpen={modals.expenses} onClose={() => setModals(m => ({...m, expenses: false}))} currentPurchases={purchaseInvoices} archivedHistory={history} onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} onUpdateInvoice={v => setPurchaseInvoices(p => p.map(inv => inv.id === v.id ? v : inv))} onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} suppliers={suppliers} onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} />}
+        {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onClearHistory={() => setHistory([])} onPreviewInvoice={setInvoiceItems} onUpdateOrder={(d, o, i) => setHistory(h => h.map(day => day.date === d ? {...day, items: day.items.map(item => item.orderId === o ? i.find(x => x.id === item.id) || item : item)} : day))} />}
+        {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={handleUpdateProduct} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
         {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} />}
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
       </Suspense>
-
       {showLock && (
         <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm">
           <div className="bg-gray-800 border border-gray-700 p-6 rounded-3xl w-full max-w-xs shadow-2xl animate-fade-up relative">

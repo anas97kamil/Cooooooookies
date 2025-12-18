@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, Suspense } from 'react';
-import { Plus, Trash2, X, ShoppingCart, UserPlus, Printer, FileText, Store, Folder, CalendarDays, ArrowRight, Zap, ChevronDown, ChevronUp, Edit3, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, X, ShoppingCart, UserPlus, Printer, FileText, Store, Folder, CalendarDays, ArrowRight, Zap, ChevronDown, ChevronUp, Edit3, RotateCcw, Search } from 'lucide-react';
 import { PurchaseInvoice, PurchaseItem, ArchivedDay, PaymentStatus, Supplier } from '../types';
 
 const PurchasePrintModal = React.lazy(() => import('./PurchasePrintModal').then(module => ({ default: module.PurchasePrintModal })));
@@ -31,6 +31,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
   const [invoiceToPrint, setInvoiceToPrint] = useState<PurchaseInvoice | null>(null);
   const [newSup, setNewSup] = useState({ name: '', phone: '' });
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Navigation state for History Tab
   const [step, setStep] = useState<NavStep>('years');
@@ -172,22 +173,47 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
 
     if (step === 'days') return (
         <div className="flex flex-col gap-3 animate-fade-up h-full">
+            <div className="relative shrink-0">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                <input 
+                  type="text" 
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                  placeholder="بحث في فواتير المشتريات (مورد، مادة، رقم)..." 
+                  className="w-full bg-gray-900 border border-gray-700 text-white rounded-xl pr-10 pl-4 py-2.5 text-xs focus:border-[#FA8072] outline-none" 
+                />
+            </div>
+            
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {currentDaysData.map(day => {
+                    let filteredInvoices = day.purchaseInvoices || [];
+                    
+                    if (searchTerm.trim()) {
+                      const term = searchTerm.toLowerCase();
+                      filteredInvoices = filteredInvoices.filter(inv => 
+                        inv.supplierName.toLowerCase().includes(term) ||
+                        inv.id.includes(term) ||
+                        inv.items.some(item => item.name.toLowerCase().includes(term))
+                      );
+                    }
+
+                    if (filteredInvoices.length === 0 && searchTerm) return null;
+                    
                     const isToday = day.id === 'today-active-purchases';
                     return (
                         <div key={day.id} className={`rounded-xl border overflow-hidden transition-all ${isToday ? 'border-orange-500/30 bg-orange-500/5' : 'border-gray-700 bg-gray-900/20'}`}>
                             <div onClick={() => setExpandedDayId(expandedDayId === day.id ? null : day.id)} className={`p-4 flex justify-between items-center cursor-pointer ${isToday ? 'bg-orange-500/10' : 'bg-gray-900/50 hover:bg-gray-900'}`}>
                                 <div className="flex items-center gap-3">
-                                    <div className="text-gray-500">{expandedDayId === day.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+                                    <div className="text-gray-500">{(expandedDayId === day.id || searchTerm) ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
                                     <span className={`font-bold text-sm ${isToday ? 'text-orange-400' : 'text-white'}`}>{day.date}</span>
+                                    {searchTerm && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">{filteredInvoices.length} فواتير مطابقة</span>}
                                 </div>
-                                <span className="font-black text-red-400">{(day.purchaseInvoices || []).reduce((s,i) => s + i.totalAmount, 0).toLocaleString()} <small className="text-[9px] text-gray-600 font-normal">ل.س</small></span>
+                                <span className="font-black text-red-400">{filteredInvoices.reduce((s,i) => s + i.totalAmount, 0).toLocaleString()} <small className="text-[9px] text-gray-600 font-normal">ل.س</small></span>
                             </div>
                             
-                            {expandedDayId === day.id && (
+                            {(expandedDayId === day.id || searchTerm) && (
                                 <div className="p-3 bg-black/20 border-t border-gray-700 animate-fade-up space-y-2">
-                                    {(day.purchaseInvoices || []).map((inv) => (
+                                    {filteredInvoices.map((inv) => (
                                         <div key={inv.id} className="bg-gray-800 p-3 rounded-xl border border-gray-700 flex justify-between items-center group">
                                             <div className="flex items-center gap-3">
                                                 <div className="bg-gray-900 p-1.5 rounded text-red-400"><Store size={14} /></div>
