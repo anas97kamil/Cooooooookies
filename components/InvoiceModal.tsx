@@ -19,14 +19,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
   const customerName = items[0]?.customerName || 'زبون عام';
   const orderId = items[0]?.orderId || '0000';
 
-  useEffect(() => {
-    // إضافة فئة الطباعة للجسم لضمان عمل @media print في index.html بشكل صحيح
-    document.body.classList.add('print-mode');
-    return () => {
-      document.body.classList.remove('print-mode');
-    };
-  }, []);
-
   const handleDownloadExcel = () => {
     const data = items.map(i => ({ 
       "المادة": i.name, 
@@ -62,14 +54,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
         <div className="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-900/50 no-print">
           <div className="flex items-center gap-2">
             <Printer size={20} className="text-[#FA8072]" />
-            <h3 className="font-black text-lg text-white">طباعة فاتورة مبيعات</h3>
+            <h3 className="font-black text-lg text-white">معاينة الفاتورة</h3>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
         </div>
 
-        {/* Invoice Body - Optimized for Printing */}
-        <div className="flex-1 overflow-y-auto bg-white p-4 sm:p-10" id="invoice-content">
-          <div className="bg-white text-black p-2 min-h-full">
+        {/* Invoice Body - This is the only part that will show during print thanks to the id */}
+        <div className="flex-1 overflow-y-auto bg-white">
+           <div id="invoice-content" className="bg-white text-black p-8 sm:p-12 min-h-full">
             {/* Logo & Info */}
             <div className="text-center mb-8 border-b-2 border-black pb-4">
               <h2 className="text-3xl font-black mb-1">مخبز كوكيز</h2>
@@ -122,20 +114,20 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
               </div>
             </div>
 
-            {/* Signature Area (Matches Purchase Style) */}
-            <div className="mt-24 hidden print:flex justify-between items-end px-8">
+            {/* Signature Area - Visible only on print */}
+            <div className="mt-20 flex justify-between items-end px-4 opacity-0 print:opacity-100">
                <div className="text-center">
-                   <p className="mb-10 font-bold text-black text-sm">توقيع المستلم</p>
-                   <div className="w-40 border-b-2 border-black border-dotted"></div>
+                   <p className="mb-10 font-bold text-black text-xs">توقيع المستلم</p>
+                   <div className="w-32 border-b border-black"></div>
                </div>
                <div className="text-center">
-                   <p className="mb-10 font-bold text-black text-sm">ختم وتوقيع المخبز</p>
-                   <div className="w-40 border-b-2 border-black border-dotted"></div>
+                   <p className="mb-10 font-bold text-black text-xs">ختم وتوقيع المخبز</p>
+                   <div className="w-32 border-b border-black"></div>
                </div>
             </div>
 
-            <div className="mt-16 text-center text-[10px] font-bold border-t border-dashed border-gray-300 pt-6 opacity-40">
-              نشكركم على ثقتكم بمخبز كوكيز - يرجى الاحتفاظ بالفاتورة كضمان لحقكم
+            <div className="mt-12 text-center text-[10px] font-bold border-t border-dashed border-gray-300 pt-4 opacity-40">
+              نشكركم على ثقتكم بمخبز كوكيز
             </div>
           </div>
         </div>
@@ -149,7 +141,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
                 </div>
             ) : (
                 <button onClick={() => setConfirmPrint(true)} className="sm:col-span-2 bg-[#FA8072] hover:bg-orange-500 text-white py-3.5 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95">
-                    <Printer size={18} /> طباعة الفاتورة (PDF)
+                    <Printer size={18} /> طباعة الفاتورة
                 </button>
             )}
             <button onClick={handleDownloadExcel} className="bg-green-700 hover:bg-green-600 text-white py-3.5 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95">

@@ -30,7 +30,6 @@
         to { opacity: 1; transform: translateY(0); }
       }
 
-      /* Custom scrollbar for better look */
       .custom-scrollbar::-webkit-scrollbar {
         width: 4px;
       }
@@ -43,37 +42,52 @@
       }
 
       @media print {
-        .no-print {
+        /* إخفاء كل العناصر التي تحمل كلاس no-print */
+        .no-print, .no-print * {
           display: none !important;
         }
-        body {
-          background-color: white !important;
-          color: black !important;
-          margin: 0 !important;
+        
+        /* إخفاء خلفية المودال الداكنة والحدود عند الطباعة */
+        .fixed.inset-0 {
+          background: white !important;
+          position: static !important;
           padding: 0 !important;
         }
-        #root {
-          background-color: white !important;
+        
+        .bg-gray-800, .bg-gray-900 {
+          background: white !important;
+          border: none !important;
+          box-shadow: none !important;
         }
+
+        /* تنسيق محتوى الفاتورة للطباعة */
         #invoice-content {
+          visibility: visible !important;
           display: block !important;
-          width: 100% !important;
           position: absolute !important;
-          top: 0 !important;
           left: 0 !important;
+          top: 0 !important;
+          width: 100% !important;
+          margin: 0 !important;
+          padding: 5mm !important;
           background: white !important;
           color: black !important;
-          padding: 10mm !important;
-          z-index: 9999 !important;
         }
-        #invoice-content * {
-          color: black !important;
+
+        /* إخفاء كل شيء آخر في الصفحة لضمان عدم وجود مساحات فارغة */
+        body > *:not(.fixed) {
+           display: none !important;
+        }
+        
+        html, body {
+          background: white !important;
+          height: auto !important;
         }
       }
       
       @page {
-        size: auto;
-        margin: 5mm;
+        size: A4;
+        margin: 0;
       }
     </style>
   <script type="importmap">
