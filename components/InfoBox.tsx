@@ -18,7 +18,7 @@ export const Summary: React.FC<SummaryProps> = ({ items, onPreview }) => {
 
   const handleUnlock = (e: React.FormEvent) => {
       e.preventDefault();
-      if (password === '1997') {
+      if (password === '2026') {
           setShowRevenue(true);
           setShowModal(false);
           setPassword('');

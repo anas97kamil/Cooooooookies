@@ -199,7 +199,7 @@ const App: React.FC = () => {
   };
 
   const verifyLock = () => {
-    if (lockPass === '1997') {
+    if (lockPass === '2026') {
       if (showLock?.target === 'full_reset') {
           localStorage.clear();
           window.location.reload();

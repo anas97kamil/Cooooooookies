@@ -13,7 +13,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'Admin' && password === '1997') {
+    if (username === 'Admin' && password === '2026') {
       onLogin();
     } else {
       setError('بيانات الدخول غير صحيحة');

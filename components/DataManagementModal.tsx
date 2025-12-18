@@ -22,7 +22,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
   };
 
   const handleConfirmRestore = () => {
-    if (restorePass === '1997') {
+    if (restorePass === '2026') {
       if (!selectedFile) return;
       onImport(selectedFile);
       onClose();
