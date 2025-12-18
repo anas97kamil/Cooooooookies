@@ -6,7 +6,7 @@ import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
 import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
-import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, Database, AlertCircle, Download } from 'lucide-react';
+import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, Database, AlertCircle, Download, AlertTriangle } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
 const ProductManager = React.lazy(() => import('./components/ProductManager').then(m => ({ default: m.ProductManager })));
@@ -340,7 +340,18 @@ const App: React.FC = () => {
             <div className="text-center mb-6">
                 <div className="w-12 h-12 bg-[#FA8072]/20 rounded-full flex items-center justify-center mx-auto mb-3"><Loader2 className="text-[#FA8072] animate-pulse" size={24} /></div>
                 <h3 className="text-white font-black text-lg">تأكيد الإجراء</h3>
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">يرجى إدخل رمز التحقق (1997)</p>
+                
+                {/* Warning Message for Full Reset */}
+                {showLock.target === 'full_reset' && (
+                  <div className="mt-3 mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex flex-col items-center gap-2">
+                    <AlertTriangle className="text-red-500" size={20} />
+                    <p className="text-red-500 text-[10px] font-black leading-relaxed">
+                      تحذير: هذا الإجراء سيقوم بحذف كافة البيانات المخزنة بشكل نهائي!
+                    </p>
+                  </div>
+                )}
+                
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">يرجى إدخال رمز التحقق للمتابعة</p>
             </div>
             <input type="password" value={lockPass} onChange={e => setLockPass(e.target.value)} placeholder="رمز الدخول" className={`w-full bg-gray-900 border ${lockError ? 'border-red-500' : 'border-gray-700'} text-white p-4 rounded-2xl mb-4 text-center outline-none focus:border-[#FA8072] text-xl tracking-widest`} autoFocus onKeyDown={e => e.key === 'Enter' && verifyLock()} />
             {lockError && <p className="text-red-500 text-[10px] text-center mb-4 font-bold animate-pulse">رمز الدخول غير صحيح!</p>}

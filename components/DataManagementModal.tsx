@@ -84,7 +84,7 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
                                      type="password" 
                                      value={restorePass} 
                                      onChange={e => { setRestorePass(e.target.value); setPassError(false); }} 
-                                     placeholder="أدخل كلمة السر (1997)" 
+                                     placeholder="أدخل رمز التحقق" 
                                      className={`w-full bg-gray-800 border ${passError ? 'border-red-500' : 'border-gray-700'} text-white rounded-lg py-2 text-center outline-none`} 
                                      autoFocus 
                                    />
