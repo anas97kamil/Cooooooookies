@@ -266,6 +266,47 @@ const App: React.FC = () => {
     reader.readAsText(file);
   };
 
+  // وظيفة تحديث الأرشيف (تعديل وحذف)
+  const handleUpdateArchivedOrder = (dayId: string, orderId: string, updatedItems: SaleItem[]) => {
+    setHistory(prev => prev.map(day => {
+      if (day.id === dayId) {
+        // تحديث المواد في الفاتورة المحددة
+        const newItems = day.items.map(item => {
+          if (item.orderId === orderId) {
+            const updated = updatedItems.find(ui => ui.id === item.id);
+            return updated ? updated : item;
+          }
+          return item;
+        });
+        
+        // إعادة حساب الإجمالي لليوم المختار
+        const newTotal = newItems.reduce((s, i) => s + (i.price * i.quantity), 0);
+        
+        return {
+          ...day,
+          items: newItems,
+          totalRevenue: newTotal
+        };
+      }
+      return day;
+    }));
+  };
+
+  const handleDeleteArchivedOrder = (dayId: string, orderId: string) => {
+    setHistory(prev => prev.map(day => {
+      if (day.id === dayId) {
+        const newItems = day.items.filter(item => item.orderId !== orderId);
+        const newTotal = newItems.reduce((s, i) => s + (i.price * i.quantity), 0);
+        return {
+          ...day,
+          items: newItems,
+          totalRevenue: newTotal
+        };
+      }
+      return day;
+    }).filter(day => day.items.length > 0 || (day.purchaseInvoices && day.purchaseInvoices.length > 0)));
+  };
+
   if (isInitializing) return <WelcomeLoader onComplete={finalizeLogin} />;
   if (!isAuthenticated) return <Login onLogin={handleLoginSuccess} />;
 
@@ -327,7 +368,17 @@ const App: React.FC = () => {
       <Suspense fallback={<ModalLoader />}>
         {modals.analytics && <AnalyticsModal history={history} currentSales={sales} currentPurchases={purchaseInvoices} onClose={() => setModals(m => ({ ...m, analytics: false }))} />}
         {modals.expenses && <ExpensesModal isOpen={modals.expenses} onClose={() => setModals(m => ({...m, expenses: false}))} currentPurchases={purchaseInvoices} archivedHistory={history} onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} onUpdateInvoice={v => setPurchaseInvoices(p => p.map(inv => inv.id === v.id ? v : inv))} onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} suppliers={suppliers} onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} />}
-        {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onClearHistory={() => setHistory([])} onPreviewInvoice={setInvoiceItems} onUpdateOrder={(d, o, i) => setHistory(h => h.map(day => day.date === d ? {...day, items: day.items.map(item => item.orderId === o ? i.find(x => x.id === item.id) || item : item)} : day))} />}
+        {modals.history && (
+          <HistoryModal 
+            history={history} 
+            currentSales={sales} 
+            onClose={() => setModals(m => ({...m, history: false}))} 
+            onClearHistory={() => setHistory([])} 
+            onPreviewInvoice={setInvoiceItems} 
+            onUpdateOrder={handleUpdateArchivedOrder} 
+            onDeleteArchivedOrder={handleDeleteArchivedOrder}
+          />
+        )}
         {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={handleUpdateProduct} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
         {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} />}

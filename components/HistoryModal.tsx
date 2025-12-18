@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { X, ChevronDown, ChevronUp, ArrowRight, Folder, CalendarDays, ShoppingBag, Zap, Store, User, Filter, TrendingUp, PieChart, Info, Clock, Download, Search } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, ArrowRight, Folder, CalendarDays, ShoppingBag, Zap, Store, User, Filter, TrendingUp, PieChart, Info, Clock, Download, Search, Trash2, Edit3, Check } from 'lucide-react';
 import { ArchivedDay, SaleItem, SaleType } from '../types';
 
 interface HistoryModalProps {
@@ -9,7 +9,8 @@ interface HistoryModalProps {
   onClose: () => void;
   onClearHistory: () => void;
   onPreviewInvoice: (items: SaleItem[]) => void;
-  onUpdateOrder: (date: string, orderId: string, updatedItems: SaleItem[]) => void;
+  onUpdateOrder: (dayId: string, orderId: string, updatedItems: SaleItem[]) => void;
+  onDeleteArchivedOrder: (dayId: string, orderId: string) => void;
 }
 
 type NavStep = 'years' | 'months' | 'days';
@@ -17,7 +18,7 @@ type FilterType = 'all' | SaleType;
 type TabMode = 'archive' | 'profit-report';
 
 export const HistoryModal: React.FC<HistoryModalProps> = ({ 
-  history, currentSales = [], onClose, onClearHistory, onPreviewInvoice, onUpdateOrder 
+  history, currentSales = [], onClose, onClearHistory, onPreviewInvoice, onUpdateOrder, onDeleteArchivedOrder 
 }) => {
   const [tab, setTab] = useState<TabMode>('archive');
   const [step, setStep] = useState<NavStep>('years');
@@ -26,6 +27,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
   const [expandedDayId, setExpandedDayId] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
+
+  // حالات التعديل المباشر
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editPrice, setEditPrice] = useState('');
+  const [editQty, setEditQty] = useState('');
 
   const fullHistory = useMemo(() => {
       const merged = [...history];
@@ -109,7 +115,6 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
       
       let orderList = Object.values(orders);
       
-      // تطبيق البحث
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
         orderList = orderList.filter(order => 
@@ -120,6 +125,22 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
       }
 
       return orderList.sort((a, b) => b[0].orderId.localeCompare(a[0].orderId));
+  };
+
+  const handleStartEdit = (item: SaleItem) => {
+    setEditingItemId(item.id);
+    setEditPrice(item.price.toString());
+    setEditQty(item.quantity.toString());
+  };
+
+  const handleSaveEdit = (dayId: string, orderItems: SaleItem[], targetItem: SaleItem) => {
+    const updated = orderItems.map(it => it.id === targetItem.id ? { 
+      ...it, 
+      price: parseFloat(editPrice) || it.price, 
+      quantity: parseFloat(editQty) || it.quantity 
+    } : it);
+    onUpdateOrder(dayId, targetItem.orderId, updated);
+    setEditingItemId(null);
   };
 
   const renderArchive = () => {
@@ -183,7 +204,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                         <div key={day.id} className={`rounded-xl border overflow-hidden shadow-sm transition-all ${isToday ? 'border-orange-500/50 bg-orange-500/5' : 'border-gray-700 bg-gray-800'}`}>
                             <div onClick={() => setExpandedDayId(expandedDayId === day.id ? null : day.id)} className={`p-4 flex justify-between items-center cursor-pointer ${isToday ? 'bg-orange-500/10' : 'bg-gray-900/50 hover:bg-gray-900'}`}>
                                 <div className="flex items-center gap-3">
-                                    <div className="text-gray-500">{expandedDayId === day.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
+                                    <div className="text-gray-500">{(expandedDayId === day.id || searchTerm) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
                                     <span className={`font-bold ${isToday ? 'text-orange-400' : 'text-white'}`}>{day.date}</span>
                                     {searchTerm && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">تم العثور على {groupedOrders.length} نتيجة</span>}
                                 </div>
@@ -205,14 +226,32 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex items-center gap-1 text-[9px] text-gray-500 font-bold"><Clock size={10} />{first.time}</div>
                                                         <span className="text-green-400 font-black text-sm">{orderTotal.toLocaleString()}</span>
-                                                        <button onClick={() => onPreviewInvoice(orderItems)} className="text-gray-500 hover:text-white transition-colors"><Download size={14}/></button>
+                                                        <div className="flex gap-2">
+                                                           <button onClick={() => onPreviewInvoice(orderItems)} className="text-gray-500 hover:text-white transition-colors" title="طباعة"><Download size={14}/></button>
+                                                           <button onClick={() => { if(window.confirm('هل أنت متأكد من حذف هذه الفاتورة من الأرشيف؟')){ onDeleteArchivedOrder(day.id, first.orderId); } }} className="text-gray-500 hover:text-red-400 transition-colors" title="حذف الفاتورة"><Trash2 size={14}/></button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="p-2 space-y-1">
                                                     {orderItems.map((item, iIdx) => (
-                                                        <div key={iIdx} className="flex justify-between items-center text-[10px] px-2 py-1 bg-gray-900/20 rounded">
-                                                            <span className="text-gray-300 font-bold">{item.name} <span className="text-gray-500 font-normal">({item.quantity} {item.unitType === 'kg' ? 'كغ' : 'قطعة'})</span></span>
-                                                            <span className="text-gray-400 tabular-nums">{(item.price * item.quantity).toLocaleString()}</span>
+                                                        <div key={iIdx} className="flex justify-between items-center text-[10px] px-2 py-1 bg-gray-900/20 rounded group/row">
+                                                            {editingItemId === item.id ? (
+                                                              <div className="flex items-center gap-2 w-full">
+                                                                <span className="text-gray-300 font-bold min-w-[60px]">{item.name}</span>
+                                                                <input type="number" value={editQty} onChange={e => setEditQty(e.target.value)} className="w-12 bg-gray-950 border border-gray-700 text-white rounded px-1 text-center" />
+                                                                <input type="number" value={editPrice} onChange={e => setEditPrice(e.target.value)} className="w-16 bg-gray-950 border border-gray-700 text-[#FA8072] rounded px-1 text-center" />
+                                                                <button onClick={() => handleSaveEdit(day.id, orderItems, item)} className="text-green-400 hover:text-green-300"><Check size={14} /></button>
+                                                                <button onClick={() => setEditingItemId(null)} className="text-gray-500 hover:text-white"><X size={14} /></button>
+                                                              </div>
+                                                            ) : (
+                                                              <>
+                                                                <div className="flex items-center gap-2">
+                                                                  <span className="text-gray-300 font-bold">{item.name} <span className="text-gray-500 font-normal">({item.quantity} {item.unitType === 'kg' ? 'كغ' : 'قطعة'})</span></span>
+                                                                  <button onClick={() => handleStartEdit(item)} className="opacity-0 group-hover/row:opacity-100 text-[#FA8072] transition-opacity"><Edit3 size={10} /></button>
+                                                                </div>
+                                                                <span className="text-gray-400 tabular-nums">{(item.price * item.quantity).toLocaleString()}</span>
+                                                              </>
+                                                            )}
                                                         </div>
                                                     ))}
                                                 </div>
