@@ -278,6 +278,7 @@ const App: React.FC = () => {
                 currentPurchases={purchaseInvoices} 
                 archivedHistory={history} 
                 onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} 
+                onUpdateInvoice={v => setPurchaseInvoices(p => p.map(inv => inv.id === v.id ? v : inv))}
                 onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} 
                 suppliers={suppliers} 
                 onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} 

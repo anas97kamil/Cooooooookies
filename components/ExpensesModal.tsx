@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, Suspense } from 'react';
-import { Plus, Trash2, X, ShoppingCart, UserPlus, Printer, FileText, Store, Folder, CalendarDays, ArrowRight, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, X, ShoppingCart, UserPlus, Printer, FileText, Store, Folder, CalendarDays, ArrowRight, Zap, ChevronDown, ChevronUp, Edit3, RotateCcw } from 'lucide-react';
 import { PurchaseInvoice, PurchaseItem, ArchivedDay, PaymentStatus, Supplier } from '../types';
 
 const PurchasePrintModal = React.lazy(() => import('./PurchasePrintModal').then(module => ({ default: module.PurchasePrintModal })));
@@ -9,6 +9,7 @@ interface ExpensesModalProps {
   currentPurchases: PurchaseInvoice[];
   archivedHistory: ArchivedDay[]; 
   onAddInvoice: (invoice: PurchaseInvoice) => void;
+  onUpdateInvoice: (invoice: PurchaseInvoice) => void;
   onDeleteInvoice: (id: string) => void;
   isOpen: boolean;
   onClose: () => void;
@@ -20,7 +21,7 @@ interface ExpensesModalProps {
 type NavStep = 'years' | 'months' | 'days';
 
 export const ExpensesModal: React.FC<ExpensesModalProps> = ({ 
-  currentPurchases, archivedHistory, onAddInvoice, onDeleteInvoice, isOpen, onClose, suppliers = [], onAddSupplier, onDeleteSupplier
+  currentPurchases, archivedHistory, onAddInvoice, onUpdateInvoice, onDeleteInvoice, isOpen, onClose, suppliers = [], onAddSupplier, onDeleteSupplier
 }) => {
   const [activeTab, setActiveTab] = useState<'new' | 'history' | 'suppliers'>('new');
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
@@ -29,6 +30,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
   const [currentInvoiceItems, setCurrentInvoiceItems] = useState<PurchaseItem[]>([]);
   const [invoiceToPrint, setInvoiceToPrint] = useState<PurchaseInvoice | null>(null);
   const [newSup, setNewSup] = useState({ name: '', phone: '' });
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
 
   // Navigation state for History Tab
   const [step, setStep] = useState<NavStep>('years');
@@ -96,23 +98,48 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
   };
 
   const handleSaveInvoice = () => {
-      const supplier = suppliers.find(s => s.id === selectedSupplierId);
+      const supplier = suppliers.find(s => s.id === selectedSupplierId || s.name === selectedSupplierId);
       if (!supplier || currentInvoiceItems.length === 0) return alert('يرجى تحديد مورد وإضافة مواد للفاتورة');
       
       const totalAmount = currentInvoiceItems.reduce((sum, item) => sum + item.total, 0);
-      onAddInvoice({ 
-          id: Date.now().toString(), 
+      
+      const invoiceData: PurchaseInvoice = { 
+          id: editingInvoiceId || Date.now().toString(), 
           supplierName: supplier.name, 
           date: new Date().toLocaleDateString('ar-SY'), 
           timestamp: Date.now(), 
           items: currentInvoiceItems, 
           totalAmount, 
           paymentStatus 
-      });
+      };
+
+      if (editingInvoiceId) {
+          onUpdateInvoice(invoiceData);
+          setEditingInvoiceId(null);
+      } else {
+          onAddInvoice(invoiceData);
+      }
+
       setSelectedSupplierId(''); 
       setCurrentInvoiceItems([]); 
       setActiveTab('history');
       setStep('years');
+  };
+
+  const startEditInvoice = (inv: PurchaseInvoice) => {
+      const supplier = suppliers.find(s => s.name === inv.supplierName);
+      setEditingInvoiceId(inv.id);
+      setSelectedSupplierId(supplier?.id || inv.supplierName);
+      setPaymentStatus(inv.paymentStatus);
+      setCurrentInvoiceItems(inv.items);
+      setActiveTab('new');
+  };
+
+  const cancelEdit = () => {
+      setEditingInvoiceId(null);
+      setSelectedSupplierId('');
+      setCurrentInvoiceItems([]);
+      setPaymentStatus('paid');
   };
 
   const renderHistoryContent = () => {
@@ -169,10 +196,11 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
                                                     <span className="text-[9px] text-gray-500">{inv.paymentStatus === 'paid' ? 'نقدي' : 'آجل'} • {inv.items.length} مواد</span>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-white font-bold text-xs">{inv.totalAmount.toLocaleString()}</span>
-                                                <button onClick={() => setInvoiceToPrint(inv)} className="p-1.5 bg-gray-700 rounded hover:bg-blue-600 text-white transition-colors"><Printer size={12}/></button>
-                                                <button onClick={() => onDeleteInvoice(inv.id)} className="p-1.5 text-gray-500 hover:text-red-500 transition-colors"><Trash2 size={12}/></button>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-white font-bold text-xs ml-2">{inv.totalAmount.toLocaleString()}</span>
+                                                <button onClick={() => setInvoiceToPrint(inv)} className="p-1.5 bg-gray-700 rounded hover:bg-blue-600 text-white transition-colors" title="طباعة"><Printer size={12}/></button>
+                                                <button onClick={() => startEditInvoice(inv)} className="p-1.5 bg-gray-700 rounded hover:bg-yellow-600 text-white transition-colors" title="تعديل"><Edit3 size={12}/></button>
+                                                <button onClick={() => onDeleteInvoice(inv.id)} className="p-1.5 text-gray-500 hover:text-red-500 transition-colors" title="حذف"><Trash2 size={12}/></button>
                                             </div>
                                         </div>
                                     ))}
@@ -216,7 +244,9 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
         </div>
 
         <div className="flex border-b border-gray-700 bg-gray-900/30">
-            <button onClick={() => setActiveTab('new')} className={`flex-1 py-4 text-xs font-black transition-all ${activeTab === 'new' ? 'bg-[#FA8072] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-800'}`}>فاتورة جديدة</button>
+            <button onClick={() => setActiveTab('new')} className={`flex-1 py-4 text-xs font-black transition-all ${activeTab === 'new' ? 'bg-[#FA8072] text-white shadow-lg' : 'text-gray-500 hover:bg-gray-800'}`}>
+              {editingInvoiceId ? 'تعديل الفاتورة' : 'فاتورة جديدة'}
+            </button>
             <button onClick={() => { setActiveTab('history'); setStep('years'); }} className={`flex-1 py-4 text-xs font-black transition-all ${activeTab === 'history' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-800'}`}>سجل المشتريات</button>
             <button onClick={() => setActiveTab('suppliers')} className={`flex-1 py-4 text-xs font-black transition-all ${activeTab === 'suppliers' ? 'bg-gray-700 text-white' : 'text-gray-500 hover:bg-gray-800'}`}>قائمة الموردين</button>
         </div>
@@ -224,6 +254,17 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
         <div className="p-6 overflow-y-auto flex-1 custom-scrollbar">
           {activeTab === 'new' ? (
               <div className="space-y-6">
+                  {editingInvoiceId && (
+                    <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-xl flex items-center justify-between">
+                        <span className="text-yellow-500 text-xs font-bold flex items-center gap-2">
+                           <Edit3 size={14} /> أنت الآن في وضع تعديل فاتورة قديمة
+                        </span>
+                        <button onClick={cancelEdit} className="text-[10px] bg-gray-700 text-white px-3 py-1 rounded-lg flex items-center gap-1">
+                           <RotateCcw size={10} /> إلغاء التعديل
+                        </button>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1">
                         <label className="text-[10px] text-gray-500 font-black uppercase pr-1">تحديد المورد:</label>
@@ -269,7 +310,14 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
                         <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest mb-1">إجمالي الفاتورة</span>
                         <div className="text-3xl font-black text-red-500">{currentInvoiceItems.reduce((s,i) => s + i.total, 0).toLocaleString()} <span className="text-xs text-gray-500 font-normal">ل.س</span></div>
                       </div>
-                      <button onClick={handleSaveInvoice} className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-3 shadow-xl shadow-green-900/20 active:scale-95 transition-all"><FileText size={20} /> حفظ الفاتورة</button>
+                      <div className="flex gap-2">
+                        {editingInvoiceId && (
+                           <button onClick={cancelEdit} className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-4 rounded-2xl font-black text-sm active:scale-95 transition-all">إلغاء</button>
+                        )}
+                        <button onClick={handleSaveInvoice} className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-3 shadow-xl shadow-green-900/20 active:scale-95 transition-all">
+                          <FileText size={20} /> {editingInvoiceId ? 'تحديث الفاتورة' : 'حفظ الفاتورة'}
+                        </button>
+                      </div>
                   </div>
               </div>
           ) : activeTab === 'suppliers' ? (

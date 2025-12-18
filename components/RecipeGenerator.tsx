@@ -87,13 +87,31 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
 
   const handleStartEditPrice = (item: any) => {
     setEditingPriceId(item.tempId);
-    setTempPrice(item.price.toString());
+    // إذا كان وزن، نظهر الإجمالي الحالي لتسهيل التعديل
+    if (item.unitType === 'kg') {
+      setTempPrice((item.price * item.quantity).toString());
+    } else {
+      setTempPrice(item.price.toString());
+    }
   };
 
   const handleSavePrice = (tempId: string) => {
-    const newPrice = parseFloat(tempPrice);
-    if (!isNaN(newPrice) && newPrice >= 0) {
-      setCart(prev => prev.map(i => i.tempId === tempId ? { ...i, price: newPrice } : i));
+    const enteredValue = parseFloat(tempPrice);
+    if (!isNaN(enteredValue) && enteredValue >= 0) {
+      setCart(prev => prev.map(i => {
+        if (i.tempId === tempId) {
+          if (i.unitType === 'kg') {
+            // الميزة المطلوبة: تعديل الوزن بناءً على المبلغ المدخل
+            // الكمية = المبلغ الإجمالي / سعر الكيلو
+            const newQty = parseFloat((enteredValue / i.price).toFixed(3));
+            return { ...i, quantity: newQty };
+          } else {
+            // المواد بالقطعة: تعديل سعر القطعة بشكل مباشر
+            return { ...i, price: enteredValue };
+          }
+        }
+        return i;
+      }));
     }
     setEditingPriceId(null);
   };
@@ -192,13 +210,17 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                                                 onChange={e => setTempPrice(e.target.value)} 
                                                 onBlur={() => handleSavePrice(i.tempId)} 
                                                 onKeyDown={e => e.key === 'Enter' && handleSavePrice(i.tempId)} 
-                                                className="w-20 bg-gray-900 border border-[#FA8072] text-white text-xs px-2 py-1 rounded-lg" 
+                                                className="w-24 bg-gray-900 border border-[#FA8072] text-white text-xs px-2 py-1 rounded-lg" 
                                                 autoFocus 
                                             />
+                                            <span className="text-[10px] text-gray-500">{i.unitType === 'kg' ? '(المبلغ الكلي)' : '(سعر القطعة)'}</span>
                                         </div>
                                     ) : (
                                         <div className="mt-1 flex items-center gap-1.5 cursor-pointer group/price" onClick={() => handleStartEditPrice(i)}>
-                                            <span className="text-[10px] text-gray-500">السعر: <span className="text-gray-300 font-bold tabular-nums">{i.price.toLocaleString()}</span></span>
+                                            <span className="text-[10px] text-gray-500">
+                                              {i.unitType === 'kg' ? 'سعر الكيلو: ' : 'السعر: '}
+                                              <span className="text-gray-300 font-bold tabular-nums">{i.price.toLocaleString()}</span>
+                                            </span>
                                             <Edit3 size={10} className="text-[#FA8072] opacity-30 group-hover/price:opacity-100" />
                                         </div>
                                     )}
@@ -207,7 +229,6 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                             </div>
 
                             <div className="flex items-center justify-between">
-                                {/* Enhanced Quantity Control with Input Field */}
                                 <div className="flex items-center gap-1 bg-gray-900/50 rounded-xl px-2 py-1.5 border border-gray-700">
                                     <button onClick={() => updateQty(i.tempId, -1)} className="text-gray-500 hover:text-white transition-colors p-1"><Minus size={14} /></button>
                                     <input 
@@ -222,7 +243,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                                 
                                 <div className="flex flex-col items-end">
                                     <span className="text-[#FA8072] font-black text-lg tabular-nums">{(i.price * i.quantity).toLocaleString()}</span>
-                                    <span className="text-[8px] text-gray-600 font-bold uppercase">المجموع</span>
+                                    <span className="text-[8px] text-gray-600 font-bold uppercase">إجمالي المادة</span>
                                 </div>
                             </div>
                         </div>
