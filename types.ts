@@ -25,10 +25,11 @@ export interface SaleItem {
   saleType: SaleType; 
   name: string;
   price: number;
-  costPrice: number; // Added for profit calculation
+  costPrice: number; 
   quantity: number;
   unitType: UnitType;
   time: string;
+  date: string; // الحقل الجديد لضمان ثبات التاريخ
 }
 
 export interface PurchaseItem {
@@ -53,8 +54,8 @@ export interface Product {
   id: string;
   name: string;
   price: number;
-  wholesalePrice: number; // New field
-  costPrice: number; // Added for profit calculation
+  wholesalePrice: number; 
+  costPrice: number; 
   unitType: UnitType;
 }
 

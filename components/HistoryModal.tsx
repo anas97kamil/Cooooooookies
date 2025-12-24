@@ -28,33 +28,28 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
   const [filterType, setFilterType] = useState<FilterType>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // حالات التعديل الجديدة - للفاتورة بالكامل
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [editCustomerName, setEditCustomerName] = useState('');
   const [editOrderItems, setEditOrderItems] = useState<SaleItem[]>([]);
 
+  // تعديل منطق دمج البيانات: نعرض الأرشيف الحقيقي فقط
   const fullHistory = useMemo(() => {
-      const merged = [...history];
-      if (currentSales.length > 0) {
-          const today = new Date();
-          const todayStr = today.toLocaleDateString('ar-SY');
-          const existingTodayIdx = merged.findIndex(d => d.date.includes(todayStr));
-          
-          const todayEntry: ArchivedDay = {
-              id: 'today-active',
-              date: `${todayStr} (مبيعات حية)`,
-              timestamp: Date.now(),
-              totalRevenue: currentSales.reduce((s, i) => s + (i.price * i.quantity), 0),
-              totalExpenses: 0,
-              totalItems: currentSales.length,
-              items: currentSales,
-              purchaseInvoices: []
-          };
+      // إذا أردت عرض مبيعات اليوم الحالية كـ "يوم غير مؤرشف"، نستخدم المنطق التالي:
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('ar-SY');
+      
+      const activeSalesEntry: ArchivedDay | null = currentSales.length > 0 ? {
+          id: 'today-active',
+          date: `${todayStr} (مبيعات اليوم - قيد العمل)`,
+          timestamp: today.getTime(),
+          totalRevenue: currentSales.reduce((s, i) => s + (i.price * i.quantity), 0),
+          totalExpenses: 0,
+          totalItems: currentSales.length,
+          items: currentSales,
+          purchaseInvoices: []
+      } : null;
 
-          if (existingTodayIdx > -1) merged[existingTodayIdx] = todayEntry;
-          else merged.push(todayEntry);
-      }
-      return merged;
+      return activeSalesEntry ? [activeSalesEntry, ...history] : history;
   }, [history, currentSales]);
 
   const profitReport = useMemo(() => {
@@ -127,14 +122,12 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
       return orderList.sort((a, b) => b[0].orderId.localeCompare(a[0].orderId));
   };
 
-  // معالجة بدء تعديل الفاتورة بالكامل
   const handleStartOrderEdit = (orderItems: SaleItem[]) => {
       setEditingOrderId(orderItems[0].orderId);
       setEditCustomerName(orderItems[0].customerName || '');
       setEditOrderItems([...orderItems]);
   };
 
-  // معالجة تغيير قيم المواد في وضع التعديل
   const handleEditItemChange = (itemId: string, field: 'price' | 'quantity', value: string) => {
       setEditOrderItems(prev => prev.map(item => {
           if (item.id === itemId) {
@@ -144,7 +137,6 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
       }));
   };
 
-  // حفظ التعديلات الشاملة للفاتورة
   const handleSaveOrderEdit = (dayId: string) => {
       if (!editingOrderId) return;
       onUpdateOrder(dayId, editingOrderId, editOrderItems, editCustomerName);
@@ -206,17 +198,20 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                     if (groupedOrders.length === 0) return null;
                     
                     const dayTotal = filteredItems.reduce((s, i) => s + (i.price * i.quantity), 0);
-                    const isToday = day.id === 'today-active';
+                    const isTodayActive = day.id === 'today-active';
 
                     return (
-                        <div key={day.id} className={`rounded-xl border overflow-hidden shadow-sm transition-all ${isToday ? 'border-orange-500/50 bg-orange-500/5' : 'border-gray-700 bg-gray-800'}`}>
-                            <div onClick={() => setExpandedDayId(expandedDayId === day.id ? null : day.id)} className={`p-4 flex justify-between items-center cursor-pointer ${isToday ? 'bg-orange-500/10' : 'bg-gray-900/50 hover:bg-gray-900'}`}>
+                        <div key={day.id} className={`rounded-xl border overflow-hidden shadow-sm transition-all ${isTodayActive ? 'border-orange-500/50 bg-orange-500/5' : 'border-gray-700 bg-gray-800'}`}>
+                            <div onClick={() => setExpandedDayId(expandedDayId === day.id ? null : day.id)} className={`p-4 flex justify-between items-center cursor-pointer ${isTodayActive ? 'bg-orange-500/10' : 'bg-gray-900/50 hover:bg-gray-900'}`}>
                                 <div className="flex items-center gap-3">
                                     <div className="text-gray-500">{(expandedDayId === day.id || searchTerm) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
-                                    <span className={`font-bold ${isToday ? 'text-orange-400' : 'text-white'}`}>{day.date}</span>
+                                    <span className={`font-bold ${isTodayActive ? 'text-orange-400' : 'text-white'}`}>{day.date}</span>
                                     {searchTerm && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">تم العثور على {groupedOrders.length} نتيجة</span>}
                                 </div>
-                                <span className="font-black text-lg text-green-400">{dayTotal.toLocaleString()} <small className="text-[10px] text-gray-500 font-normal">ل.س</small></span>
+                                <div className="flex flex-col items-end">
+                                    <span className="font-black text-lg text-green-400">{dayTotal.toLocaleString()} <small className="text-[10px] text-gray-500 font-normal">ل.س</small></span>
+                                    {day.totalExpenses > 0 && <span className="text-[10px] text-red-400 font-bold">مشتريات: {day.totalExpenses.toLocaleString()}</span>}
+                                </div>
                             </div>
                             {(expandedDayId === day.id || searchTerm) && (
                                 <div className="p-4 bg-gray-900/30 border-t border-gray-700 animate-fade-up space-y-4">
@@ -262,7 +257,9 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                            ) : (
                                                                <>
                                                                  <button onClick={() => onPreviewInvoice(orderItems)} className="text-gray-500 hover:text-white transition-colors" title="طباعة"><Download size={14}/></button>
-                                                                 <button onClick={() => handleStartOrderEdit(orderItems)} className="text-gray-500 hover:text-[#FA8072] transition-colors" title="تعديل الفاتورة"><Edit3 size={14}/></button>
+                                                                 {!isTodayActive && (
+                                                                   <button onClick={() => handleStartOrderEdit(orderItems)} className="text-gray-500 hover:text-[#FA8072] transition-colors" title="تعديل الفاتورة"><Edit3 size={14}/></button>
+                                                                 )}
                                                                  <button onClick={() => { if(window.confirm('هل أنت متأكد من حذف هذه الفاتورة من الأرشيف؟')){ onDeleteArchivedOrder(day.id, first.orderId); } }} className="text-gray-500 hover:text-red-400 transition-colors" title="حذف الفاتورة"><Trash2 size={14}/></button>
                                                                </>
                                                            )}
@@ -310,9 +307,6 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                         </div>
                     );
                 })}
-                {currentDaysData.length > 0 && searchTerm && !currentDaysData.some(day => groupItemsByOrder(day.items.filter(item => filterType === 'all' || item.saleType === filterType)).length > 0) && (
-                    <div className="py-10 text-center text-gray-500 text-sm">لم يتم العثور على فواتير تطابق بحثك.</div>
-                )}
             </div>
         </div>
     );

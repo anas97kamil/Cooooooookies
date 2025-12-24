@@ -131,8 +131,8 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const CHECK_INTERVAL = 60 * 1000; // Check every minute
-    const REMINDER_INTERVAL = 60 * 60 * 1000; // 1 Hour
+    const CHECK_INTERVAL = 60 * 1000; 
+    const REMINDER_INTERVAL = 60 * 60 * 1000; 
 
     const intervalId = setInterval(() => {
       const now = Date.now();
@@ -218,6 +218,7 @@ const App: React.FC = () => {
       const orderId = Date.now().toString();
       const now = new Date();
       const time = now.toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' });
+      const date = now.toLocaleDateString('ar-SY');
       const nextNum = sales.length > 0 ? Math.max(...sales.map(s => s.customerNumber || 0)) + 1 : 1;
       
       const finalItems: SaleItem[] = items.map(i => ({ 
@@ -228,11 +229,41 @@ const App: React.FC = () => {
         customerName: name || '', 
         customerId: id || '', 
         saleType: type, 
-        time 
+        time,
+        date
       }));
 
       setSales(prev => [...prev, ...finalItems]);
   }, [sales]);
+
+  const handleArchiveDay = () => {
+      if (sales.length === 0 && purchaseInvoices.length === 0) {
+          alert('لا توجد مبيعات أو مشتريات نشطة لترحيلها.');
+          return;
+      }
+
+      if (!window.confirm('هل أنت متأكد من إغلاق اليوم وترحيل كافة المبيعات والمشتريات الحالية إلى الأرشيف؟ سيتم تصفير الشاشة الرئيسية.')) return;
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('ar-SY');
+      const timestamp = now.getTime();
+
+      const newArchivedDay: ArchivedDay = {
+          id: `archive-${timestamp}`,
+          date: dateStr,
+          timestamp,
+          totalRevenue: sales.reduce((s, i) => s + (i.price * i.quantity), 0),
+          totalExpenses: purchaseInvoices.reduce((s, i) => s + i.totalAmount, 0),
+          totalItems: sales.length,
+          items: [...sales],
+          purchaseInvoices: [...purchaseInvoices]
+      };
+
+      setHistory(prev => [newArchivedDay, ...prev]);
+      setSales([]);
+      setPurchaseInvoices([]);
+      alert('تم ترحيل بيانات اليوم بنجاح إلى الأرشيف.');
+  };
 
   const handleExportData = () => {
     const backup = { dailySales: sales, dailyPurchaseInvoices: purchaseInvoices, salesHistory: history, products, customers, suppliers, exportDate: new Date().toISOString() };
@@ -244,7 +275,6 @@ const App: React.FC = () => {
     link.click();
     URL.revokeObjectURL(url);
     
-    // Reset reminder
     lastBackupTimestamp.current = Date.now();
     setShowBackupReminder(false);
   };
@@ -266,22 +296,18 @@ const App: React.FC = () => {
     reader.readAsText(file);
   };
 
-  // وظيفة تحديث الأرشيف (تعديل وحذف) المطورة
   const handleUpdateArchivedOrder = (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => {
     setHistory(prev => prev.map(day => {
-      if (day.id === dayId || (dayId === 'today-active' && day.id === 'today-active')) {
-        // تحديث المواد في الفاتورة المحددة
+      if (day.id === dayId) {
         const newItems = day.items.map(item => {
           if (item.orderId === orderId) {
             const updated = updatedItems.find(ui => ui.id === item.id);
             const base = updated ? updated : item;
-            // إذا تم تغيير اسم الزبون، نقوم بتحديثه في جميع بنود الفاتورة
             return newCustomerName !== undefined ? { ...base, customerName: newCustomerName } : base;
           }
           return item;
         });
         
-        // إعادة حساب الإجمالي لليوم المختار
         const newTotal = newItems.reduce((s, i) => s + (i.price * i.quantity), 0);
         
         return {
@@ -292,23 +318,11 @@ const App: React.FC = () => {
       }
       return day;
     }));
-
-    // إذا كانت الفاتورة من مبيعات اليوم النشطة، نقوم بتحديثها هناك أيضاً
-    if (dayId === 'today-active') {
-        setSales(prev => prev.map(item => {
-            if (item.orderId === orderId) {
-                const updated = updatedItems.find(ui => ui.id === item.id);
-                const base = updated ? updated : item;
-                return newCustomerName !== undefined ? { ...base, customerName: newCustomerName } : base;
-            }
-            return item;
-        }));
-    }
   };
 
   const handleDeleteArchivedOrder = (dayId: string, orderId: string) => {
     setHistory(prev => prev.map(day => {
-      if (day.id === dayId || (dayId === 'today-active' && day.id === 'today-active')) {
+      if (day.id === dayId) {
         const newItems = day.items.filter(item => item.orderId !== orderId);
         const newTotal = newItems.reduce((s, i) => s + (i.price * i.quantity), 0);
         return {
@@ -319,10 +333,6 @@ const App: React.FC = () => {
       }
       return day;
     }).filter(day => day.items.length > 0 || (day.purchaseInvoices && day.purchaseInvoices.length > 0)));
-
-    if (dayId === 'today-active') {
-        setSales(prev => prev.filter(item => item.orderId !== orderId));
-    }
   };
 
   if (isInitializing) return <WelcomeLoader onComplete={finalizeLogin} />;
@@ -343,14 +353,13 @@ const App: React.FC = () => {
         isSyncing={isSyncing}
       />
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl no-print">
-        <Summary items={sales} onPreview={() => setInvoiceItems(sales)} />
+        <Summary items={sales} onPreview={() => setInvoiceItems(sales)} onArchiveDay={handleArchiveDay} />
         <POSInterface products={products} customers={customers} onCompleteOrder={completeOrder} onOpenProductManager={() => setModals(m => ({...m, products: true}))} onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} />
         <div className="mt-8">
             <SalesTable items={sales} onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id, p) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
         </div>
       </main>
       
-      {/* Backup Reminder Toast */}
       {showBackupReminder && (
         <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-80 bg-gray-800 border border-orange-500/50 p-5 rounded-[2rem] shadow-2xl z-[150] animate-fade-up flex flex-col gap-4 no-print">
             <div className="flex items-start gap-4">
@@ -410,7 +419,6 @@ const App: React.FC = () => {
                 <div className="w-12 h-12 bg-[#FA8072]/20 rounded-full flex items-center justify-center mx-auto mb-3"><Loader2 className="text-[#FA8072] animate-pulse" size={24} /></div>
                 <h3 className="text-white font-black text-lg">تأكيد الإجراء</h3>
                 
-                {/* Warning Message for Full Reset */}
                 {showLock.target === 'full_reset' && (
                   <div className="mt-3 mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex flex-col items-center gap-2">
                     <AlertTriangle className="text-red-500" size={20} />

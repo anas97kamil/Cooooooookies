@@ -1,14 +1,15 @@
 
 import React, { useState } from 'react';
-import { DollarSign, Lock, Eye, EyeOff, X, TrendingUp } from 'lucide-react';
+import { DollarSign, Lock, Eye, EyeOff, X, TrendingUp, Archive } from 'lucide-react';
 import { SaleItem } from '../types';
 
 interface SummaryProps {
   items: SaleItem[];
   onPreview: () => void;
+  onArchiveDay: () => void; // إضافة وظيفة الأرشفة
 }
 
-export const Summary: React.FC<SummaryProps> = ({ items, onPreview }) => {
+export const Summary: React.FC<SummaryProps> = ({ items, onPreview, onArchiveDay }) => {
   const [showRevenue, setShowRevenue] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [password, setPassword] = useState('');
@@ -31,7 +32,6 @@ export const Summary: React.FC<SummaryProps> = ({ items, onPreview }) => {
 
   return (
     <>
-        {/* Custom Password Modal */}
         {showModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-up">
                 <div className="bg-gray-800 border border-gray-600 w-full max-w-xs p-6 rounded-2xl shadow-2xl">
@@ -64,12 +64,12 @@ export const Summary: React.FC<SummaryProps> = ({ items, onPreview }) => {
             </div>
         )}
 
-        <div className="mb-6 print-break-inside-avoid">
-             {/* Main Sales Card - Full Width */}
-            <div className="bg-gray-800 text-white p-5 rounded-2xl shadow-lg border border-gray-700 relative overflow-hidden flex items-center justify-between">
+        <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4 no-print">
+            {/* Sales Card */}
+            <div className="md:col-span-2 bg-gray-800 text-white p-5 rounded-3xl shadow-lg border border-gray-700 relative overflow-hidden flex items-center justify-between">
                 <div>
                     <div className="flex items-center gap-2 mb-1">
-                        <p className="text-gray-400 text-xs font-medium">إجمالي المبيعات اليومية</p>
+                        <p className="text-gray-400 text-xs font-black uppercase tracking-widest">إجمالي المبيعات النشطة</p>
                         {showRevenue ? (
                             <button onClick={() => setShowRevenue(false)} className="text-gray-500 hover:text-white print:hidden" title="إخفاء">
                                 <EyeOff size={14} />
@@ -93,6 +93,20 @@ export const Summary: React.FC<SummaryProps> = ({ items, onPreview }) => {
                     <TrendingUp size={28} className="text-[#FA8072]" />
                 </div>
             </div>
+
+            {/* Archive / End Day Button */}
+            <button 
+              onClick={onArchiveDay}
+              className="bg-gradient-to-br from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white p-5 rounded-3xl shadow-xl shadow-orange-900/20 flex flex-col items-center justify-center gap-2 transition-all active:scale-95 group border border-white/10"
+            >
+                <div className="bg-white/20 p-2 rounded-xl group-hover:scale-110 transition-transform">
+                    <Archive size={24} />
+                </div>
+                <div className="text-center">
+                    <span className="block font-black text-sm">إغلاق اليوم</span>
+                    <span className="block text-[8px] font-bold opacity-70 uppercase tracking-widest">ترحيل المبيعات للأرشيف</span>
+                </div>
+            </button>
         </div>
     </>
   );
