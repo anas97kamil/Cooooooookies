@@ -13,7 +13,10 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === 'Admin' && password === '2026') {
+    // قراءة كلمة المرور من localStorage للتأكد من المزامنة
+    const savedPass = localStorage.getItem('systemPassword') || '2026';
+    
+    if (username === 'Admin' && password === savedPass) {
       onLogin();
     } else {
       setError('بيانات الدخول غير صحيحة');

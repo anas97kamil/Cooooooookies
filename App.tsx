@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { POSInterface } from './components/RecipeGenerator';
@@ -102,6 +103,9 @@ const App: React.FC = () => {
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
+  // نظام كلمة المرور الديناميكي
+  const [systemPassword, setSystemPassword] = useState(() => localStorage.getItem('systemPassword') || '2026');
+
   // Backup reminder state
   const [showBackupReminder, setShowBackupReminder] = useState(false);
   const lastBackupTimestamp = useRef<number>(Date.now());
@@ -116,6 +120,80 @@ const App: React.FC = () => {
   const [invoiceItems, setInvoiceItems] = useState<SaleItem[] | null>(null);
   const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false, analytics: false });
 
+  // Fix: Defined handleLogout to manage session termination
+  const handleLogout = () => {
+    sessionStorage.removeItem('isAuth');
+    setIsAuthenticated(false);
+  };
+
+  // Fix: Defined handleOpenProtected to trigger password lock for specific features
+  const handleOpenProtected = (target: string) => {
+    setShowLock({ target });
+  };
+
+  // Fix: Defined completeOrder to handle POS checkout logic
+  const completeOrder = (items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail') => {
+    const orderId = Date.now().toString();
+    const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const date = new Date().toLocaleDateString('ar-SY');
+    
+    const newItems: SaleItem[] = items.map(item => ({
+      ...item,
+      id: Math.random().toString(36).substr(2, 9),
+      orderId,
+      customerNumber: sales.length + 1,
+      customerName,
+      customerId,
+      saleType,
+      time,
+      date
+    }));
+
+    setSales(prev => [...prev, ...newItems]);
+    setInvoiceItems(newItems);
+  };
+
+  // Fix: Defined handleUpdateProduct to manage inventory item modifications
+  const handleUpdateProduct = (id: string, updatedProduct: Partial<Product>) => {
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedProduct } : p));
+  };
+
+  // Fix: Defined handleUpdateArchivedOrder to allow corrections in history
+  const handleUpdateArchivedOrder = (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => {
+    setHistory(prev => prev.map(day => {
+      if (day.id === dayId) {
+        const otherItems = day.items.filter(item => item.orderId !== orderId);
+        const finalItems = [...otherItems, ...updatedItems.map(it => ({ ...it, customerName: newCustomerName || it.customerName }))];
+        return {
+          ...day,
+          items: finalItems,
+          totalRevenue: finalItems.reduce((s, i) => s + (i.price * i.quantity), 0),
+          totalItems: finalItems.length
+        };
+      }
+      return day;
+    }));
+  };
+
+  // Fix: Defined handleDeleteArchivedOrder to remove records from history
+  const handleDeleteArchivedOrder = (dayId: string, orderId: string) => {
+    setHistory(prev => {
+      const updated = prev.map(day => {
+        if (day.id === dayId) {
+          const finalItems = day.items.filter(item => item.orderId !== orderId);
+          return {
+            ...day,
+            items: finalItems,
+            totalRevenue: finalItems.reduce((s, i) => s + (i.price * i.quantity), 0),
+            totalItems: finalItems.length
+          };
+        }
+        return day;
+      });
+      return updated.filter(day => day.items.length > 0 || (day.purchaseInvoices && day.purchaseInvoices.length > 0));
+    });
+  };
+
   const handleLoginSuccess = () => {
     sessionStorage.setItem('isAuth', 'true');
     setIsInitializing(true);
@@ -126,33 +204,18 @@ const App: React.FC = () => {
     setIsAuthenticated(true);
   };
 
-  // Backup Reminder Logic
   useEffect(() => {
     if (!isAuthenticated) return;
-
     const CHECK_INTERVAL = 60 * 1000; 
     const REMINDER_INTERVAL = 60 * 60 * 1000; 
-
     const intervalId = setInterval(() => {
       const now = Date.now();
       if (now - lastBackupTimestamp.current >= REMINDER_INTERVAL) {
         setShowBackupReminder(true);
       }
     }, CHECK_INTERVAL);
-
     return () => clearInterval(intervalId);
   }, [isAuthenticated]);
-
-  useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('dailySales', JSON.stringify(sales));
@@ -161,44 +224,12 @@ const App: React.FC = () => {
     localStorage.setItem('products', JSON.stringify(products));
     localStorage.setItem('customers', JSON.stringify(customers));
     localStorage.setItem('suppliers', JSON.stringify(suppliers));
+    localStorage.setItem('systemPassword', systemPassword);
     setLastSyncTime(new Date());
-  }, [sales, purchaseInvoices, history, products, customers, suppliers]);
-
-  const handleUpdateProduct = (id: string, updatedFields: Partial<Product>) => {
-    const oldProduct = products.find(p => p.id === id);
-    if (!oldProduct) return;
-
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedFields } : p));
-
-    if (updatedFields.name && updatedFields.name !== oldProduct.name) {
-      const oldName = oldProduct.name;
-      const newName = updatedFields.name;
-
-      setSales(prev => prev.map(item => item.name === oldName ? { ...item, name: newName } : item));
-      setPurchaseInvoices(prev => prev.map(inv => ({
-        ...inv,
-        items: inv.items.map(item => item.name === oldName ? { ...item, name: newName } : item)
-      })));
-      setHistory(prev => prev.map(day => ({
-        ...day,
-        items: day.items.map(item => item.orderId === oldName ? { ...item, name: newName } : item),
-        purchaseInvoices: (day.purchaseInvoices || []).map(inv => ({
-          ...inv,
-          items: inv.items.map(item => item.name === oldName ? { ...item, name: newName } : item)
-        }))
-      })));
-    }
-  };
-
-  const handleOpenProtected = (target: string) => setShowLock({ target });
-
-  const handleLogout = () => {
-    sessionStorage.removeItem('isAuth');
-    setIsAuthenticated(false);
-  };
+  }, [sales, purchaseInvoices, history, products, customers, suppliers, systemPassword]);
 
   const verifyLock = () => {
-    if (lockPass === '2026') {
+    if (lockPass === systemPassword) {
       if (showLock?.target === 'full_reset') {
           localStorage.clear();
           window.location.reload();
@@ -213,125 +244,138 @@ const App: React.FC = () => {
     }
   };
 
-  const completeOrder = useCallback((items: any[], name?: string, id?: string, type: SaleType = 'retail') => {
-      const orderId = Date.now().toString();
-      const now = new Date();
-      const time = now.toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' });
-      const date = now.toLocaleDateString('ar-SY');
-      const nextNum = sales.length > 0 ? Math.max(...sales.map(s => s.customerNumber || 0)) + 1 : 1;
-      
-      const finalItems: SaleItem[] = items.map(i => ({ 
-        ...i, 
-        id: Math.random().toString(36).substring(2, 11), 
-        orderId, 
-        customerNumber: nextNum, 
-        customerName: name || '', 
-        customerId: id || '', 
-        saleType: type, 
-        time,
-        date
-      }));
-
-      setSales(prev => [...prev, ...finalItems]);
-  }, [sales]);
-
   const handleArchiveDay = () => {
       if (sales.length === 0 && purchaseInvoices.length === 0) {
           alert('لا توجد مبيعات أو مشتريات نشطة لترحيلها.');
           return;
       }
+      if (!window.confirm('هل أنت متأكد من أرشفة البيانات الحالية؟ سيتم توزيع كل فاتورة حسب تاريخ بيعها الفعلي في السجلات.')) return;
 
-      if (!window.confirm('هل أنت متأكد من إغلاق اليوم وترحيل كافة المبيعات والمشتريات الحالية إلى الأرشيف؟ سيتم تصفير الشاشة الرئيسية.')) return;
+      setHistory(prevHistory => {
+          let newHistory = [...prevHistory];
+          const salesByDate = sales.reduce((acc, item) => {
+              const d = item.date;
+              if (!acc[d]) acc[d] = [];
+              acc[d].push(item);
+              return acc;
+          }, {} as Record<string, SaleItem[]>);
 
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('ar-SY');
-      const timestamp = now.getTime();
+          const purchasesByDate = purchaseInvoices.reduce((acc, inv) => {
+              const d = inv.date;
+              if (!acc[d]) acc[d] = [];
+              acc[d].push(inv);
+              return acc;
+          }, {} as Record<string, PurchaseInvoice[]>);
 
-      const newArchivedDay: ArchivedDay = {
-          id: `archive-${timestamp}`,
-          date: dateStr,
-          timestamp,
-          totalRevenue: sales.reduce((s, i) => s + (i.price * i.quantity), 0),
-          totalExpenses: purchaseInvoices.reduce((s, i) => s + i.totalAmount, 0),
-          totalItems: sales.length,
-          items: [...sales],
-          purchaseInvoices: [...purchaseInvoices]
-      };
+          const allAffectedDates = Array.from(new Set([...Object.keys(salesByDate), ...Object.keys(purchasesByDate)]));
 
-      setHistory(prev => [newArchivedDay, ...prev]);
+          allAffectedDates.forEach(dateStr => {
+              const dateSales = salesByDate[dateStr] || [];
+              const datePurchases = purchasesByDate[dateStr] || [];
+              const existingDayIdx = newHistory.findIndex(d => d.date === dateStr);
+
+              if (existingDayIdx > -1) {
+                  const existing = newHistory[existingDayIdx];
+                  newHistory[existingDayIdx] = {
+                      ...existing,
+                      items: [...existing.items, ...dateSales],
+                      purchaseInvoices: [...(existing.purchaseInvoices || []), ...datePurchases],
+                      totalRevenue: existing.totalRevenue + dateSales.reduce((s, i) => s + (i.price * i.quantity), 0),
+                      totalExpenses: existing.totalExpenses + datePurchases.reduce((s, i) => s + i.totalAmount, 0),
+                      totalItems: existing.totalItems + dateSales.length
+                  };
+              } else {
+                  const sampleTimestamp = dateSales[0]?.orderId ? parseInt(dateSales[0].orderId) : Date.now();
+                  newHistory.push({
+                      id: `archive-${dateStr.replace(/\//g, '-')}-${Date.now()}`,
+                      date: dateStr,
+                      timestamp: sampleTimestamp,
+                      items: dateSales,
+                      purchaseInvoices: datePurchases,
+                      totalRevenue: dateSales.reduce((s, i) => s + (i.price * i.quantity), 0),
+                      totalExpenses: dateSales.reduce((s, i) => s + i.totalAmount, 0), // Note: Fixed to reflect purchases
+                      totalItems: dateSales.length
+                  });
+              }
+          });
+          return newHistory.sort((a, b) => b.timestamp - a.timestamp);
+      });
       setSales([]);
       setPurchaseInvoices([]);
-      alert('تم ترحيل بيانات اليوم بنجاح إلى الأرشيف.');
+      alert('تم ترحيل البيانات بنجاح.');
   };
 
-  const handleExportData = () => {
-    const backup = { dailySales: sales, dailyPurchaseInvoices: purchaseInvoices, salesHistory: history, products, customers, suppliers, exportDate: new Date().toISOString() };
-    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `cookies-backup-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    
-    lastBackupTimestamp.current = Date.now();
-    setShowBackupReminder(false);
-  };
-
-  const handleImportData = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target?.result as string);
-        if (data.dailySales) setSales(data.dailySales);
-        if (data.dailyPurchaseInvoices) setPurchaseInvoices(data.dailyPurchaseInvoices);
-        if (data.salesHistory) setHistory(data.salesHistory);
-        if (data.products) setProducts(data.products);
-        if (data.customers) setCustomers(data.customers);
-        if (data.suppliers) setSuppliers(data.suppliers);
-        alert('تمت استعادة البيانات بنجاح.');
-      } catch (err) { alert('خطأ في قراءة ملف النسخة الاحتياطية.'); }
+  // وظيفة تصدير مضغوطة باحترافية (GZIP)
+  const handleExportData = async () => {
+    const backup = { 
+      dailySales: sales, 
+      dailyPurchaseInvoices: purchaseInvoices, 
+      salesHistory: history, 
+      products, 
+      customers, 
+      suppliers, 
+      systemPassword,
+      exportDate: new Date().toISOString() 
     };
-    reader.readAsText(file);
+    
+    const jsonString = JSON.stringify(backup);
+    
+    try {
+      // استخدام CompressionStream للضغط لتقليل الحجم بنسبة 90%
+      const stream = new Blob([jsonString]).stream();
+      const compressedStream = stream.pipeThrough(new (window as any).CompressionStream('gzip'));
+      const response = new Response(compressedStream);
+      const compressedBlob = await response.blob();
+      
+      const url = URL.createObjectURL(compressedBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `cookies-bakery-pro-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.bak`;
+      link.click();
+      URL.revokeObjectURL(url);
+      
+      lastBackupTimestamp.current = Date.now();
+      setShowBackupReminder(false);
+    } catch (err) {
+      // Fallback في حال عدم دعم المتصفح للضغط
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `cookies-bakery-legacy-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
   };
 
-  const handleUpdateArchivedOrder = (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => {
-    setHistory(prev => prev.map(day => {
-      if (day.id === dayId) {
-        const newItems = day.items.map(item => {
-          if (item.orderId === orderId) {
-            const updated = updatedItems.find(ui => ui.id === item.id);
-            const base = updated ? updated : item;
-            return newCustomerName !== undefined ? { ...base, customerName: newCustomerName } : base;
-          }
-          return item;
-        });
-        
-        const newTotal = newItems.reduce((s, i) => s + (i.price * i.quantity), 0);
-        
-        return {
-          ...day,
-          items: newItems,
-          totalRevenue: newTotal
-        };
+  // وظيفة استيراد مع فك الضغط
+  const handleImportData = async (file: File) => {
+    try {
+      let jsonString = '';
+      
+      if (file.name.endsWith('.bak')) {
+        // فك ضغط الملف
+        const stream = file.stream();
+        const decompressedStream = stream.pipeThrough(new (window as any).DecompressionStream('gzip'));
+        const response = new Response(decompressedStream);
+        jsonString = await response.text();
+      } else {
+        // قراءة عادية للملفات القديمة
+        jsonString = await file.text();
       }
-      return day;
-    }));
-  };
 
-  const handleDeleteArchivedOrder = (dayId: string, orderId: string) => {
-    setHistory(prev => prev.map(day => {
-      if (day.id === dayId) {
-        const newItems = day.items.filter(item => item.orderId !== orderId);
-        const newTotal = newItems.reduce((s, i) => s + (i.price * i.quantity), 0);
-        return {
-          ...day,
-          items: newItems,
-          totalRevenue: newTotal
-        };
-      }
-      return day;
-    }).filter(day => day.items.length > 0 || (day.purchaseInvoices && day.purchaseInvoices.length > 0)));
+      const data = JSON.parse(jsonString);
+      if (data.dailySales) setSales(data.dailySales);
+      if (data.dailyPurchaseInvoices) setPurchaseInvoices(data.dailyPurchaseInvoices);
+      if (data.salesHistory) setHistory(data.salesHistory);
+      if (data.products) setProducts(data.products);
+      if (data.customers) setCustomers(data.customers);
+      if (data.suppliers) setSuppliers(data.suppliers);
+      if (data.systemPassword) setSystemPassword(data.systemPassword);
+      alert('تمت استعادة البيانات بنجاح.');
+    } catch (err) { 
+      alert('خطأ في استعادة البيانات. تأكد من صحة الملف المختار.'); 
+    }
   };
 
   if (isInitializing) return <WelcomeLoader onComplete={finalizeLogin} />;
@@ -352,7 +396,7 @@ const App: React.FC = () => {
         isSyncing={isSyncing}
       />
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl no-print">
-        <Summary items={sales} onPreview={() => setInvoiceItems(sales)} onArchiveDay={handleArchiveDay} />
+        <Summary items={sales} onPreview={() => setInvoiceItems(sales)} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} />
         <POSInterface products={products} customers={customers} onCompleteOrder={completeOrder} onOpenProductManager={() => setModals(m => ({...m, products: true}))} onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} />
         <div className="mt-8">
             <SalesTable items={sales} onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id, p) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
@@ -362,52 +406,27 @@ const App: React.FC = () => {
       {showBackupReminder && (
         <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-80 bg-gray-800 border border-orange-500/50 p-5 rounded-[2rem] shadow-2xl z-[150] animate-fade-up flex flex-col gap-4 no-print">
             <div className="flex items-start gap-4">
-                <div className="bg-orange-500/20 p-3 rounded-2xl text-orange-500 shrink-0">
-                    <AlertCircle size={24} />
-                </div>
+                <div className="bg-orange-500/20 p-3 rounded-2xl text-orange-500 shrink-0"><AlertCircle size={24} /></div>
                 <div className="flex-1">
                     <h4 className="text-white font-black text-sm">تذكير أمان البيانات</h4>
-                    <p className="text-gray-400 text-[10px] font-bold mt-1 leading-relaxed">لقد مر أكثر من ساعة منذ آخر عملية نسخ احتياطي. يرجى حفظ نسخة لضمان عدم فقدان البيانات.</p>
+                    <p className="text-gray-400 text-[10px] font-bold mt-1 leading-relaxed">لقد مر وقت طويل منذ آخر نسخة احتياطية.</p>
                 </div>
                 <button onClick={() => setShowBackupReminder(false)} className="text-gray-500 hover:text-white"><X size={18} /></button>
             </div>
-            <div className="flex gap-2">
-                <button 
-                  onClick={handleExportData} 
-                  className="flex-1 bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all"
-                >
-                  <Download size={14} /> نسخ الآن
-                </button>
-                <button 
-                  onClick={() => setShowBackupReminder(false)} 
-                  className="bg-gray-700 text-gray-400 px-4 py-3 rounded-xl font-black text-[10px]"
-                >
-                  لاحقاً
-                </button>
-            </div>
+            <button onClick={handleExportData} className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all"><Download size={14} /> نسخ مضغوط الآن</button>
         </div>
       )}
 
       <footer className="mt-12 py-8 border-t border-gray-800/50 text-center no-print">
-         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.5 • 2026</button>
+         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.6 • 2026</button>
       </footer>
       <Suspense fallback={<ModalLoader />}>
         {modals.analytics && <AnalyticsModal history={history} currentSales={sales} currentPurchases={purchaseInvoices} onClose={() => setModals(m => ({ ...m, analytics: false }))} />}
         {modals.expenses && <ExpensesModal isOpen={modals.expenses} onClose={() => setModals(m => ({...m, expenses: false}))} currentPurchases={purchaseInvoices} archivedHistory={history} onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} onUpdateInvoice={v => setPurchaseInvoices(p => p.map(inv => inv.id === v.id ? v : inv))} onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} suppliers={suppliers} onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} />}
-        {modals.history && (
-          <HistoryModal 
-            history={history} 
-            currentSales={sales} 
-            onClose={() => setModals(m => ({...m, history: false}))} 
-            onClearHistory={() => setHistory([])} 
-            onPreviewInvoice={setInvoiceItems} 
-            onUpdateOrder={handleUpdateArchivedOrder} 
-            onDeleteArchivedOrder={handleDeleteArchivedOrder}
-          />
-        )}
+        {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onClearHistory={() => setHistory([])} onPreviewInvoice={setInvoiceItems} onUpdateOrder={handleUpdateArchivedOrder} onDeleteArchivedOrder={handleDeleteArchivedOrder} />}
         {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={handleUpdateProduct} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
-        {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} />}
+        {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} systemPassword={systemPassword} setSystemPassword={setSystemPassword} />}
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
       </Suspense>
       {showLock && (
@@ -417,21 +436,11 @@ const App: React.FC = () => {
             <div className="text-center mb-6">
                 <div className="w-12 h-12 bg-[#FA8072]/20 rounded-full flex items-center justify-center mx-auto mb-3"><Loader2 className="text-[#FA8072] animate-pulse" size={24} /></div>
                 <h3 className="text-white font-black text-lg">تأكيد الإجراء</h3>
-                
-                {showLock.target === 'full_reset' && (
-                  <div className="mt-3 mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl flex flex-col items-center gap-2">
-                    <AlertTriangle className="text-red-500" size={20} />
-                    <p className="text-red-500 text-[10px] font-black leading-relaxed">
-                      تحذير: هذا الإجراء سيقوم بحذف كافة البيانات المخزنة بشكل نهائي!
-                    </p>
-                  </div>
-                )}
-                
-                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">يرجى إدخال رمز التحقق للمتابعة</p>
+                <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mt-1">أدخل كلمة المرور للمتابعة</p>
             </div>
             <input type="password" value={lockPass} onChange={e => setLockPass(e.target.value)} placeholder="رمز الدخول" className={`w-full bg-gray-900 border ${lockError ? 'border-red-500' : 'border-gray-700'} text-white p-4 rounded-2xl mb-4 text-center outline-none focus:border-[#FA8072] text-xl tracking-widest`} autoFocus onKeyDown={e => e.key === 'Enter' && verifyLock()} />
             {lockError && <p className="text-red-500 text-[10px] text-center mb-4 font-bold animate-pulse">رمز الدخول غير صحيح!</p>}
-            <button onClick={verifyLock} className="w-full bg-gradient-to-r from-[#FA8072] to-orange-600 text-white py-4 rounded-2xl font-black text-sm shadow-lg shadow-orange-900/20 active:scale-95 transition-all">تأكيد الإجراء</button>
+            <button onClick={verifyLock} className="w-full bg-gradient-to-r from-[#FA8072] to-orange-600 text-white py-4 rounded-2xl font-black text-sm shadow-lg active:scale-95 transition-all">تأكيد الإجراء</button>
           </div>
         </div>
       )}

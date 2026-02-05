@@ -6,10 +6,11 @@ import { SaleItem } from '../types';
 interface SummaryProps {
   items: SaleItem[];
   onPreview: () => void;
-  onArchiveDay: () => void; // إضافة وظيفة الأرشفة
+  onArchiveDay: () => void;
+  systemPassword: string; // استلام كلمة المرور الديناميكية
 }
 
-export const Summary: React.FC<SummaryProps> = ({ items, onPreview, onArchiveDay }) => {
+export const Summary: React.FC<SummaryProps> = ({ items, onPreview, onArchiveDay, systemPassword }) => {
   const [showRevenue, setShowRevenue] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [password, setPassword] = useState('');
@@ -19,7 +20,7 @@ export const Summary: React.FC<SummaryProps> = ({ items, onPreview, onArchiveDay
 
   const handleUnlock = (e: React.FormEvent) => {
       e.preventDefault();
-      if (password === '2026') {
+      if (password === systemPassword) {
           setShowRevenue(true);
           setShowModal(false);
           setPassword('');

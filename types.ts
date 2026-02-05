@@ -17,9 +17,9 @@ export interface Supplier {
 }
 
 export interface SaleItem {
-  id: string;
+  id: string#stringstring;
   orderId: string;
-  customerNumber: number;
+  customercustomerNumberNumber: number;
   customerName?: string; 
   customerId?: string; 
   saleType: SaleType; 
