@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Copy, Check, Download, FileSpreadsheet, Printer } from 'lucide-react';
+import { X, Copy, Check, FileSpreadsheet, Printer } from 'lucide-react';
 import { SaleItem } from '../types';
 import { utils, writeFile } from 'xlsx';
 
@@ -33,7 +33,6 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
   };
 
   const handlePrint = () => {
-    // جلب محتوى الفاتورة ونقله للحاوية الخارجية للطباعة لضمان عدم التكرار
     const printContent = document.getElementById('pos-invoice-content');
     const printArea = document.getElementById('print-area');
     
@@ -41,7 +40,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
       printArea.innerHTML = printContent.innerHTML;
       printArea.className = 'print-mode-80mm';
       window.print();
-      printArea.innerHTML = ''; // تنظيف الحاوية بعد الطباعة
+      printArea.innerHTML = ''; 
     }
   };
 
@@ -66,50 +65,48 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-950/50 p-6 flex justify-center">
-           {/* هذا الجزء سيظهر في الشاشة فقط، وعند الطباعة سيتم نسخه لـ print-area */}
-           <div id="pos-invoice-content" className="bg-white text-black p-6 w-[80mm] shadow-2xl">
-            <div className="text-center mb-6 border-b-2 border-black pb-4">
-              <h2 className="text-2xl font-black mb-1 text-black">مخبز كوكيز</h2>
-              <p className="text-[11px] font-black uppercase text-black">فاتورة مبيعات</p>
-              <div className="mt-2 text-center text-[10px] font-black">رقم: #{customerNumber}</div>
-              <div className="flex justify-between items-center mt-3 text-[10px] font-black">
-                 <span>{dayDate}</span>
-                 <span>{timeStr}</span>
+           <div id="pos-invoice-content" className="bg-white text-black p-4 w-[80mm] shadow-2xl h-fit">
+            <div className="text-center mb-4 border-b-2 border-black pb-2">
+              <h2 className="text-xl font-black mb-0 text-black">مخبز كوكيز</h2>
+              <p className="text-[10px] font-black text-black">فاتورة مبيعات</p>
+              <div className="flex justify-between items-center mt-2 text-[9px] font-black">
+                 <span>رقم: #{customerNumber}</span>
+                 <span>{dayDate} - {timeStr}</span>
               </div>
             </div>
 
-            <div className="mb-6">
-              <span className="text-[10px] font-black text-gray-600 block">الزبون:</span>
-              <p className="text-xl font-black text-black">{customerName}</p>
+            <div className="mb-4">
+              <span className="text-[9px] font-black block">الزبون:</span>
+              <p className="text-lg font-black text-black leading-tight">{customerName}</p>
             </div>
 
-            <table className="w-full text-right mb-6">
-              <thead className="border-b-2 border-black">
-                <tr className="text-[11px] font-black">
-                  <th className="py-2">المادة</th>
-                  <th className="py-2 text-center">الكمية</th>
-                  <th className="py-2 text-left">الإجمالي</th>
+            <table className="w-full text-right mb-4 border-t border-black">
+              <thead>
+                <tr className="text-[10px] font-black border-b border-black">
+                  <th className="py-1">المادة</th>
+                  <th className="py-1 text-center">الكمية</th>
+                  <th className="py-1 text-left">الإجمالي</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/10">
+              <tbody>
                 {items.map((item, idx) => (
-                  <tr key={idx} className="text-[12px] font-black">
-                    <td className="py-3 leading-tight">{item.name}</td>
-                    <td className="py-3 text-center">{item.quantity}</td>
-                    <td className="py-3 text-left">{(item.price * item.quantity).toLocaleString()}</td>
+                  <tr key={idx} className="text-[11px] font-black border-b border-black/10">
+                    <td className="py-2 leading-tight">{item.name}</td>
+                    <td className="py-2 text-center">{item.quantity}</td>
+                    <td className="py-2 text-left">{(item.price * item.quantity).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="border-t-2 border-black pt-4 mb-8">
-              <div className="flex justify-between items-center text-2xl font-black">
+            <div className="border-t-2 border-black pt-2 mb-6">
+              <div className="flex justify-between items-center text-xl font-black">
                 <span>المجموع:</span>
-                <span className="tabular-nums">{total.toLocaleString()}</span>
+                <span>{total.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-4">
+            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-2">
               شكراً لزيارتكم - مخبز كوكيز
             </div>
           </div>
