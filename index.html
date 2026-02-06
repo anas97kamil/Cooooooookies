@@ -41,22 +41,23 @@
         border-radius: 10px;
       }
 
-      /* نظام الطباعة POS 80mm - أسود صريح */
+      /* نظام الطباعة POS 80mm المحسن */
       @media print {
         @page {
           size: 80mm auto;
           margin: 0;
         }
 
-        .no-print, .no-print * {
-          display: none !important;
-        }
-
-        body {
-          background: white !important;
+        html, body {
+          width: 80mm;
           margin: 0 !important;
           padding: 0 !important;
-          width: 80mm !important;
+          background: white !important;
+          overflow: visible !important;
+        }
+
+        .no-print, .no-print * {
+          display: none !important;
         }
 
         #invoice-content, .print-content {
@@ -65,7 +66,10 @@
           background: white !important;
           color: black !important;
           display: block !important;
+          box-sizing: border-box !important;
           filter: grayscale(100%) contrast(200%) !important;
+          page-break-after: avoid !important;
+          min-height: auto !important;
         }
 
         /* إجبار كافة العناصر على اللون الأسود الحبري */
@@ -75,6 +79,7 @@
           print-color-adjust: exact !important;
           opacity: 1 !important;
           border-color: #000000 !important;
+          box-shadow: none !important;
         }
       }
 

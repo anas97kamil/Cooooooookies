@@ -48,7 +48,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-2 overflow-y-auto no-print-overlay">
-      <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-2xl shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col max-h-[95vh] print:max-h-none print:shadow-none print:border-none print:bg-white print:w-[80mm]">
+      <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-2xl shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col max-h-[95vh] print:max-h-none print:shadow-none print:border-none print:bg-white print:w-[80mm] print:overflow-visible">
         
         {/* Header - Hidden on Print */}
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 shrink-0 no-print">
@@ -59,16 +59,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
         </div>
 
-        {/* Invoice Body - Restricted to 80mm for WYSIWYG */}
+        {/* Invoice Body */}
         <div className="flex-1 overflow-y-auto bg-gray-900/50 p-4 print:p-0 print:overflow-visible print:bg-white">
-           <div id="invoice-content" className="bg-white text-black p-6 mx-auto w-[80mm] min-h-full shadow-2xl print:shadow-none print:w-[80mm] print:p-4">
+           <div id="invoice-content" className="bg-white text-black p-6 mx-auto w-[80mm] shadow-2xl print:shadow-none print:w-[80mm] print:p-4 print:min-h-0 print:box-border">
             
             {/* Logo & Header */}
             <div className="text-center mb-4 border-b-2 border-black pb-3">
               <h2 className="text-2xl font-black mb-0 text-black">مخبز كوكيز</h2>
               <p className="text-[11px] font-black uppercase text-black">فاتورة مبيعات</p>
               
-              {/* رقم الفاتورة - مصغر جداً */}
               <div className="mt-2 text-center">
                 <span className="text-[10px] font-black text-black">رقم الفاتورة: #{customerNumber}</span>
               </div>

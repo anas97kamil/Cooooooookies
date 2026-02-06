@@ -38,7 +38,7 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
 
   return (
     <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[120] flex items-center justify-center p-2 overflow-y-auto no-print-overlay">
-      <div className="bg-gray-800 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh] animate-fade-up border border-gray-700 print:bg-white print:border-none print:shadow-none print:w-[80mm] print:max-h-none">
+      <div className="bg-gray-800 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col max-h-[90vh] animate-fade-up border border-gray-700 print:bg-white print:border-none print:shadow-none print:w-[80mm] print:max-h-none print:overflow-visible">
         
         {/* Header */}
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 rounded-t-2xl no-print">
@@ -46,9 +46,9 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
           <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
         </div>
 
-        {/* Content - Fixed 80mm Preview */}
+        {/* Content */}
         <div className="p-4 overflow-y-auto flex-1 bg-gray-950/50 print:p-0 print:bg-white print:overflow-visible">
-          <div id="invoice-content" className="bg-white text-black p-6 mx-auto w-[80mm] min-h-full print:w-[80mm] print:p-4">
+          <div id="invoice-content" className="bg-white text-black p-6 mx-auto w-[80mm] print:w-[80mm] print:p-4 print:min-h-0 print:box-border">
             <div className="text-center mb-5 border-b-2 border-black pb-3">
               <h2 className="text-xl font-black mb-1 text-black">مخبز كوكيز</h2>
               <p className="text-black font-black text-[10px] uppercase">سند استلام مشتريات</p>
