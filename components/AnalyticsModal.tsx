@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { X, BarChart3, Printer, LineChart, PieChart, Target, Calendar, TrendingUp, ArrowDownRight, ArrowUpRight, Activity, AlertTriangle, ShieldCheck, TrendingDown } from 'lucide-react';
+import { X, BarChart3, Printer, Activity, Target } from 'lucide-react';
 import { ArchivedDay, SaleItem, PurchaseInvoice } from '../types';
 
 interface AnalyticsModalProps {
@@ -58,16 +58,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
     
     return { revenue, purchases, profit, expenseRatio, profitMargin };
   }, [filteredData]);
-
-  // منطق حالة الاستقرار المالي
-  const stabilityStatus = useMemo(() => {
-    const margin = totals.profitMargin;
-    if (totals.revenue === 0) return { label: 'لا توجد بيانات', color: 'text-gray-400', icon: Activity, message: 'لم يتم تسجيل عمليات خلال الفترة' };
-    if (totals.profit < 0) return { label: 'عجز مالي / مخاطر', color: 'text-red-600', icon: AlertTriangle, message: 'المصاريف تتجاوز الدخل، يتطلب مراجعة فورية' };
-    if (margin <= 5) return { label: 'توازن حذر / هامش ضيق', color: 'text-orange-600', icon: TrendingDown, message: 'الأرباح منخفضة مقارنة بالمصاريف والتشغيل' };
-    if (margin <= 20) return { label: 'نمو مستقر ومبشر', color: 'text-emerald-600', icon: TrendingUp, message: 'توازن جيد بين الدخل والمصروفات التشغيلية' };
-    return { label: 'استقرار مالي عالٍ', color: 'text-green-600', icon: ShieldCheck, message: 'أداء متميز مع هوامش ربح قوية ومستدامة' };
-  }, [totals]);
 
   const productStats = useMemo(() => {
     const stats: Record<string, { qty: number, revenue: number, profit: number, cost: number }> = {};
@@ -254,24 +244,16 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                    </table>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 pt-8 border-t-2 border-black">
+                <div className="grid grid-cols-1 gap-8 pt-8 border-t-2 border-black">
                     <div>
-                        <h4 className="text-[10px] font-black mb-3 flex items-center gap-2"><Target size={14} /> ملخص التوجه الاستراتيجي:</h4>
+                        <h4 className="text-[10px] font-black mb-3 flex items-center gap-2"><Target size={14} /> ملاحظات التقرير الإحصائي:</h4>
                         <p className="text-[11px] font-bold text-gray-700 leading-relaxed italic">
-                          {stabilityStatus.message}. 
+                          تم استخراج هذا التقرير بناءً على البيانات المسجلة في النظام للفترة المحددة. 
                           {totals.profit >= 0 
-                            ? ` تم تحقيق توازن مالي إيجابي خلال الفترة الحالية، حيث يساهم المنتج (${productStats[0]?.[0] || '---'}) بأكبر حصة ربحية.`
-                            : ` يوجد عجز مالي قدره ${Math.abs(totals.profit).toLocaleString()} ل.س، نوصي بمراجعة أسعار المواد أو تقليل المصاريف التشغيلية فوراً.`
+                            ? ` تم تحقيق صافي ربح قدره ${totals.profit.toLocaleString()} ل.س، مع مساهمة رئيسية من منتج (${productStats[0]?.[0] || '---'}).`
+                            : ` تم تسجيل عجز إجمالي قدره ${Math.abs(totals.profit).toLocaleString()} ل.س خلال هذه الفترة.`
                           }
                         </p>
-                    </div>
-                    <div className="flex flex-col items-center justify-center border-r border-gray-100">
-                         <div className="flex items-center gap-2 mb-2">
-                            <stabilityStatus.icon size={16} className={stabilityStatus.color} />
-                            <span className="text-[10px] font-black text-black uppercase">تقييم استقرار النشاط</span>
-                         </div>
-                         <div className={`text-2xl font-black ${stabilityStatus.color}`}>{stabilityStatus.label}</div>
-                         <span className="text-[8px] text-gray-400 font-bold mt-1">بناءً على تحليل هامش الربحية الفعلي</span>
                     </div>
                 </div>
 
