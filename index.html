@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
@@ -41,11 +40,11 @@
         border-radius: 10px;
       }
 
-      /* نظام الطباعة الموحد والمحسّن - إصلاح شامل */
+      /* نظام الطباعة المحسن - حل مشكلة الحجم الصغير والقص */
       @media print {
         @page {
           margin: 0 !important;
-          size: auto;
+          size: portrait !important; /* إجبار الوضع الرأسي */
         }
 
         html, body {
@@ -54,61 +53,51 @@
           padding: 0 !important;
           width: 100% !important;
           height: auto !important;
-          min-height: 100% !important;
           overflow: visible !important;
         }
 
-        /* إخفاء واجهة التطبيق بالكامل أثناء الطباعة */
-        #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md, .bg-black\/95 {
+        #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md {
           display: none !important;
-          opacity: 0 !important;
-          visibility: hidden !important;
         }
 
-        /* حاوية الطباعة الرئيسية */
         #print-area {
           display: block !important;
           visibility: visible !important;
           width: 100% !important;
+          position: static !important;
           margin: 0 !important;
           padding: 0 !important;
-          position: static !important; 
-          height: auto !important;
-          min-height: auto !important;
-          overflow: visible !important;
         }
 
-        /* تحسين مظهر النصوص والتباين للطباعة الحرارية */
+        /* تحسين التباين للطباعة */
         #print-area * {
+          color: #000 !important;
+          background: transparent !important;
+          box-shadow: none !important;
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          color: #000 !important;
-          background-color: transparent !important;
-          box-shadow: none !important;
-          text-shadow: none !important;
-          overflow: visible !important;
         }
 
-        /* وضع الفاتورة الحرارية 80mm - الحجم الكامل */
+        /* وضع الفاتورة الحرارية - ملء العرض بالكامل */
         .print-mode-80mm {
-          width: 80mm !important;
-          max-width: 80mm !important;
-          margin: 0 auto !important;
-          padding: 5mm 5mm 30mm 5mm !important; /* زيادة البادينغ السفلي للقص اليدوي */
-          display: block !important;
+          width: 100% !important; /* تمدد لملء عرض الورق المتاح */
+          max-width: 100% !important;
+          padding: 10px 15px 40px 15px !important;
           box-sizing: border-box !important;
-          height: auto !important;
-          min-height: 100% !important;
-          page-break-after: avoid !important;
+          display: block !important;
+          direction: rtl !important;
         }
 
-        /* وضع التقرير المالي A4 */
+        /* زيادة أحجام النصوص في الطباعة لتكون واضحة */
+        .print-mode-80mm h2 { font-size: 24px !important; font-weight: 900 !important; }
+        .print-mode-80mm p { font-size: 14px !important; font-weight: 800 !important; }
+        .print-mode-80mm table { font-size: 14px !important; width: 100% !important; }
+        .print-mode-80mm .total-text { font-size: 26px !important; font-weight: 900 !important; }
+
         .print-mode-a4 {
           width: 210mm !important;
-          padding: 15mm !important;
+          padding: 20mm !important;
           margin: 0 auto !important;
-          display: block !important;
-          height: auto !important;
         }
       }
     </style>
@@ -128,7 +117,6 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- حاوية حقن محتوى الطباعة -->
     <div id="print-area"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

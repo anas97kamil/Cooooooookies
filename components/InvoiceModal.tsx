@@ -36,14 +36,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
     const printArea = document.getElementById('print-area');
     
     if (printContent && printArea) {
-      // حقن المحتوى في حاوية الطباعة المخصصة في index.html
       printArea.innerHTML = printContent.innerHTML;
       printArea.className = 'print-mode-80mm';
       
-      // تأخير بسيط لضمان استقرار العناصر
       setTimeout(() => {
         window.print();
-        // تنظيف الحاوية بعد الطباعة
         setTimeout(() => {
           printArea.innerHTML = ''; 
           printArea.className = '';
@@ -67,73 +64,73 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 shrink-0">
           <div className="flex items-center gap-3">
             <div className="bg-[#FA8072]/20 p-2 rounded-xl"><Printer size={20} className="text-[#FA8072]" /></div>
-            <h3 className="font-black text-sm text-white">معاينة الفاتورة (80mm)</h3>
+            <h3 className="font-black text-sm text-white">معاينة وطباعة الفاتورة</h3>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-950/50 p-6 flex justify-center">
-           <div id="pos-invoice-content" className="bg-white text-black p-4 w-[80mm] shadow-2xl h-fit">
+           <div id="pos-invoice-content" className="bg-white text-black p-4 w-[80mm] shadow-2xl h-fit print:w-full print:shadow-none">
             <div className="text-center mb-4 border-b-2 border-black pb-2">
-              <h2 className="text-xl font-black mb-0 text-black">مخبز كوكيز</h2>
-              <p className="text-[10px] font-black text-black uppercase">فاتورة مبيعات</p>
-              <div className="flex justify-between items-center mt-2 text-[9px] font-black">
-                 <span>رقم: #{customerNumber}</span>
+              <h2 className="text-2xl font-black mb-1 text-black">مخبز كوكيز</h2>
+              <p className="text-[12px] font-black text-black uppercase tracking-widest">فاتورة مبيعات</p>
+              <div className="flex justify-between items-center mt-3 text-[11px] font-black px-1">
+                 <span>رقم الفاتورة: #{customerNumber}</span>
                  <span>{dayDate} - {timeStr}</span>
               </div>
             </div>
 
-            <div className="mb-4">
-              <span className="text-[9px] font-black block text-gray-500">الزبون:</span>
-              <p className="text-lg font-black text-black leading-tight">{customerName}</p>
+            <div className="mb-4 border-b border-black/10 pb-2">
+              <span className="text-[10px] font-black block text-gray-500">اسم الزبون:</span>
+              <p className="text-xl font-black text-black leading-tight">{customerName}</p>
             </div>
 
-            <table className="w-full text-right mb-4 border-t border-black">
+            <table className="w-full text-right mb-6 border-t border-black">
               <thead>
-                <tr className="text-[10px] font-black border-b border-black">
-                  <th className="py-1">المادة</th>
-                  <th className="py-1 text-center">الكمية</th>
-                  <th className="py-1 text-left">الإجمالي</th>
+                <tr className="text-[12px] font-black border-b border-black">
+                  <th className="py-2">المادة</th>
+                  <th className="py-2 text-center">الكمية</th>
+                  <th className="py-2 text-left">الإجمالي</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, idx) => (
-                  <tr key={idx} className="text-[11px] font-black border-b border-black/10">
-                    <td className="py-2 leading-tight">{item.name}</td>
-                    <td className="py-2 text-center">{item.quantity}</td>
-                    <td className="py-2 text-left">{(item.price * item.quantity).toLocaleString()}</td>
+                  <tr key={idx} className="text-[13px] font-bold border-b border-black/5">
+                    <td className="py-3 leading-tight">{item.name}</td>
+                    <td className="py-3 text-center font-black">{item.quantity}</td>
+                    <td className="py-3 text-left font-black">{ (item.price * item.quantity).toLocaleString() }</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="border-t-2 border-black pt-2 mb-6">
-              <div className="flex justify-between items-center text-xl font-black">
-                <span>المجموع:</span>
-                <span>{total.toLocaleString()}</span>
+            <div className="border-t-2 border-black pt-3 mb-8">
+              <div className="flex justify-between items-center text-2xl font-black total-text">
+                <span>المجموع الكلي:</span>
+                <span>{total.toLocaleString()} ل.س</span>
               </div>
             </div>
 
-            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-2 mb-8">
-              شكراً لزيارتكم - مخبز كوكيز
+            <div className="text-center text-[11px] font-black border-t border-dashed border-black pt-4 mb-10">
+              شكراً لزيارتكم - مخبز كوكيز <br/> ميزانك دليلك
             </div>
-            {/* سبيس إضافي للطباعة الحرارية */}
-            <div className="h-10 print:block hidden"></div>
+            
+            <div className="h-12 print:block hidden"></div>
           </div>
         </div>
 
         <div className="p-6 bg-gray-900 border-t border-gray-700 shrink-0">
             <div className="grid grid-cols-2 gap-3 mb-3">
-                <button onClick={handlePrint} className="bg-[#FA8072] hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-xl">
-                    <Printer size={18} /> طباعة الفاتورة
+                <button onClick={handlePrint} className="bg-[#FA8072] hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all">
+                    <Printer size={20} /> طباعة الآن
                 </button>
-                <button onClick={handleDownloadExcel} className="bg-green-700 hover:bg-green-600 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-xl">
-                    <FileSpreadsheet size={18} /> تصدير Excel
+                <button onClick={handleDownloadExcel} className="bg-green-700 hover:bg-green-600 text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all">
+                    <FileSpreadsheet size={20} /> Excel
                 </button>
             </div>
-            <button onClick={handleCopy} className={`w-full py-3.5 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 transition-all border border-gray-700 ${copied ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
-                {copied ? <Check size={16} /> : <Copy size={16} />} 
-                {copied ? 'تم النسخ' : 'نسخ كـنص'}
+            <button onClick={handleCopy} className={`w-full py-4 rounded-2xl font-black text-[11px] flex items-center justify-center gap-2 transition-all border border-gray-700 ${copied ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                {copied ? <Check size={18} /> : <Copy size={18} />} 
+                {copied ? 'تم النسخ بنجاح' : 'نسخ الفاتورة كـنص'}
             </button>
         </div>
       </div>
