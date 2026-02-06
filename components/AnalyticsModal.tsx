@@ -1,6 +1,6 @@
 
 import React, { useMemo, useState } from 'react';
-import { X, BarChart3, Printer, LineChart, PieChart, Target, Calendar, TrendingUp, ArrowDownRight, ArrowUpRight, Activity } from 'lucide-react';
+import { X, BarChart3, Printer, LineChart, PieChart, Target, Calendar, TrendingUp, ArrowDownRight, ArrowUpRight, Activity, AlertTriangle, ShieldCheck, TrendingDown } from 'lucide-react';
 import { ArchivedDay, SaleItem, PurchaseInvoice } from '../types';
 
 interface AnalyticsModalProps {
@@ -54,9 +54,20 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
     const purchases = filteredData.reduce((s, d) => s + d.purchases, 0);
     const profit = filteredData.reduce((s, d) => s + d.profit, 0);
     const expenseRatio = revenue > 0 ? (purchases / revenue * 100) : 0;
+    const profitMargin = revenue > 0 ? (profit / revenue * 100) : 0;
     
-    return { revenue, purchases, profit, expenseRatio };
+    return { revenue, purchases, profit, expenseRatio, profitMargin };
   }, [filteredData]);
+
+  // منطق حالة الاستقرار المالي
+  const stabilityStatus = useMemo(() => {
+    const margin = totals.profitMargin;
+    if (totals.revenue === 0) return { label: 'لا توجد بيانات', color: 'text-gray-400', icon: Activity, message: 'لم يتم تسجيل عمليات خلال الفترة' };
+    if (totals.profit < 0) return { label: 'عجز مالي / مخاطر', color: 'text-red-600', icon: AlertTriangle, message: 'المصاريف تتجاوز الدخل، يتطلب مراجعة فورية' };
+    if (margin <= 5) return { label: 'توازن حذر / هامش ضيق', color: 'text-orange-600', icon: TrendingDown, message: 'الأرباح منخفضة مقارنة بالمصاريف والتشغيل' };
+    if (margin <= 20) return { label: 'نمو مستقر ومبشر', color: 'text-emerald-600', icon: TrendingUp, message: 'توازن جيد بين الدخل والمصروفات التشغيلية' };
+    return { label: 'استقرار مالي عالٍ', color: 'text-green-600', icon: ShieldCheck, message: 'أداء متميز مع هوامش ربح قوية ومستدامة' };
+  }, [totals]);
 
   const productStats = useMemo(() => {
     const stats: Record<string, { qty: number, revenue: number, profit: number, cost: number }> = {};
@@ -94,26 +105,21 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
     return (
       <div className="py-4">
         <h4 className="text-[10px] font-black mb-4 flex items-center gap-2 text-gray-800 uppercase tracking-wider">
-           <Activity size={12} className="text-black" /> الاتجاه المالي خلال الفترة المحددة:
+           <Activity size={12} className="text-black" /> الاتجاه المالي المباشر (الزمن vs القيمة):
         </h4>
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
-          {/* المحاور */}
           <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="black" strokeWidth="1" />
-          
-          {/* أسماء الأيام/التاريخ أسفل المحور */}
           {filteredData.map((d, i) => {
-             if (filteredData.length > 10 && i % 2 !== 0) return null; // تقليل الزحمة
+             if (filteredData.length > 10 && i % 4 !== 0) return null;
              return (
-               <text key={i} x={getX(i)} y={height - padding + 15} fontSize="9" fontWeight="bold" textAnchor="middle" fill="#666">
+               <text key={i} x={getX(i)} y={height - padding + 15} fontSize="8" fontWeight="bold" textAnchor="middle" fill="#999">
                  {d.date.split('/')[0]}
                </text>
              );
           })}
-
           <path d={revPath} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
           <path d={purPath} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,2" />
           <path d={profPath} fill="none" stroke="#000000" strokeWidth="3" strokeLinecap="round" />
-          
           {filteredData.map((d, i) => (
             <circle key={i} cx={getX(i)} cy={getY(d.profit)} r="3" fill="black" />
           ))}
@@ -148,10 +154,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
         <div className="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-900 shrink-0">
           <div className="flex items-center gap-3">
              <div className="bg-[#FA8072]/20 p-2.5 rounded-2xl"><BarChart3 className="text-[#FA8072]" size={24} /></div>
-             <h3 className="font-black text-xl text-white">التحليلات المالية المتقدمة</h3>
+             <h3 className="font-black text-xl text-white">التحليلات والذكاء المالي</h3>
           </div>
           <div className="flex items-center gap-2">
-              <button onClick={handlePrint} className="bg-white text-black hover:bg-gray-200 px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg border border-gray-200"><Printer size={18} /> طباعة التقرير النهائي (A4)</button>
+              <button onClick={handlePrint} className="bg-white text-black hover:bg-gray-200 px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg border border-gray-200"><Printer size={18} /> طباعة التقرير (A4)</button>
               <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-xl transition-all text-gray-400"><X size={24} /></button>
           </div>
         </div>
@@ -180,48 +186,48 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
           <div className="flex justify-center p-4">
              <div id="report-a4-content" className="bg-white text-black w-[210mm] p-[18mm] shadow-2xl min-h-[297mm] flex flex-col gap-10">
                 
-                {/* ترويسة بسيطة واحترافية */}
                 <div className="flex justify-between items-end border-b-2 border-black pb-4">
                     <div>
                         <h1 className="text-4xl font-black text-black mb-1">مخبز كوكيز</h1>
-                        <p className="text-[10px] font-bold text-gray-500">خلاصة الأداء المالي والتحليل التشغيلي</p>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Financial Performance Analysis</p>
                     </div>
                     <div className="text-left font-black">
-                        <span className="text-xs text-gray-400 block uppercase mb-1">تاريخ التقرير</span>
-                        <span className="text-lg">{now.toLocaleDateString('ar-SY')}</span>
+                        <span className="text-[9px] text-gray-400 block uppercase mb-1">Report Generated on</span>
+                        <span className="text-base tabular-nums">{now.toLocaleDateString('ar-SY')}</span>
                     </div>
                 </div>
 
-                {/* قسم الأرقام المفتوحة - KPIs */}
                 <div className="flex justify-between items-center px-2">
-                    <div className="flex flex-col border-r-2 border-black/10 pr-8 last:border-0">
-                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">إجمالي المبيعات</span>
-                        <span className="text-3xl font-black text-black tabular-nums">{totals.revenue.toLocaleString()}</span>
-                        <span className="text-[8px] text-gray-500 mt-1">ليرة سورية</span>
+                    <div className="flex flex-col border-r-2 border-black/10 pr-6 last:border-0">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">حجم المبيعات</span>
+                        <span className="text-2xl font-black text-black tabular-nums">{totals.revenue.toLocaleString()}</span>
+                        <span className="text-[8px] text-gray-500 mt-1 font-bold">ليرة سورية</span>
                     </div>
-                    <div className="flex flex-col border-r-2 border-black/10 pr-8 last:border-0">
-                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">إجمالي المشتريات</span>
-                        <span className="text-3xl font-black text-red-600 tabular-nums">{totals.purchases.toLocaleString()}</span>
-                        <span className="text-[8px] text-gray-500 mt-1">ليرة سورية</span>
+                    <div className="flex flex-col border-r-2 border-black/10 pr-6 last:border-0">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">إجمالي التكلفة</span>
+                        <span className="text-2xl font-black text-red-600 tabular-nums">{totals.purchases.toLocaleString()}</span>
+                        <span className="text-[8px] text-gray-500 mt-1 font-bold">ليرة سورية</span>
                     </div>
-                    <div className="flex flex-col border-r-2 border-black/10 pr-8 last:border-0">
-                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">صافي الأرباح</span>
-                        <span className="text-3xl font-black text-green-600 tabular-nums">{totals.profit.toLocaleString()}</span>
-                        <span className="text-[8px] text-gray-500 mt-1">ليرة سورية</span>
+                    <div className="flex flex-col border-r-2 border-black/10 pr-6 last:border-0">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">صافي الربح</span>
+                        <span className={`text-2xl font-black tabular-nums ${totals.profit >= 0 ? 'text-green-600' : 'text-red-700'}`}>
+                          {totals.profit.toLocaleString()}
+                        </span>
+                        <span className="text-[8px] text-gray-500 mt-1 font-bold">ليرة سورية</span>
                     </div>
-                    <div className="flex flex-col pr-8">
-                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">كفاءة الإنفاق</span>
-                        <span className="text-3xl font-black text-black tabular-nums">{totals.expenseRatio.toFixed(1)}%</span>
-                        <span className="text-[8px] text-gray-500 mt-1">من الدخل</span>
+                    <div className="flex flex-col pr-6">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">نسبة الربحية</span>
+                        <span className={`text-2xl font-black tabular-nums ${totals.profitMargin >= 0 ? 'text-black' : 'text-red-600'}`}>
+                          {totals.profitMargin.toFixed(1)}%
+                        </span>
+                        <span className="text-[8px] text-gray-500 mt-1 font-bold">من إجمالي الدخل</span>
                     </div>
                 </div>
 
-                {/* المنحنى البياني الزمني */}
                 <div className="border-t border-b border-gray-100 py-6">
                     {renderTimelineChart()}
                 </div>
 
-                {/* التحليل التشغيلي للأصناف */}
                 <div className="flex-1">
                    <h3 className="text-[12px] font-black mb-4 flex items-center gap-2 border-r-4 border-black pr-3">تحليل أداء المنتجات المبيعة:</h3>
                    <table className="w-full text-right text-[11px] border-collapse">
@@ -229,8 +235,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                           <tr className="border-b-2 border-black">
                               <th className="py-3 font-black text-gray-400">اسم المنتج</th>
                               <th className="py-3 text-center font-black text-gray-400">الكمية</th>
-                              <th className="py-3 text-center font-black text-gray-400">المبيعات</th>
-                              <th className="py-3 text-left font-black text-black">الربح المحقق</th>
+                              <th className="py-3 text-center font-black text-gray-400">إيرادات البيع</th>
+                              <th className="py-3 text-left font-black text-black">صافي الأرباح</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -239,34 +245,36 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                                   <td className="py-4 font-black text-black">{name}</td>
                                   <td className="py-4 text-center tabular-nums font-bold text-gray-600">{data.qty.toLocaleString()}</td>
                                   <td className="py-4 text-center tabular-nums font-bold text-gray-600">{data.revenue.toLocaleString()}</td>
-                                  <td className="py-4 text-left font-black tabular-nums text-black">{data.profit.toLocaleString()}</td>
+                                  <td className={`py-4 text-left font-black tabular-nums ${data.profit >= 0 ? 'text-black' : 'text-red-600'}`}>
+                                    {data.profit.toLocaleString()}
+                                  </td>
                               </tr>
                           ))}
                       </tbody>
                    </table>
                 </div>
 
-                {/* ملخص ذكي بسيط */}
                 <div className="grid grid-cols-2 gap-8 pt-8 border-t-2 border-black">
                     <div>
-                        <h4 className="text-[10px] font-black mb-3 flex items-center gap-2"><Target size={14} /> ملخص الحالة التشغيلية:</h4>
-                        <p className="text-[11px] font-bold text-gray-700 leading-relaxed">
-                            تشير البيانات إلى استقرار في التدفق النقدي بمتوسط مبيعات قدرها {totals.revenue.toLocaleString()} ل.س. 
-                            الصنف الأكثر مساهمة في الأرباح هو ({productStats[0]?.[0] || '---'}). 
-                            نوصي بمراجعة دورية للمشتريات لضمان الحفاظ على هامش ربح { (100 - totals.expenseRatio).toFixed(1) }%.
+                        <h4 className="text-[10px] font-black mb-3 flex items-center gap-2"><Target size={14} /> ملخص التوجه الاستراتيجي:</h4>
+                        <p className="text-[11px] font-bold text-gray-700 leading-relaxed italic">
+                          {stabilityStatus.message}. 
+                          {totals.profit >= 0 
+                            ? ` تم تحقيق توازن مالي إيجابي خلال الفترة الحالية، حيث يساهم المنتج (${productStats[0]?.[0] || '---'}) بأكبر حصة ربحية.`
+                            : ` يوجد عجز مالي قدره ${Math.abs(totals.profit).toLocaleString()} ل.س، نوصي بمراجعة أسعار المواد أو تقليل المصاريف التشغيلية فوراً.`
+                          }
                         </p>
                     </div>
                     <div className="flex flex-col items-center justify-center border-r border-gray-100">
                          <div className="flex items-center gap-2 mb-2">
-                            <Activity size={16} className="text-green-500" />
-                            <span className="text-[10px] font-black text-black uppercase">درجة استقرار النشاط</span>
+                            <stabilityStatus.icon size={16} className={stabilityStatus.color} />
+                            <span className="text-[10px] font-black text-black uppercase">تقييم استقرار النشاط</span>
                          </div>
-                         <div className="text-2xl font-black">آمن ومستقر</div>
-                         <span className="text-[8px] text-gray-400 font-bold mt-1">بناءً على توازن الدخل والمصاريف</span>
+                         <div className={`text-2xl font-black ${stabilityStatus.color}`}>{stabilityStatus.label}</div>
+                         <span className="text-[8px] text-gray-400 font-bold mt-1">بناءً على تحليل هامش الربحية الفعلي</span>
                     </div>
                 </div>
 
-                {/* تذييل التقرير */}
                 <div className="mt-auto pt-6 flex justify-between items-end border-t border-gray-100">
                     <div className="text-[8px] font-bold text-gray-400">
                         <p>نظام محاسبة مخبز كوكيز | CB-2026-v2</p>
@@ -274,7 +282,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                     </div>
                     <div className="text-center w-48 pt-2">
                         <div className="h-[1px] bg-black w-full mb-2"></div>
-                        <span className="text-[10px] font-black">الاعتماد المالي</span>
+                        <span className="text-[10px] font-black">الاعتماد المالي المعتمد</span>
                     </div>
                 </div>
              </div>

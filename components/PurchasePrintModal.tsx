@@ -10,8 +10,6 @@ interface PurchasePrintModalProps {
 }
 
 export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice, onClose }) => {
-  const [confirmPrint, setConfirmPrint] = useState(false);
-  
   const handleDownloadExcel = () => {
     const rows = invoice.items.map(item => ({
         "المادة": item.name,
@@ -33,9 +31,15 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
     if (printContent && printArea) {
       printArea.innerHTML = printContent.innerHTML;
       printArea.className = 'print-mode-80mm';
-      window.print();
-      printArea.innerHTML = '';
-      setConfirmPrint(false);
+      
+      // تأخير لضمان استقرار العناصر في DOM
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => {
+          printArea.innerHTML = '';
+          printArea.className = '';
+        }, 500);
+      }, 300);
     }
   };
 
@@ -48,7 +52,7 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
           <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 bg-gray-950/50 flex justify-center">
+        <div className="p-6 overflow-y-auto flex-1 bg-gray-950/50 p-6 flex justify-center">
           <div id="purchase-invoice-content" className="bg-white text-black p-6 w-[80mm] shadow-2xl h-fit">
             <div className="text-center mb-5 border-b-2 border-black pb-3">
               <h2 className="text-xl font-black mb-1 text-black">مخبز كوكيز</h2>

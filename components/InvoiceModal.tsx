@@ -37,10 +37,19 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
     const printArea = document.getElementById('print-area');
     
     if (printContent && printArea) {
+      // نسخ المحتوى للحاوية المخصصة للطباعة
       printArea.innerHTML = printContent.innerHTML;
       printArea.className = 'print-mode-80mm';
-      window.print();
-      printArea.innerHTML = ''; 
+      
+      // مهلة زمنية تضمن استقرار العناصر في DOM قبل الطباعة
+      setTimeout(() => {
+        window.print();
+        // مهلة لتنظيف الحاوية بعد الطباعة
+        setTimeout(() => {
+          printArea.innerHTML = ''; 
+          printArea.className = '';
+        }, 500);
+      }, 300);
     }
   };
 
