@@ -17,9 +17,9 @@ export interface Supplier {
 }
 
 export interface SaleItem {
-  id: string#stringstring;
+  id: string;
   orderId: string;
-  customercustomerNumberNumber: number;
+  customerNumber: number;
   customerName?: string; 
   customerId?: string; 
   saleType: SaleType; 
@@ -29,7 +29,7 @@ export interface SaleItem {
   quantity: number;
   unitType: UnitType;
   time: string;
-  date: string; // الحقل الجديد لضمان ثبات التاريخ
+  date: string; 
 }
 
 export interface PurchaseItem {

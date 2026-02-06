@@ -1,16 +1,17 @@
 
 import React, { useRef, useState } from 'react';
-import { X, Download, Upload, Database, AlertTriangle, FileJson, Trash2, Lock, KeyRound, CheckCircle2 } from 'lucide-react';
+import { X, Download, Upload, Database, AlertTriangle, FileJson, Trash2, Lock, KeyRound, CheckCircle2, Archive } from 'lucide-react';
 
 interface DataManagementModalProps {
   onExport: () => void;
   onImport: (file: File) => void;
+  onArchiveDay: () => void;
   onClose: () => void;
   systemPassword: string;
   setSystemPassword: (pass: string) => void;
 }
 
-export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExport, onImport, onClose, systemPassword, setSystemPassword }) => {
+export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExport, onImport, onArchiveDay, onClose, systemPassword, setSystemPassword }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [showPassField, setShowPassField] = useState(false);
@@ -70,6 +71,26 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({ onExpo
         </div>
 
         <div className="p-6 overflow-y-auto space-y-6 custom-scrollbar">
+            
+            {/* قسم ترحيل اليوم - مضاف حديثاً */}
+            <div className="bg-orange-500/10 p-5 rounded-2xl border border-orange-500/20 space-y-4">
+                <h4 className="text-white font-bold flex items-center gap-2 text-sm">
+                    <Archive size={16} className="text-orange-500" /> إغلاق وترحيل اليوم
+                </h4>
+                <p className="text-gray-400 text-[10px] font-bold leading-relaxed">
+                    سيتم نقل جميع مبيعات ومشتريات اليوم النشطة إلى السجلات التاريخية وتصفير القوائم الحالية لبدء يوم جديد.
+                </p>
+                <button 
+                    onClick={() => {
+                        onArchiveDay();
+                        onClose();
+                    }} 
+                    className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3.5 rounded-xl font-black text-xs transition-all shadow-xl active:scale-95"
+                >
+                    ترحيل مبيعات اليوم وتصفير النظام
+                </button>
+            </div>
+
             {/* قسم تغيير كلمة المرور */}
             <div className="bg-gray-900/40 p-5 rounded-2xl border border-gray-700 space-y-4">
                 <h4 className="text-white font-bold flex items-center gap-2 text-sm">

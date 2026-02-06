@@ -95,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
             </div>
 
-            {/* Left Side: Desktop Android-style Status Bar */}
+            {/* Left Side: Desktop Status Bar */}
             <div className="hidden md:flex items-center">
                  <div className="flex items-center bg-gray-950 px-3 py-1 rounded-full border border-gray-800 shadow-2xl gap-3">
                     <div className="flex items-center gap-3 px-3 border-l border-gray-800/80">

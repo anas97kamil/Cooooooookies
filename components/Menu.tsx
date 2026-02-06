@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Trash2, Search, User, Download, Store, Edit3, Receipt, Clock, Package, ChevronDown, ChevronUp, LayoutList } from 'lucide-react';
+import { Trash2, Search, User, Download, Store, Edit3, Receipt, Clock, Package, ChevronDown, ChevronUp, LayoutList, Hash } from 'lucide-react';
 import { SaleItem } from '../types';
 
 interface SalesTableProps {
@@ -36,7 +36,8 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
       }
       return groupedOrders.filter(g => 
           (g[0].customerName?.toLowerCase() || '').includes(term) ||
-          g[0].orderId.includes(term)
+          g[0].orderId.includes(term) ||
+          g[0].customerNumber.toString() === term
       );
   }, [groupedOrders, searchTerm, isExpanded]);
 
@@ -63,7 +64,7 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                   type="text" 
                   value={searchTerm} 
                   onChange={e => setSearchTerm(e.target.value)} 
-                  placeholder="بحث في فواتير اليوم..." 
+                  placeholder="بحث باسم الزبون أو رقم الفاتورة..." 
                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl pr-10 pl-4 py-2 text-xs outline-none focus:border-[#FA8072] transition-all shadow-lg" 
                 />
             </div>
@@ -100,11 +101,14 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                 </div>
                                 <div className="flex flex-col">
                                     <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5 bg-black/40 px-2 py-0.5 rounded border border-gray-700" title="رقم الفاتورة">
+                                            <Hash size={10} className="text-[#FA8072]" />
+                                            <span className="text-sm font-black text-white tabular-nums">{first.customerNumber}</span>
+                                        </div>
                                         <span className="font-black text-white text-sm">{first.customerName || 'زبون عام'}</span>
                                         {isLatest && <span className="bg-[#FA8072] text-white text-[8px] px-1.5 py-0.5 rounded font-black uppercase">الأحدث</span>}
                                     </div>
-                                    <div className="flex items-center gap-2 mt-0.5">
-                                        <span className="text-[9px] bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded font-bold tabular-nums">#{first.orderId.slice(-4)}</span>
+                                    <div className="flex items-center gap-2 mt-1">
                                         <div className="flex items-center gap-1 text-[9px] text-gray-500 font-bold">
                                             <Clock size={10} /> {first.time}
                                         </div>

@@ -6,7 +6,7 @@ import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
 import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
-import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, Database, AlertCircle, Download, AlertTriangle } from 'lucide-react';
+import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, AlertCircle, Download, AlertTriangle } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
 const ProductManager = React.lazy(() => import('./components/ProductManager').then(m => ({ default: m.ProductManager })));
@@ -49,7 +49,7 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
   return (
     <div className="fixed inset-0 bg-gray-900 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#FA8072]/10 rounded-full blur-[100px] animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] animate-pulse"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
       <div className="relative z-10 max-w-sm w-full">
         <div className="mb-8 relative">
            <div className="w-24 h-24 bg-gradient-to-tr from-[#FA8072] to-orange-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-orange-500/20 animate-bounce">
@@ -103,10 +103,8 @@ const App: React.FC = () => {
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
-  // نظام كلمة المرور الديناميكي
   const [systemPassword, setSystemPassword] = useState(() => localStorage.getItem('systemPassword') || '2026');
 
-  // Backup reminder state
   const [showBackupReminder, setShowBackupReminder] = useState(false);
   const lastBackupTimestamp = useRef<number>(Date.now());
 
@@ -120,45 +118,45 @@ const App: React.FC = () => {
   const [invoiceItems, setInvoiceItems] = useState<SaleItem[] | null>(null);
   const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false, analytics: false });
 
-  // Fix: Defined handleLogout to manage session termination
   const handleLogout = () => {
     sessionStorage.removeItem('isAuth');
     setIsAuthenticated(false);
   };
 
-  // Fix: Defined handleOpenProtected to trigger password lock for specific features
   const handleOpenProtected = (target: string) => {
     setShowLock({ target });
   };
 
-  // Fix: Defined completeOrder to handle POS checkout logic
-  const completeOrder = (items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail') => {
+  const completeOrder = useCallback((items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail') => {
     const orderId = Date.now().toString();
     const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    const date = new Date().toLocaleDateString('ar-SY');
+    const todayDate = new Date().toLocaleDateString('ar-SY');
     
+    // حساب رقم الزبون بناءً على فواتير اليوم حصراً
+    const todayOrders = sales.filter(s => s.date === todayDate);
+    const uniqueOrderIds = new Set(todayOrders.map(s => s.orderId));
+    const nextCustomerNumber = uniqueOrderIds.size + 1;
+
     const newItems: SaleItem[] = items.map(item => ({
       ...item,
       id: Math.random().toString(36).substr(2, 9),
       orderId,
-      customerNumber: sales.length + 1,
+      customerNumber: nextCustomerNumber,
       customerName,
       customerId,
       saleType,
       time,
-      date
+      date: todayDate
     }));
 
     setSales(prev => [...prev, ...newItems]);
     setInvoiceItems(newItems);
-  };
+  }, [sales]);
 
-  // Fix: Defined handleUpdateProduct to manage inventory item modifications
   const handleUpdateProduct = (id: string, updatedProduct: Partial<Product>) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedProduct } : p));
   };
 
-  // Fix: Defined handleUpdateArchivedOrder to allow corrections in history
   const handleUpdateArchivedOrder = (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => {
     setHistory(prev => prev.map(day => {
       if (day.id === dayId) {
@@ -175,7 +173,6 @@ const App: React.FC = () => {
     }));
   };
 
-  // Fix: Defined handleDeleteArchivedOrder to remove records from history
   const handleDeleteArchivedOrder = (dayId: string, orderId: string) => {
     setHistory(prev => {
       const updated = prev.map(day => {
@@ -244,68 +241,85 @@ const App: React.FC = () => {
     }
   };
 
-  const handleArchiveDay = () => {
+  const handleArchiveDay = useCallback(() => {
       if (sales.length === 0 && purchaseInvoices.length === 0) {
-          alert('لا توجد مبيعات أو مشتريات نشطة لترحيلها.');
+          alert('لا توجد عمليات مبيعات أو مشتريات نشطة حالياً لترحيلها.');
           return;
       }
-      if (!window.confirm('هل أنت متأكد من أرشفة البيانات الحالية؟ سيتم توزيع كل فاتورة حسب تاريخ بيعها الفعلي في السجلات.')) return;
+      
+      const confirmed = window.confirm('هل أنت متأكد من ترحيل المبيعات للأرشيف وتصفير اليوم؟ \n\nسيتم توزيع كل فاتورة حسب تاريخها الأصلي في السجلات التاريخية.');
+      if (!confirmed) return;
 
-      setHistory(prevHistory => {
-          let newHistory = [...prevHistory];
-          const salesByDate = sales.reduce((acc, item) => {
-              const d = item.date;
-              if (!acc[d]) acc[d] = [];
-              acc[d].push(item);
-              return acc;
-          }, {} as Record<string, SaleItem[]>);
+      try {
+          const currentSales = [...sales];
+          const currentPurchases = [...purchaseInvoices];
 
-          const purchasesByDate = purchaseInvoices.reduce((acc, inv) => {
-              const d = inv.date;
-              if (!acc[d]) acc[d] = [];
-              acc[d].push(inv);
-              return acc;
-          }, {} as Record<string, PurchaseInvoice[]>);
-
-          const allAffectedDates = Array.from(new Set([...Object.keys(salesByDate), ...Object.keys(purchasesByDate)]));
-
-          allAffectedDates.forEach(dateStr => {
-              const dateSales = salesByDate[dateStr] || [];
-              const datePurchases = purchasesByDate[dateStr] || [];
-              const existingDayIdx = newHistory.findIndex(d => d.date === dateStr);
-
-              if (existingDayIdx > -1) {
-                  const existing = newHistory[existingDayIdx];
-                  newHistory[existingDayIdx] = {
-                      ...existing,
-                      items: [...existing.items, ...dateSales],
-                      purchaseInvoices: [...(existing.purchaseInvoices || []), ...datePurchases],
-                      totalRevenue: existing.totalRevenue + dateSales.reduce((s, i) => s + (i.price * i.quantity), 0),
-                      totalExpenses: existing.totalExpenses + datePurchases.reduce((s, i) => s + i.totalAmount, 0),
-                      totalItems: existing.totalItems + dateSales.length
-                  };
-              } else {
-                  const sampleTimestamp = dateSales[0]?.orderId ? parseInt(dateSales[0].orderId) : Date.now();
-                  newHistory.push({
-                      id: `archive-${dateStr.replace(/\//g, '-')}-${Date.now()}`,
-                      date: dateStr,
-                      timestamp: sampleTimestamp,
-                      items: dateSales,
-                      purchaseInvoices: datePurchases,
-                      totalRevenue: dateSales.reduce((s, i) => s + (i.price * i.quantity), 0),
-                      totalExpenses: dateSales.reduce((s, i) => s + i.totalAmount, 0), // Note: Fixed to reflect purchases
-                      totalItems: dateSales.length
-                  });
-              }
+          const salesMap = new Map<string, SaleItem[]>();
+          currentSales.forEach(s => {
+              const d = s.date;
+              if (!salesMap.has(d)) salesMap.set(d, []);
+              salesMap.get(d)!.push(s);
           });
-          return newHistory.sort((a, b) => b.timestamp - a.timestamp);
-      });
-      setSales([]);
-      setPurchaseInvoices([]);
-      alert('تم ترحيل البيانات بنجاح.');
-  };
 
-  // وظيفة تصدير مضغوطة باحترافية (GZIP)
+          const purchaseMap = new Map<string, PurchaseInvoice[]>();
+          currentPurchases.forEach(p => {
+              const d = p.date;
+              if (!purchaseMap.has(d)) purchaseMap.set(d, []);
+              purchaseMap.get(d)!.push(p);
+          });
+
+          const allUniqueDates = Array.from(new Set([...salesMap.keys(), ...purchaseMap.keys()]));
+
+          setHistory(prev => {
+              const newHistory = [...prev];
+              
+              allUniqueDates.forEach(dateStr => {
+                  const daySales = salesMap.get(dateStr) || [];
+                  const dayPurchases = purchaseMap.get(dateStr) || [];
+                  
+                  const rev = daySales.reduce((s, i) => s + (i.price * i.quantity), 0);
+                  const exp = dayPurchases.reduce((s, i) => s + i.totalAmount, 0);
+                  
+                  const existingIdx = newHistory.findIndex(h => h.date === dateStr);
+                  
+                  if (existingIdx !== -1) {
+                      newHistory[existingIdx] = {
+                          ...newHistory[existingIdx],
+                          items: [...newHistory[existingIdx].items, ...daySales],
+                          purchaseInvoices: [...(newHistory[existingIdx].purchaseInvoices || []), ...dayPurchases],
+                          totalRevenue: newHistory[existingIdx].totalRevenue + rev,
+                          totalExpenses: newHistory[existingIdx].totalExpenses + exp,
+                          totalItems: newHistory[existingIdx].totalItems + daySales.length
+                      };
+                  } else {
+                      const refItem = daySales[0];
+                      const ts = refItem ? parseInt(refItem.orderId) : Date.now();
+                      
+                      newHistory.push({
+                          id: `arch-${dateStr.replace(/[^0-9]/g, '')}-${Date.now()}`,
+                          date: dateStr,
+                          timestamp: ts,
+                          items: daySales,
+                          purchaseInvoices: dayPurchases,
+                          totalRevenue: rev,
+                          totalExpenses: exp,
+                          totalItems: daySales.length
+                      });
+                  }
+              });
+
+              return newHistory.sort((a, b) => b.timestamp - a.timestamp);
+          });
+
+          setSales([]);
+          setPurchaseInvoices([]);
+          alert('تم ترحيل البيانات وتصفير اليوم بنجاح!');
+      } catch (error) {
+          console.error('Archive Error:', error);
+          alert('حدث خطأ أثناء الترحيل.');
+      }
+  }, [sales, purchaseInvoices]);
+
   const handleExportData = async () => {
     const backup = { 
       dailySales: sales, 
@@ -317,27 +331,21 @@ const App: React.FC = () => {
       systemPassword,
       exportDate: new Date().toISOString() 
     };
-    
     const jsonString = JSON.stringify(backup);
-    
     try {
-      // استخدام CompressionStream للضغط لتقليل الحجم بنسبة 90%
       const stream = new Blob([jsonString]).stream();
       const compressedStream = stream.pipeThrough(new (window as any).CompressionStream('gzip'));
       const response = new Response(compressedStream);
       const compressedBlob = await response.blob();
-      
       const url = URL.createObjectURL(compressedBlob);
       const link = document.createElement('a');
       link.href = url;
       link.download = `cookies-bakery-pro-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.bak`;
       link.click();
       URL.revokeObjectURL(url);
-      
       lastBackupTimestamp.current = Date.now();
       setShowBackupReminder(false);
     } catch (err) {
-      // Fallback في حال عدم دعم المتصفح للضغط
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -348,22 +356,17 @@ const App: React.FC = () => {
     }
   };
 
-  // وظيفة استيراد مع فك الضغط
   const handleImportData = async (file: File) => {
     try {
       let jsonString = '';
-      
       if (file.name.endsWith('.bak')) {
-        // فك ضغط الملف
         const stream = file.stream();
         const decompressedStream = stream.pipeThrough(new (window as any).DecompressionStream('gzip'));
         const response = new Response(decompressedStream);
         jsonString = await response.text();
       } else {
-        // قراءة عادية للملفات القديمة
         jsonString = await file.text();
       }
-
       const data = JSON.parse(jsonString);
       if (data.dailySales) setSales(data.dailySales);
       if (data.dailyPurchaseInvoices) setPurchaseInvoices(data.dailyPurchaseInvoices);
@@ -374,7 +377,7 @@ const App: React.FC = () => {
       if (data.systemPassword) setSystemPassword(data.systemPassword);
       alert('تمت استعادة البيانات بنجاح.');
     } catch (err) { 
-      alert('خطأ في استعادة البيانات. تأكد من صحة الملف المختار.'); 
+      alert('خطأ في استعادة البيانات.'); 
     }
   };
 
@@ -396,7 +399,7 @@ const App: React.FC = () => {
         isSyncing={isSyncing}
       />
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl no-print">
-        <Summary items={sales} onPreview={() => setInvoiceItems(sales)} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} />
+        <Summary items={sales} onPreview={() => setInvoiceItems(sales)} systemPassword={systemPassword} />
         <POSInterface products={products} customers={customers} onCompleteOrder={completeOrder} onOpenProductManager={() => setModals(m => ({...m, products: true}))} onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} />
         <div className="mt-8">
             <SalesTable items={sales} onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id, p) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
@@ -426,7 +429,7 @@ const App: React.FC = () => {
         {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onClearHistory={() => setHistory([])} onPreviewInvoice={setInvoiceItems} onUpdateOrder={handleUpdateArchivedOrder} onDeleteArchivedOrder={handleDeleteArchivedOrder} />}
         {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={handleUpdateProduct} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
-        {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} systemPassword={systemPassword} setSystemPassword={setSystemPassword} />}
+        {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} setSystemPassword={setSystemPassword} />}
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
       </Suspense>
       {showLock && (

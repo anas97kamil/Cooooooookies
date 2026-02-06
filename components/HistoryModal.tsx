@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { X, ChevronDown, ChevronUp, ArrowRight, Folder, CalendarDays, ShoppingBag, Zap, Store, User, Filter, TrendingUp, PieChart, Info, Clock, Download, Search, Trash2, Edit3, Check, Save } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, ArrowRight, Folder, CalendarDays, ShoppingBag, Zap, Store, User, Filter, TrendingUp, PieChart, Info, Clock, Download, Search, Trash2, Edit3, Check, Save, Hash } from 'lucide-react';
 import { ArchivedDay, SaleItem, SaleType } from '../types';
 
 interface HistoryModalProps {
@@ -40,7 +40,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
       
       const activeSalesEntry: ArchivedDay | null = currentSales.length > 0 ? {
           id: 'today-active',
-          date: `${todayStr} (مبيعات اليوم - قيد العمل)`,
+          date: `${todayStr} (مباشر)`,
           timestamp: today.getTime(),
           totalRevenue: currentSales.reduce((s, i) => s + (i.price * i.quantity), 0),
           totalExpenses: 0,
@@ -115,6 +115,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
         orderList = orderList.filter(order => 
           (order[0].customerName?.toLowerCase() || '').includes(term) ||
           order[0].orderId.includes(term) ||
+          order[0].customerNumber.toString() === term ||
           order.some(item => item.name.toLowerCase().includes(term))
         );
       }
@@ -163,7 +164,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     if (step === 'months') return (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 animate-fade-up">
             {months.map(monthIdx => (
-                <button key={monthIdx} onClick={() => { setSelectedMonth(monthIdx); setStep('days'); }} className="bg-gray-700/50 hover:bg-gray-600 border border-gray-600 p-8 rounded-2xl flex flex-col items-center gap-3 transition-all group">
+                <button key={monthIdx} onClick={() => { setSelectedMonth(monthIdx); setStep('days'); }} className="bg-gray-700/50 hover:bg-gray-600 border border-gray-700 p-8 rounded-2xl flex flex-col items-center gap-3 transition-all group">
                     <CalendarDays size={48} className="text-blue-400 group-hover:scale-110 transition-transform" />
                     <span className="text-xl font-bold text-white">{getMonthName(monthIdx)}</span>
                 </button>
@@ -180,7 +181,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                       type="text" 
                       value={searchTerm}
                       onChange={e => setSearchTerm(e.target.value)}
-                      placeholder="بحث في الفواتير (اسم الزبون، مادة، رقم)..." 
+                      placeholder="بحث في الفواتير (اسم الزبون، مادة، رقم الفاتورة)..." 
                       className="w-full bg-gray-900 border border-gray-700 text-white rounded-xl pr-10 pl-4 py-2 text-xs focus:border-[#FA8072] outline-none" 
                     />
                 </div>
@@ -224,6 +225,10 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                             <div key={oIdx} className={`bg-gray-800/80 rounded-2xl border overflow-hidden shadow-inner transition-all ${isEditing ? 'border-[#FA8072] ring-2 ring-[#FA8072]/20' : 'border-gray-700'}`}>
                                                 <div className={`p-3 flex justify-between items-center border-b ${isEditing ? 'bg-[#FA8072]/10 border-[#FA8072]/20' : 'bg-gray-900/50 border-gray-700/50'}`}>
                                                     <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-1.5 bg-black/40 px-2 py-0.5 rounded border border-gray-700" title="رقم الفاتورة">
+                                                            <Hash size={10} className="text-[#FA8072]" />
+                                                            <span className="text-xs font-black text-white tabular-nums">{first.customerNumber}</span>
+                                                        </div>
                                                         {first.saleType === 'wholesale' ? <Store size={14} className="text-orange-400" /> : <User size={14} className="text-blue-400" />}
                                                         
                                                         {isEditing ? (
@@ -237,7 +242,6 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                         ) : (
                                                             <span className="text-white text-xs font-black">{first.customerName || 'زبون عام'}</span>
                                                         )}
-                                                        <span className="text-[9px] bg-gray-700 text-gray-400 px-1.5 py-0.5 rounded font-bold tabular-nums">#{first.orderId.slice(-4)}</span>
                                                     </div>
                                                     
                                                     <div className="flex items-center gap-3">
