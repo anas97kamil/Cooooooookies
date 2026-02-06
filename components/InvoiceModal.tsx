@@ -11,7 +11,6 @@ interface InvoiceModalProps {
 
 export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) => {
   const [copied, setCopied] = useState(false);
-  const [confirmPrint, setConfirmPrint] = useState(false);
   
   const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const timeStr = items[0]?.time || new Date().toLocaleTimeString('ar-SY');
@@ -33,6 +32,19 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
     writeFile(wb, `فاتورة-${customerNumber}-${customerName}-${dayDate}.xlsx`);
   };
 
+  const handlePrint = () => {
+    // جلب محتوى الفاتورة ونقله للحاوية الخارجية للطباعة لضمان عدم التكرار
+    const printContent = document.getElementById('pos-invoice-content');
+    const printArea = document.getElementById('print-area');
+    
+    if (printContent && printArea) {
+      printArea.innerHTML = printContent.innerHTML;
+      printArea.className = 'print-mode-80mm';
+      window.print();
+      printArea.innerHTML = ''; // تنظيف الحاوية بعد الطباعة
+    }
+  };
+
   const handleCopy = () => {
     const text = `مخبز كوكيز - فاتورة مبيعات\nرقم الفاتورة: ${customerNumber}\nالتاريخ: ${dayDate}\nالعميل: ${customerName}\nالمواد: ${items.map(i => `${i.name} (${i.quantity})`).join(' - ')}\nالمجموع: ${total} ل.س`;
     navigator.clipboard.writeText(text).then(() => {
@@ -41,110 +53,80 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
     });
   };
 
-  const handlePrint = () => {
-    window.print();
-    setConfirmPrint(false);
-  };
-
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-2 overflow-y-auto no-print">
-      <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-2xl shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col max-h-[95vh]">
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-4 overflow-y-auto no-print">
+      <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-lg shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col h-[90vh]">
         
-        {/* Header - Hidden on Print */}
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 shrink-0">
-          <div className="flex items-center gap-2">
-            <Printer size={18} className="text-[#FA8072]" />
-            <h3 className="font-black text-sm text-white">معاينة فاتورة 80mm</h3>
+          <div className="flex items-center gap-3">
+            <div className="bg-[#FA8072]/20 p-2 rounded-xl"><Printer size={20} className="text-[#FA8072]" /></div>
+            <h3 className="font-black text-sm text-white">معاينة الفاتورة (80mm)</h3>
           </div>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
         </div>
 
-        {/* Invoice Body Container */}
-        <div className="flex-1 overflow-y-auto bg-gray-900/50 p-4 print:p-0 print:bg-white print:overflow-visible">
-           <div id="invoice-content" className="bg-white text-black p-6 mx-auto w-[80mm] print:w-[80mm] print:p-4 print:shadow-none shadow-2xl box-border">
-            
-            {/* Logo & Header */}
-            <div className="text-center mb-4 border-b-2 border-black pb-3">
-              <h2 className="text-2xl font-black mb-0 text-black">مخبز كوكيز</h2>
+        <div className="flex-1 overflow-y-auto bg-gray-950/50 p-6 flex justify-center">
+           {/* هذا الجزء سيظهر في الشاشة فقط، وعند الطباعة سيتم نسخه لـ print-area */}
+           <div id="pos-invoice-content" className="bg-white text-black p-6 w-[80mm] shadow-2xl">
+            <div className="text-center mb-6 border-b-2 border-black pb-4">
+              <h2 className="text-2xl font-black mb-1 text-black">مخبز كوكيز</h2>
               <p className="text-[11px] font-black uppercase text-black">فاتورة مبيعات</p>
-              
-              <div className="mt-2 text-center">
-                <span className="text-[10px] font-black text-black">رقم الفاتورة: #{customerNumber}</span>
-              </div>
-
-              <div className="flex justify-between items-center mt-3 px-1">
-                 <p className="text-[10px] font-black text-black tabular-nums">{dayDate}</p>
-                 <p className="text-[10px] font-black text-black tabular-nums">{timeStr}</p>
+              <div className="mt-2 text-center text-[10px] font-black">رقم: #{customerNumber}</div>
+              <div className="flex justify-between items-center mt-3 text-[10px] font-black">
+                 <span>{dayDate}</span>
+                 <span>{timeStr}</span>
               </div>
             </div>
 
-            {/* Info Section */}
-            <div className="flex flex-col gap-1 mb-5 border-b border-black pb-3">
-              <span className="text-[9px] font-black text-black">الزبون:</span>
-              <p className="text-lg font-black text-black leading-tight">{customerName}</p>
+            <div className="mb-6">
+              <span className="text-[10px] font-black text-gray-600 block">الزبون:</span>
+              <p className="text-xl font-black text-black">{customerName}</p>
             </div>
 
-            {/* Items Table */}
-            <table className="w-full text-right mb-6 border-collapse">
-              <thead>
-                <tr className="border-b-2 border-black">
-                  <th className="py-2 px-1 text-right font-black text-[11px] text-black">المادة</th>
-                  <th className="py-2 px-1 text-center font-black text-[11px] text-black">الكمية</th>
-                  <th className="py-2 px-1 text-left font-black text-[11px] text-black">الإجمالي</th>
+            <table className="w-full text-right mb-6">
+              <thead className="border-b-2 border-black">
+                <tr className="text-[11px] font-black">
+                  <th className="py-2">المادة</th>
+                  <th className="py-2 text-center">الكمية</th>
+                  <th className="py-2 text-left">الإجمالي</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-black/20 print:divide-black">
+              <tbody className="divide-y divide-black/10">
                 {items.map((item, idx) => (
-                  <tr key={idx} className="font-black text-[12px] text-black">
-                    <td className="py-2.5 px-1 text-right leading-tight">{item.name}</td>
-                    <td className="py-2.5 px-1 text-center tabular-nums">{item.quantity}</td>
-                    <td className="py-2.5 px-1 text-left tabular-nums">{(item.price * item.quantity).toLocaleString()}</td>
+                  <tr key={idx} className="text-[12px] font-black">
+                    <td className="py-3 leading-tight">{item.name}</td>
+                    <td className="py-3 text-center">{item.quantity}</td>
+                    <td className="py-3 text-left">{(item.price * item.quantity).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            {/* Totals */}
-            <div className="border-t-2 border-black pt-3 mb-6">
-              <div className="flex justify-between items-center text-xl font-black text-black">
+            <div className="border-t-2 border-black pt-4 mb-8">
+              <div className="flex justify-between items-center text-2xl font-black">
                 <span>المجموع:</span>
-                <span className="tabular-nums underline decoration-2">{total.toLocaleString()} ل.س</span>
+                <span className="tabular-nums">{total.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-3 text-black">
+            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-4">
               شكراً لزيارتكم - مخبز كوكيز
             </div>
           </div>
         </div>
 
-        {/* Actions - Hidden on Print */}
-        <div className="p-6 bg-gray-900 border-t border-gray-700 shrink-0">
+        <div className="p-6 bg-gray-900 border-t border-gray-700">
             <div className="grid grid-cols-2 gap-3 mb-3">
-                {confirmPrint ? (
-                    <div className="col-span-2 flex items-center gap-2">
-                        <button onClick={handlePrint} className="flex-1 bg-green-600 hover:bg-green-500 text-white py-4 rounded-2xl font-black text-xs transition-all shadow-xl active:scale-95 animate-pulse">تأكيد الطباعة (80mm)</button>
-                        <button onClick={() => setConfirmPrint(false)} className="px-6 bg-gray-700 text-white py-4 rounded-2xl font-black text-xs">إلغاء</button>
-                    </div>
-                ) : (
-                    <button onClick={() => setConfirmPrint(true)} className="col-span-1 bg-[#FA8072] hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95">
-                        <Printer size={18} /> طباعة حرارية
-                    </button>
-                )}
-                
-                {!confirmPrint && (
-                   <button onClick={handleDownloadExcel} className="col-span-1 bg-green-700 hover:bg-green-600 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-xl active:scale-95">
-                       <FileSpreadsheet size={18} /> تصدير Excel
-                   </button>
-                )}
+                <button onClick={handlePrint} className="bg-[#FA8072] hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-xl">
+                    <Printer size={18} /> طباعة الفاتورة
+                </button>
+                <button onClick={handleDownloadExcel} className="bg-green-700 hover:bg-green-600 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-xl">
+                    <FileSpreadsheet size={18} /> تصدير Excel
+                </button>
             </div>
-            
-            <button 
-                onClick={handleCopy} 
-                className={`w-full py-3.5 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 transition-all border border-gray-700 ${copied ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-gray-800 text-gray-400 hover:text-white'}`}
-            >
+            <button onClick={handleCopy} className={`w-full py-3.5 rounded-2xl font-black text-[10px] flex items-center justify-center gap-2 transition-all border border-gray-700 ${copied ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
                 {copied ? <Check size={16} /> : <Copy size={16} />} 
-                {copied ? 'تم نسخ بيانات الفاتورة' : 'نسخ الفاتورة كنص'}
+                {copied ? 'تم النسخ' : 'نسخ كـنص'}
             </button>
         </div>
       </div>

@@ -41,63 +41,49 @@
         border-radius: 10px;
       }
 
-      /* نظام الطباعة POS 80mm المحسن لمنع الورقة الثانية */
+      /* نظام الطباعة الصارم لمنع التكرار والورق الفارغ */
       @media print {
-        @page {
-          size: 80mm auto;
-          margin: 0; /* إلغاء هوامش المتصفح تماماً */
-        }
-
+        /* إخفاء كل شيء تماماً لمنع النسخ المكررة */
         html, body {
-          width: 80mm !important;
-          height: auto !important; /* هام جداً: منع الارتفاع الكامل */
+          background: white !important;
           margin: 0 !important;
           padding: 0 !important;
-          background: white !important;
-          overflow: visible !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-
-        #root {
           height: auto !important;
-          position: static !important;
+          min-height: 0 !important;
+          overflow: visible !important;
         }
 
-        .no-print {
+        #root, .no-print {
           display: none !important;
         }
 
-        /* حاوية الفاتورة الفعلية */
-        #invoice-content {
+        /* إظهار منطقة الطباعة فقط ككتلة واحدة ثابتة */
+        #print-area {
           display: block !important;
-          width: 80mm !important;
-          padding: 2mm 4mm !important; /* تقليل الحشو لضمان الملاءمة */
-          margin: 0 !important;
-          background: white !important;
-          color: black !important;
-          box-sizing: border-box !important;
+          position: static !important;
+          margin: 0 auto !important;
+          padding: 0 !important;
+          visibility: visible !important;
+          height: auto !important;
           page-break-after: avoid !important;
           page-break-inside: avoid !important;
-          min-height: auto !important;
-          overflow: hidden !important;
         }
 
-        /* إزالة أي انزياح عرضي قد يسبب ورقة ثانية */
-        * {
-          box-sizing: border-box !important;
-          color: #000 !important;
-          text-shadow: none !important;
-          box-shadow: none !important;
+        /* تنسيق الفاتورة الحرارية */
+        .print-mode-80mm {
+          width: 72mm !important; /* العرض الفعلي للطباعة داخل رول 80mm */
+          padding: 2mm !important;
         }
-      }
 
-      .pos-preview-container {
-        width: 80mm;
-        background: white;
-        color: black;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        margin: 0 auto;
+        /* تنسيق التقرير A4 */
+        .print-mode-a4 {
+          width: 210mm !important;
+          padding: 15mm !important;
+        }
+
+        @page {
+          margin: 0 !important;
+        }
       }
     </style>
   <script type="importmap">
@@ -116,6 +102,8 @@
 </head>
   <body>
     <div id="root"></div>
+    <!-- حاوية الطباعة المنعزلة تماماً لمنع تكرار المحتوى -->
+    <div id="print-area"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
