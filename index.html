@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
@@ -40,7 +41,7 @@
         border-radius: 10px;
       }
 
-      /* نظام الطباعة الموحد والمحسّن */
+      /* نظام الطباعة الموحد والمحسّن - إصلاح شامل */
       @media print {
         @page {
           margin: 0 !important;
@@ -53,12 +54,12 @@
           padding: 0 !important;
           width: 100% !important;
           height: auto !important;
-          min-height: auto !important;
+          min-height: 100% !important;
           overflow: visible !important;
         }
 
         /* إخفاء واجهة التطبيق بالكامل أثناء الطباعة */
-        #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md {
+        #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md, .bg-black\/95 {
           display: none !important;
           opacity: 0 !important;
           visibility: hidden !important;
@@ -71,12 +72,13 @@
           width: 100% !important;
           margin: 0 !important;
           padding: 0 !important;
-          position: static !important; /* هام جداً لضمان تدفق المحتوى بالكامل */
+          position: static !important; 
           height: auto !important;
+          min-height: auto !important;
           overflow: visible !important;
         }
 
-        /* تحسين مظهر النصوص للطباعة الحرارية */
+        /* تحسين مظهر النصوص والتباين للطباعة الحرارية */
         #print-area * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
@@ -84,16 +86,20 @@
           background-color: transparent !important;
           box-shadow: none !important;
           text-shadow: none !important;
+          overflow: visible !important;
         }
 
-        /* وضع الفاتورة الحرارية 80mm */
+        /* وضع الفاتورة الحرارية 80mm - الحجم الكامل */
         .print-mode-80mm {
           width: 80mm !important;
           max-width: 80mm !important;
           margin: 0 auto !important;
-          padding: 10mm 5mm 20mm 5mm !important; /* هام: بادينغ سفلي لمنع قص السطر الأخير */
+          padding: 5mm 5mm 30mm 5mm !important; /* زيادة البادينغ السفلي للقص اليدوي */
           display: block !important;
           box-sizing: border-box !important;
+          height: auto !important;
+          min-height: 100% !important;
+          page-break-after: avoid !important;
         }
 
         /* وضع التقرير المالي A4 */
@@ -102,6 +108,7 @@
           padding: 15mm !important;
           margin: 0 auto !important;
           display: block !important;
+          height: auto !important;
         }
       }
     </style>
@@ -121,6 +128,7 @@
 </head>
   <body>
     <div id="root"></div>
+    <!-- حاوية حقن محتوى الطباعة -->
     <div id="print-area"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

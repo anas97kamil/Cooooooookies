@@ -194,7 +194,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                         <span className="text-[8px] text-gray-500 mt-1 font-bold">ليرة سورية</span>
                     </div>
                     <div className="flex flex-col border-r-2 border-black/10 pr-6 last:border-0">
-                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">إجمالي التكلفة</span>
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">إجمالي المشتريات</span>
                         <span className="text-2xl font-black text-red-600 tabular-nums">{totals.purchases.toLocaleString()}</span>
                         <span className="text-[8px] text-gray-500 mt-1 font-bold">ليرة سورية</span>
                     </div>
