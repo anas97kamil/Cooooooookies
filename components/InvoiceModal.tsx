@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, Copy, Check, FileSpreadsheet, Printer } from 'lucide-react';
 import { SaleItem } from '../types';
@@ -37,14 +36,14 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
     const printArea = document.getElementById('print-area');
     
     if (printContent && printArea) {
-      // نسخ المحتوى للحاوية المخصصة للطباعة
+      // حقن المحتوى في حاوية الطباعة المخصصة في index.html
       printArea.innerHTML = printContent.innerHTML;
       printArea.className = 'print-mode-80mm';
       
-      // مهلة زمنية تضمن استقرار العناصر في DOM قبل الطباعة
+      // تأخير بسيط لضمان استقرار العناصر
       setTimeout(() => {
         window.print();
-        // مهلة لتنظيف الحاوية بعد الطباعة
+        // تنظيف الحاوية بعد الطباعة
         setTimeout(() => {
           printArea.innerHTML = ''; 
           printArea.className = '';
@@ -77,7 +76,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
            <div id="pos-invoice-content" className="bg-white text-black p-4 w-[80mm] shadow-2xl h-fit">
             <div className="text-center mb-4 border-b-2 border-black pb-2">
               <h2 className="text-xl font-black mb-0 text-black">مخبز كوكيز</h2>
-              <p className="text-[10px] font-black text-black">فاتورة مبيعات</p>
+              <p className="text-[10px] font-black text-black uppercase">فاتورة مبيعات</p>
               <div className="flex justify-between items-center mt-2 text-[9px] font-black">
                  <span>رقم: #{customerNumber}</span>
                  <span>{dayDate} - {timeStr}</span>
@@ -85,7 +84,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
             </div>
 
             <div className="mb-4">
-              <span className="text-[9px] font-black block">الزبون:</span>
+              <span className="text-[9px] font-black block text-gray-500">الزبون:</span>
               <p className="text-lg font-black text-black leading-tight">{customerName}</p>
             </div>
 
@@ -115,13 +114,15 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
               </div>
             </div>
 
-            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-2">
+            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-2 mb-8">
               شكراً لزيارتكم - مخبز كوكيز
             </div>
+            {/* سبيس إضافي للطباعة الحرارية */}
+            <div className="h-10 print:block hidden"></div>
           </div>
         </div>
 
-        <div className="p-6 bg-gray-900 border-t border-gray-700">
+        <div className="p-6 bg-gray-900 border-t border-gray-700 shrink-0">
             <div className="grid grid-cols-2 gap-3 mb-3">
                 <button onClick={handlePrint} className="bg-[#FA8072] hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-xs flex items-center justify-center gap-2 shadow-xl">
                     <Printer size={18} /> طباعة الفاتورة

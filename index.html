@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
   <head>
@@ -41,7 +40,7 @@
         border-radius: 10px;
       }
 
-      /* نظام الطباعة المحسن */
+      /* نظام الطباعة الموحد والمحسّن */
       @media print {
         @page {
           margin: 0 !important;
@@ -54,49 +53,54 @@
           padding: 0 !important;
           width: 100% !important;
           height: auto !important;
+          min-height: auto !important;
           overflow: visible !important;
         }
 
-        /* إخفاء كل شيء عدا منطقة الطباعة */
-        #root, .no-print, .no-print-overlay, [role="dialog"], .fixed {
+        /* إخفاء واجهة التطبيق بالكامل أثناء الطباعة */
+        #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md {
           display: none !important;
+          opacity: 0 !important;
+          visibility: hidden !important;
         }
 
+        /* حاوية الطباعة الرئيسية */
         #print-area {
           display: block !important;
           visibility: visible !important;
           width: 100% !important;
           margin: 0 !important;
           padding: 0 !important;
-          position: absolute !important;
-          top: 0 !important;
-          left: 0 !important;
+          position: static !important; /* هام جداً لضمان تدفق المحتوى بالكامل */
+          height: auto !important;
+          overflow: visible !important;
         }
 
-        /* الحفاظ على الألوان والرسوم */
+        /* تحسين مظهر النصوص للطباعة الحرارية */
         #print-area * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
-          color-adjust: exact !important;
+          color: #000 !important;
+          background-color: transparent !important;
+          box-shadow: none !important;
+          text-shadow: none !important;
         }
 
-        /* الفاتورة الحرارية 80mm */
+        /* وضع الفاتورة الحرارية 80mm */
         .print-mode-80mm {
-          width: 72mm !important; 
+          width: 80mm !important;
+          max-width: 80mm !important;
           margin: 0 auto !important;
-          padding: 2mm !important;
+          padding: 10mm 5mm 20mm 5mm !important; /* هام: بادينغ سفلي لمنع قص السطر الأخير */
+          display: block !important;
+          box-sizing: border-box !important;
         }
 
-        /* تقرير A4 */
+        /* وضع التقرير المالي A4 */
         .print-mode-a4 {
           width: 210mm !important;
-          padding: 0 !important;
+          padding: 15mm !important;
           margin: 0 auto !important;
-        }
-        
-        /* تأكيد ظهور الصور والرسوم البيانية */
-        svg, img {
-          max-width: 100% !important;
           display: block !important;
         }
       }
@@ -117,7 +121,6 @@
 </head>
   <body>
     <div id="root"></div>
-    <!-- الحاوية النظيفة للطباعة -->
     <div id="print-area"></div>
     <script type="module" src="/index.tsx"></script>
   </body>
