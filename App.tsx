@@ -48,7 +48,7 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 
   return (
     <div className="fixed inset-0 bg-gray-900 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#FA8072]/10 rounded-full blur-[100px] animate-pulse"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-[#FA8072]/10 rounded-full blur-[100px] animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
       <div className="relative z-10 max-w-sm w-full">
         <div className="mb-8 relative">
@@ -132,10 +132,21 @@ const App: React.FC = () => {
     const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
     const todayDate = new Date().toLocaleDateString('ar-SY');
     
-    // حساب رقم الزبون بناءً على فواتير اليوم حصراً
-    const todayOrders = sales.filter(s => s.date === todayDate);
-    const uniqueOrderIds = new Set(todayOrders.map(s => s.orderId));
-    const nextCustomerNumber = uniqueOrderIds.size + 1;
+    // الحل الجديد: حساب رقم الفاتورة بناءً على المبيعات الحالية + الأرشيف لهذا اليوم
+    // 1. البحث عن أعلى رقم في المبيعات النشطة لليوم
+    const activeTodaySales = sales.filter(s => s.date === todayDate);
+    const activeMax = activeTodaySales.length > 0 
+      ? Math.max(...activeTodaySales.map(s => s.customerNumber)) 
+      : 0;
+
+    // 2. البحث عن أعلى رقم في الأرشيف لنفس تاريخ اليوم
+    const archivedToday = history.find(h => h.date === todayDate);
+    const archivedMax = (archivedToday && archivedToday.items.length > 0)
+      ? Math.max(...archivedToday.items.map(s => s.customerNumber))
+      : 0;
+
+    // 3. الرقم التالي هو الأكبر بينهما + 1
+    const nextCustomerNumber = Math.max(activeMax, archivedMax) + 1;
 
     const newItems: SaleItem[] = items.map(item => ({
       ...item,
@@ -151,7 +162,7 @@ const App: React.FC = () => {
 
     setSales(prev => [...prev, ...newItems]);
     setInvoiceItems(newItems);
-  }, [sales]);
+  }, [sales, history]); // أضفنا التاريخ للتبع
 
   const handleUpdateProduct = (id: string, updatedProduct: Partial<Product>) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedProduct } : p));

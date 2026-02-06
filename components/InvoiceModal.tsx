@@ -47,11 +47,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-2 overflow-y-auto no-print-overlay">
-      <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-2xl shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col max-h-[95vh] print:max-h-none print:shadow-none print:border-none print:bg-white print:w-[80mm] print:overflow-visible">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-2 overflow-y-auto no-print">
+      <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-2xl shadow-2xl border border-gray-700 animate-fade-up overflow-hidden flex flex-col max-h-[95vh]">
         
         {/* Header - Hidden on Print */}
-        <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 shrink-0 no-print">
+        <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 shrink-0">
           <div className="flex items-center gap-2">
             <Printer size={18} className="text-[#FA8072]" />
             <h3 className="font-black text-sm text-white">معاينة فاتورة 80mm</h3>
@@ -59,9 +59,9 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
           <button onClick={onClose} className="p-2 text-gray-400 hover:text-white transition-colors"><X size={24} /></button>
         </div>
 
-        {/* Invoice Body */}
-        <div className="flex-1 overflow-y-auto bg-gray-900/50 p-4 print:p-0 print:overflow-visible print:bg-white">
-           <div id="invoice-content" className="bg-white text-black p-6 mx-auto w-[80mm] shadow-2xl print:shadow-none print:w-[80mm] print:p-4 print:min-h-0 print:box-border">
+        {/* Invoice Body Container */}
+        <div className="flex-1 overflow-y-auto bg-gray-900/50 p-4 print:p-0 print:bg-white print:overflow-visible">
+           <div id="invoice-content" className="bg-white text-black p-6 mx-auto w-[80mm] print:w-[80mm] print:p-4 print:shadow-none shadow-2xl box-border">
             
             {/* Logo & Header */}
             <div className="text-center mb-4 border-b-2 border-black pb-3">
@@ -81,11 +81,11 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
             {/* Info Section */}
             <div className="flex flex-col gap-1 mb-5 border-b border-black pb-3">
               <span className="text-[9px] font-black text-black">الزبون:</span>
-              <p className="text-lg font-black text-black">{customerName}</p>
+              <p className="text-lg font-black text-black leading-tight">{customerName}</p>
             </div>
 
             {/* Items Table */}
-            <table className="w-full text-right mb-6">
+            <table className="w-full text-right mb-6 border-collapse">
               <thead>
                 <tr className="border-b-2 border-black">
                   <th className="py-2 px-1 text-right font-black text-[11px] text-black">المادة</th>
@@ -105,21 +105,21 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
             </table>
 
             {/* Totals */}
-            <div className="border-t-2 border-black pt-3 mb-8">
+            <div className="border-t-2 border-black pt-3 mb-6">
               <div className="flex justify-between items-center text-xl font-black text-black">
                 <span>المجموع:</span>
                 <span className="tabular-nums underline decoration-2">{total.toLocaleString()} ل.س</span>
               </div>
             </div>
 
-            <div className="mt-8 text-center text-[9px] font-black border-t border-dashed border-black pt-3 text-black">
+            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-3 text-black">
               شكراً لزيارتكم - مخبز كوكيز
             </div>
           </div>
         </div>
 
         {/* Actions - Hidden on Print */}
-        <div className="p-6 bg-gray-900 border-t border-gray-700 no-print shrink-0">
+        <div className="p-6 bg-gray-900 border-t border-gray-700 shrink-0">
             <div className="grid grid-cols-2 gap-3 mb-3">
                 {confirmPrint ? (
                     <div className="col-span-2 flex items-center gap-2">

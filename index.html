@@ -41,49 +41,57 @@
         border-radius: 10px;
       }
 
-      /* نظام الطباعة POS 80mm المحسن */
+      /* نظام الطباعة POS 80mm المحسن لمنع الورقة الثانية */
       @media print {
         @page {
           size: 80mm auto;
-          margin: 0;
+          margin: 0; /* إلغاء هوامش المتصفح تماماً */
         }
 
         html, body {
-          width: 80mm;
+          width: 80mm !important;
+          height: auto !important; /* هام جداً: منع الارتفاع الكامل */
           margin: 0 !important;
           padding: 0 !important;
           background: white !important;
           overflow: visible !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
 
-        .no-print, .no-print * {
+        #root {
+          height: auto !important;
+          position: static !important;
+        }
+
+        .no-print {
           display: none !important;
         }
 
-        #invoice-content, .print-content {
+        /* حاوية الفاتورة الفعلية */
+        #invoice-content {
+          display: block !important;
           width: 80mm !important;
-          padding: 4mm !important;
+          padding: 2mm 4mm !important; /* تقليل الحشو لضمان الملاءمة */
+          margin: 0 !important;
           background: white !important;
           color: black !important;
-          display: block !important;
           box-sizing: border-box !important;
-          filter: grayscale(100%) contrast(200%) !important;
           page-break-after: avoid !important;
+          page-break-inside: avoid !important;
           min-height: auto !important;
+          overflow: hidden !important;
         }
 
-        /* إجبار كافة العناصر على اللون الأسود الحبري */
+        /* إزالة أي انزياح عرضي قد يسبب ورقة ثانية */
         * {
-          color: #000000 !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-          opacity: 1 !important;
-          border-color: #000000 !important;
+          box-sizing: border-box !important;
+          color: #000 !important;
+          text-shadow: none !important;
           box-shadow: none !important;
         }
       }
 
-      /* تنسيق خاص للمعاينة لتشبه الورق */
       .pos-preview-container {
         width: 80mm;
         background: white;
