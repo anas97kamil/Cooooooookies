@@ -1,7 +1,7 @@
 
 import React, { useMemo, useState } from 'react';
-import { X, BarChart3, Printer, FileText, TrendingUp, Trophy, Activity, Target, PieChart, ShoppingBag, Truck, ReceiptText, LineChart } from 'lucide-react';
-import { ArchivedDay, SaleItem, PurchaseInvoice, PurchaseItem } from '../types';
+import { X, BarChart3, Printer, LineChart, PieChart, Target, Calendar, TrendingUp, ArrowDownRight, ArrowUpRight, Activity } from 'lucide-react';
+import { ArchivedDay, SaleItem, PurchaseInvoice } from '../types';
 
 interface AnalyticsModalProps {
   history: ArchivedDay[];
@@ -27,7 +27,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
         purchases: (day.purchaseInvoices || []).reduce((s, i) => s + i.totalAmount, 0),
         profit: day.items.reduce((s, i) => s + ((i.price - (i.costPrice || 0)) * i.quantity), 0),
         items: day.items,
-        purchaseInvoices: day.purchaseInvoices || [],
         timestamp: day.timestamp
       })),
       {
@@ -36,7 +35,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
         purchases: currentPurchases.reduce((s, i) => s + i.totalAmount, 0),
         profit: currentSales.reduce((s, i) => s + ((i.price - (i.costPrice || 0)) * i.quantity), 0),
         items: currentSales,
-        purchaseInvoices: currentPurchases,
         timestamp: Date.now()
       }
     ].sort((a, b) => a.timestamp - b.timestamp);
@@ -51,85 +49,79 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
     });
   }, [allData, viewMode, daysCount, selectedMonth, selectedYear]);
 
-  // إحصائيات المبيعات
+  const totals = useMemo(() => {
+    const revenue = filteredData.reduce((s, d) => s + d.revenue, 0);
+    const purchases = filteredData.reduce((s, d) => s + d.purchases, 0);
+    const profit = filteredData.reduce((s, d) => s + d.profit, 0);
+    const expenseRatio = revenue > 0 ? (purchases / revenue * 100) : 0;
+    
+    return { revenue, purchases, profit, expenseRatio };
+  }, [filteredData]);
+
   const productStats = useMemo(() => {
-    const stats: Record<string, { qty: number, revenue: number, profit: number, unit: string, cost: number }> = {};
+    const stats: Record<string, { qty: number, revenue: number, profit: number, cost: number }> = {};
     filteredData.forEach(day => {
       day.items.forEach(item => {
-        if (!stats[item.name]) stats[item.name] = { qty: 0, revenue: 0, profit: 0, unit: item.unitType, cost: 0 };
+        if (!stats[item.name]) stats[item.name] = { qty: 0, revenue: 0, profit: 0, cost: 0 };
         stats[item.name].qty += item.quantity;
         stats[item.name].revenue += (item.price * item.quantity);
         stats[item.name].cost += ((item.costPrice || 0) * item.quantity);
         stats[item.name].profit += ((item.price - (item.costPrice || 0)) * item.quantity);
       });
     });
-    return Object.entries(stats).sort((a, b) => b[1].qty - a[1].qty);
+    return Object.entries(stats).sort((a, b) => b[1].revenue - a[1].revenue);
   }, [filteredData]);
 
-  const totals = useMemo(() => {
-    const revenue = filteredData.reduce((s, d) => s + d.revenue, 0);
-    const purchases = filteredData.reduce((s, d) => s + d.purchases, 0);
-    const profit = filteredData.reduce((s, d) => s + d.profit, 0);
-    
-    const uniqueOrders = new Set();
-    filteredData.forEach(d => d.items.forEach(i => uniqueOrders.add(i.orderId)));
-    
-    return {
-      revenue,
-      purchases,
-      profit,
-      orderCount: uniqueOrders.size,
-      avgOrder: uniqueOrders.size > 0 ? (revenue / uniqueOrders.size) : 0,
-      expenseRatio: revenue > 0 ? (purchases / revenue * 100) : 0
-    };
-  }, [filteredData]);
-
-  // منطق رسم المنحنيات البيانية بواسطة SVG
-  const renderChart = () => {
-    if (filteredData.length < 2) return null;
+  const renderTimelineChart = () => {
+    if (filteredData.length < 2) return (
+        <div className="h-32 flex items-center justify-center border border-dashed border-gray-300 text-gray-400 text-[10px]">
+            لا توجد بيانات كافية لرسم المنحنى الزمني حالياً
+        </div>
+    );
 
     const width = 800;
-    const height = 180;
-    const padding = 20;
+    const height = 150;
+    const padding = 40;
     
     const maxVal = Math.max(...filteredData.map(d => Math.max(d.revenue, d.purchases, d.profit, 1000)));
-    
     const getX = (index: number) => padding + (index * (width - 2 * padding) / (filteredData.length - 1));
     const getY = (val: number) => height - padding - (val * (height - 2 * padding) / maxVal);
 
-    const generatePath = (dataKey: 'revenue' | 'purchases' | 'profit') => {
-      return filteredData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d[dataKey])}`).join(' ');
-    };
+    const revPath = filteredData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d.revenue)}`).join(' ');
+    const purPath = filteredData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d.purchases)}`).join(' ');
+    const profPath = filteredData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d.profit)}`).join(' ');
 
     return (
-      <div className="w-full border-2 border-black p-4 bg-gray-50/50">
-        <h3 className="text-[11px] font-black mb-4 flex items-center gap-2 border-b border-black/10 pb-1">
-          <LineChart size={14} /> منحنيات الأداء المالي (المبيعات vs المشتريات vs الأرباح):
-        </h3>
+      <div className="py-4">
+        <h4 className="text-[10px] font-black mb-4 flex items-center gap-2 text-gray-800 uppercase tracking-wider">
+           <Activity size={12} className="text-black" /> الاتجاه المالي خلال الفترة المحددة:
+        </h4>
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
-          {/* شبكة أفقية خلفية */}
-          {[0, 0.5, 1].map(p => (
-            <line key={p} x1={padding} y1={getY(maxVal * p)} x2={width - padding} y2={getY(maxVal * p)} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4" />
-          ))}
+          {/* المحاور */}
+          <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="black" strokeWidth="1" />
           
-          {/* مسار المبيعات */}
-          <path d={generatePath('revenue')} fill="none" stroke="#059669" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          {/* مسار المشتريات */}
-          <path d={generatePath('purchases')} fill="none" stroke="#dc2626" strokeWidth="2" strokeDasharray="5,3" strokeLinecap="round" strokeLinejoin="round" />
-          {/* مسار الأرباح */}
-          <path d={generatePath('profit')} fill="none" stroke="#000000" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+          {/* أسماء الأيام/التاريخ أسفل المحور */}
+          {filteredData.map((d, i) => {
+             if (filteredData.length > 10 && i % 2 !== 0) return null; // تقليل الزحمة
+             return (
+               <text key={i} x={getX(i)} y={height - padding + 15} fontSize="9" fontWeight="bold" textAnchor="middle" fill="#666">
+                 {d.date.split('/')[0]}
+               </text>
+             );
+          })}
+
+          <path d={revPath} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" />
+          <path d={purPath} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeDasharray="4,2" />
+          <path d={profPath} fill="none" stroke="#000000" strokeWidth="3" strokeLinecap="round" />
           
-          {/* نقاط البيانات للأرباح */}
           {filteredData.map((d, i) => (
-            <circle key={i} cx={getX(i)} cy={getY(d.profit)} r="4" fill="black" />
+            <circle key={i} cx={getX(i)} cy={getY(d.profit)} r="3" fill="black" />
           ))}
         </svg>
-        
-        {/* مفتاح الرسم البياني */}
-        <div className="flex justify-center gap-6 mt-4 text-[9px] font-black uppercase">
-            <div className="flex items-center gap-1.5"><div className="w-8 h-1 bg-[#059669]"></div> <span>إجمالي المبيعات</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-8 h-1 bg-[#dc2626] border-b border-dashed border-white"></div> <span>إجمالي المشتريات</span></div>
-            <div className="flex items-center gap-1.5"><div className="w-8 h-1.5 bg-black"></div> <span>صافي الربح الفعلي</span></div>
+        <div className="flex justify-center gap-8 mt-6 text-[8px] font-black border-t border-gray-100 pt-3">
+           <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#10b981] rounded-full"></div> <span>المبيعات</span></div>
+           <div className="flex items-center gap-2"><div className="w-3 h-1 bg-[#ef4444]"></div> <span>المشتريات</span></div>
+           <div className="flex items-center gap-2"><div className="w-3 h-3 bg-black rounded-full"></div> <span>الربح الصافي</span></div>
         </div>
       </div>
     );
@@ -138,12 +130,13 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
   const handlePrint = () => {
     const printContent = document.getElementById('report-a4-content');
     const printArea = document.getElementById('print-area');
-    
     if (printContent && printArea) {
       printArea.innerHTML = printContent.innerHTML;
       printArea.className = 'print-mode-a4';
-      window.print();
-      printArea.innerHTML = '';
+      setTimeout(() => {
+        window.print();
+        setTimeout(() => { printArea.innerHTML = ''; printArea.className = ''; }, 500);
+      }, 300);
     }
   };
 
@@ -152,14 +145,13 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-md z-50 flex items-center justify-center p-4 no-print">
       <div className="bg-gray-800 rounded-[2.5rem] w-full max-w-5xl shadow-2xl border border-gray-700 flex flex-col h-[95vh]">
-        
         <div className="p-5 border-b border-gray-700 flex justify-between items-center bg-gray-900 shrink-0">
           <div className="flex items-center gap-3">
              <div className="bg-[#FA8072]/20 p-2.5 rounded-2xl"><BarChart3 className="text-[#FA8072]" size={24} /></div>
-             <h3 className="font-black text-xl text-white">التقارير التحليلية والذكاء المالي</h3>
+             <h3 className="font-black text-xl text-white">التحليلات المالية المتقدمة</h3>
           </div>
           <div className="flex items-center gap-2">
-              <button onClick={handlePrint} className="bg-white text-black hover:bg-gray-200 px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg border border-gray-200"><Printer size={18} /> طباعة التقرير الشامل (A4)</button>
+              <button onClick={handlePrint} className="bg-white text-black hover:bg-gray-200 px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg border border-gray-200"><Printer size={18} /> طباعة التقرير النهائي (A4)</button>
               <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-xl transition-all text-gray-400"><X size={24} /></button>
           </div>
         </div>
@@ -170,7 +162,6 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                 <button onClick={() => setViewMode('days')} className={`px-10 py-3 rounded-xl text-xs font-black transition-all ${viewMode === 'days' ? 'bg-gray-700 text-white shadow-lg' : 'text-gray-500'}`}>المدى القريب</button>
                 <button onClick={() => setViewMode('monthly')} className={`px-10 py-3 rounded-xl text-xs font-black transition-all ${viewMode === 'monthly' ? 'bg-[#FA8072] text-white shadow-lg' : 'text-gray-500'}`}>الجرد الشهري</button>
              </div>
-             
              {viewMode === 'days' ? (
                <div className="flex gap-2">
                  {[7, 15, 30].map(c => (
@@ -179,7 +170,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                </div>
              ) : (
                <div className="flex gap-2">
-                 <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} className="bg-gray-900 border border-gray-800 text-white text-[10px] px-5 py-2.5 rounded-xl outline-none focus:border-[#FA8072]">
+                 <select value={selectedMonth} onChange={e => setSelectedMonth(parseInt(e.target.value))} className="bg-gray-900 border border-gray-800 text-white text-[10px] px-5 py-2.5 rounded-xl outline-none">
                    {Array.from({length: 12}).map((_, i) => <option key={i} value={i}>{getMonthName(i)}</option>)}
                  </select>
                </div>
@@ -187,99 +178,103 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
           </div>
 
           <div className="flex justify-center p-4">
-             <div id="report-a4-content" className="bg-white text-black w-[210mm] p-[15mm] shadow-2xl min-h-[297mm] flex flex-col gap-6">
+             <div id="report-a4-content" className="bg-white text-black w-[210mm] p-[18mm] shadow-2xl min-h-[297mm] flex flex-col gap-10">
                 
-                {/* الترويسة العصرية */}
-                <div className="flex justify-between items-center border-b-4 border-black pb-6">
-                    <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 bg-black text-white flex items-center justify-center text-3xl font-black rounded-xl">C</div>
-                        <div>
-                            <h1 className="text-3xl font-black uppercase text-black leading-none">مخبز كوكيز</h1>
-                            <p className="text-[10px] font-bold text-gray-600 mt-1">نظام إدارة العمليات والتحليل المالي المتقدم</p>
-                        </div>
+                {/* ترويسة بسيطة واحترافية */}
+                <div className="flex justify-between items-end border-b-2 border-black pb-4">
+                    <div>
+                        <h1 className="text-4xl font-black text-black mb-1">مخبز كوكيز</h1>
+                        <p className="text-[10px] font-bold text-gray-500">خلاصة الأداء المالي والتحليل التشغيلي</p>
                     </div>
                     <div className="text-left font-black">
-                        <p className="text-xl uppercase border-b-2 border-black inline-block mb-1">تقرير الأداء المالي</p>
-                        <p className="text-[9px] text-gray-500 block">الفترة: {viewMode === 'monthly' ? `${getMonthName(selectedMonth)} ${selectedYear}` : `آخر ${daysCount} يوم`}</p>
+                        <span className="text-xs text-gray-400 block uppercase mb-1">تاريخ التقرير</span>
+                        <span className="text-lg">{now.toLocaleDateString('ar-SY')}</span>
                     </div>
                 </div>
 
-                {/* قسم المؤشرات الشاملة (KPIs) */}
-                <div className="grid grid-cols-4 gap-4">
-                    <div className="border-2 border-black p-4 text-center">
-                        <span className="text-[8px] font-black text-gray-500 uppercase block mb-1">إجمالي المبيعات</span>
-                        <span className="text-lg font-black text-black tabular-nums">{totals.revenue.toLocaleString()}</span>
+                {/* قسم الأرقام المفتوحة - KPIs */}
+                <div className="flex justify-between items-center px-2">
+                    <div className="flex flex-col border-r-2 border-black/10 pr-8 last:border-0">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">إجمالي المبيعات</span>
+                        <span className="text-3xl font-black text-black tabular-nums">{totals.revenue.toLocaleString()}</span>
+                        <span className="text-[8px] text-gray-500 mt-1">ليرة سورية</span>
                     </div>
-                    <div className="border-2 border-black p-4 text-center bg-gray-50">
-                        <span className="text-[8px] font-black text-gray-500 uppercase block mb-1">إجمالي المشتريات</span>
-                        <span className="text-lg font-black text-red-600 tabular-nums">{totals.purchases.toLocaleString()}</span>
+                    <div className="flex flex-col border-r-2 border-black/10 pr-8 last:border-0">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">إجمالي المشتريات</span>
+                        <span className="text-3xl font-black text-red-600 tabular-nums">{totals.purchases.toLocaleString()}</span>
+                        <span className="text-[8px] text-gray-500 mt-1">ليرة سورية</span>
                     </div>
-                    <div className="border-2 border-black p-4 text-center">
-                        <span className="text-[8px] font-black text-gray-500 uppercase block mb-1">صافي الربح</span>
-                        <span className="text-lg font-black text-black tabular-nums">{totals.profit.toLocaleString()}</span>
+                    <div className="flex flex-col border-r-2 border-black/10 pr-8 last:border-0">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">صافي الأرباح</span>
+                        <span className="text-3xl font-black text-green-600 tabular-nums">{totals.profit.toLocaleString()}</span>
+                        <span className="text-[8px] text-gray-500 mt-1">ليرة سورية</span>
                     </div>
-                    <div className="border-2 border-black p-4 text-center">
-                        <span className="text-[8px] font-black text-gray-500 uppercase block mb-1">متوسط الفاتورة</span>
-                        <span className="text-lg font-black text-black tabular-nums">{totals.avgOrder.toFixed(0)}</span>
+                    <div className="flex flex-col pr-8">
+                        <span className="text-[9px] font-black text-gray-400 uppercase mb-2">كفاءة الإنفاق</span>
+                        <span className="text-3xl font-black text-black tabular-nums">{totals.expenseRatio.toFixed(1)}%</span>
+                        <span className="text-[8px] text-gray-500 mt-1">من الدخل</span>
                     </div>
                 </div>
 
-                {/* قسم منحنيات الأداء المالي (بديل الموردين والمشتريات) */}
-                {renderChart()}
+                {/* المنحنى البياني الزمني */}
+                <div className="border-t border-b border-gray-100 py-6">
+                    {renderTimelineChart()}
+                </div>
 
-                {/* التحليل التفصيلي للمنتجات */}
+                {/* التحليل التشغيلي للأصناف */}
                 <div className="flex-1">
-                   <h3 className="text-[11px] font-black mb-3 flex items-center gap-2"><PieChart size={14} /> تحليل ربحية الأصناف المباعة:</h3>
-                   <table className="w-full text-right text-[10px] border-collapse">
+                   <h3 className="text-[12px] font-black mb-4 flex items-center gap-2 border-r-4 border-black pr-3">تحليل أداء المنتجات المبيعة:</h3>
+                   <table className="w-full text-right text-[11px] border-collapse">
                       <thead>
-                          <tr className="bg-black text-white">
-                              <th className="p-3 font-black">اسم الصنف</th>
-                              <th className="p-3 text-center font-black">الكمية</th>
-                              <th className="p-3 text-center font-black">المبيعات</th>
-                              <th className="p-3 text-center font-black">التكلفة</th>
-                              <th className="p-3 text-left font-black">الربح الصافي</th>
+                          <tr className="border-b-2 border-black">
+                              <th className="py-3 font-black text-gray-400">اسم المنتج</th>
+                              <th className="py-3 text-center font-black text-gray-400">الكمية</th>
+                              <th className="py-3 text-center font-black text-gray-400">المبيعات</th>
+                              <th className="py-3 text-left font-black text-black">الربح المحقق</th>
                           </tr>
                       </thead>
-                      <tbody className="divide-y divide-black">
+                      <tbody className="divide-y divide-gray-100">
                           {productStats.map(([name, data], idx) => (
-                              <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                  <td className="p-2 font-black text-black">{name}</td>
-                                  <td className="p-2 text-center tabular-nums font-bold">{data.qty.toLocaleString()}</td>
-                                  <td className="p-2 text-center tabular-nums font-bold">{data.revenue.toLocaleString()}</td>
-                                  <td className="p-2 text-center tabular-nums text-gray-500 font-bold">{data.cost.toLocaleString()}</td>
-                                  <td className="p-2 text-left font-black tabular-nums">{data.profit.toLocaleString()}</td>
+                              <tr key={idx} className="group hover:bg-gray-50">
+                                  <td className="py-4 font-black text-black">{name}</td>
+                                  <td className="py-4 text-center tabular-nums font-bold text-gray-600">{data.qty.toLocaleString()}</td>
+                                  <td className="py-4 text-center tabular-nums font-bold text-gray-600">{data.revenue.toLocaleString()}</td>
+                                  <td className="py-4 text-left font-black tabular-nums text-black">{data.profit.toLocaleString()}</td>
                               </tr>
                           ))}
                       </tbody>
-                      <tfoot>
-                          <tr className="border-t-4 border-black bg-gray-100 font-black text-[11px]">
-                              <td className="p-3 text-xs">الإجمالي العام للفترة</td>
-                              <td colSpan={3} className="p-3 text-center italic text-[9px] text-gray-500">تم احتساب الأرباح بناءً على تكلفة المواد عند المبيع</td>
-                              <td className="p-3 text-left text-xs">{totals.profit.toLocaleString()} ل.س</td>
-                          </tr>
-                      </tfoot>
                    </table>
                 </div>
 
-                {/* ملخص الأداء الذكي */}
-                <div className="p-4 bg-gray-50 border-r-8 border-black">
-                    <h4 className="text-[10px] font-black mb-1 flex items-center gap-2 uppercase"><Target size={12} /> خلاصة المركز المالي والتوجه العام:</h4>
-                    <p className="text-[10px] font-bold leading-relaxed text-gray-800">
-                        تظهر الرسوم البيانية أعلاه استقرار المسار المالي للمخبز بمتوسط إيرادات دورية قدرها {totals.revenue.toLocaleString()} ل.س. 
-                        تمثل التكاليف التشغيلية (المشتريات) حوالي {totals.expenseRatio.toFixed(1)}% من إجمالي الدخل، مما يشير إلى كفاءة إدارة التكاليف. 
-                        الصنف الأعلى مبيعاً ({productStats[0]?.[0] || '---'}) يظل الركيزة الأساسية للنمو، بينما نوصي بمراقبة منحنى المشتريات لضمان بقاء هوامش الربح ضمن المنطقة الآمنة.
-                    </p>
+                {/* ملخص ذكي بسيط */}
+                <div className="grid grid-cols-2 gap-8 pt-8 border-t-2 border-black">
+                    <div>
+                        <h4 className="text-[10px] font-black mb-3 flex items-center gap-2"><Target size={14} /> ملخص الحالة التشغيلية:</h4>
+                        <p className="text-[11px] font-bold text-gray-700 leading-relaxed">
+                            تشير البيانات إلى استقرار في التدفق النقدي بمتوسط مبيعات قدرها {totals.revenue.toLocaleString()} ل.س. 
+                            الصنف الأكثر مساهمة في الأرباح هو ({productStats[0]?.[0] || '---'}). 
+                            نوصي بمراجعة دورية للمشتريات لضمان الحفاظ على هامش ربح { (100 - totals.expenseRatio).toFixed(1) }%.
+                        </p>
+                    </div>
+                    <div className="flex flex-col items-center justify-center border-r border-gray-100">
+                         <div className="flex items-center gap-2 mb-2">
+                            <Activity size={16} className="text-green-500" />
+                            <span className="text-[10px] font-black text-black uppercase">درجة استقرار النشاط</span>
+                         </div>
+                         <div className="text-2xl font-black">آمن ومستقر</div>
+                         <span className="text-[8px] text-gray-400 font-bold mt-1">بناءً على توازن الدخل والمصاريف</span>
+                    </div>
                 </div>
 
-                {/* التوقيعات */}
-                <div className="mt-auto pt-6 border-t border-black flex justify-between items-end">
-                    <div className="text-[8px] font-bold text-gray-500 space-y-1">
-                        <p>نظام محاسبة مخبز كوكيز - CB Analytics v2.6</p>
-                        <p>مرجع التقرير الرقمي: CB-{Date.now().toString().slice(-6)}</p>
-                        <p>وقت الاستخراج: {now.toLocaleTimeString('ar-SY')}</p>
+                {/* تذييل التقرير */}
+                <div className="mt-auto pt-6 flex justify-between items-end border-t border-gray-100">
+                    <div className="text-[8px] font-bold text-gray-400">
+                        <p>نظام محاسبة مخبز كوكيز | CB-2026-v2</p>
+                        <p>تاريخ الاستخراج: {now.toLocaleString('ar-SY')}</p>
                     </div>
-                    <div className="text-center w-48 border-t-2 border-black pt-2">
-                        <span className="text-[10px] font-black">اعتماد الإدارة المالية</span>
+                    <div className="text-center w-48 pt-2">
+                        <div className="h-[1px] bg-black w-full mb-2"></div>
+                        <span className="text-[10px] font-black">الاعتماد المالي</span>
                     </div>
                 </div>
              </div>
