@@ -111,8 +111,8 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
               </div>
             </div>
 
-            <div className="text-center text-[11px] font-black border-t border-dashed border-black pt-4 mb-10">
-              شكراً لزيارتكم - مخبز كوكيز <br/> ميزانك دليلك
+            <div className="text-center text-[12px] font-black border-t border-dashed border-black pt-4 mb-10 italic">
+              صُنع يدوياً بكل حُب
             </div>
             
             <div className="h-12 print:block hidden"></div>
