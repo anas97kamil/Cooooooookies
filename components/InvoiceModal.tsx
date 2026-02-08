@@ -1,24 +1,20 @@
+
 import React, { useState } from 'react';
 import { X, Copy, Check, FileSpreadsheet, Printer } from 'lucide-react';
 import { SaleItem } from '../types';
 import { utils, writeFile } from 'xlsx';
 
-interface InvoiceModalProps {
-  items: SaleItem[];
-  onClose: () => void;
-}
-
-export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) => {
+export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
   const [copied, setCopied] = useState(false);
   
-  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const timeStr = items[0]?.time || new Date().toLocaleTimeString('ar-SY');
-  const dayDate = new Date().toLocaleDateString('ar-SY');
+  const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+  const timeStr = items[0]?.time || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const dayDate = new Date().toLocaleDateString('en-US');
   const customerName = items[0]?.customerName || 'زبون عام';
   const customerNumber = items[0]?.customerNumber || 0;
 
   const handleDownloadExcel = () => {
-    const data = items.map(i => ({ 
+    const data = items.map((i: any) => ({ 
       "المادة": i.name, 
       "الكمية": i.quantity, 
       "السعر": i.price, 
@@ -50,7 +46,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
   };
 
   const handleCopy = () => {
-    const text = `مخبز كوكيز - فاتورة مبيعات\nرقم الفاتورة: ${customerNumber}\nالتاريخ: ${dayDate}\nالعميل: ${customerName}\nالمواد: ${items.map(i => `${i.name} (${i.quantity})`).join(' - ')}\nالمجموع: ${total} ل.س`;
+    const text = `مخبز كوكيز - فاتورة مبيعات\nرقم الفاتورة: ${customerNumber}\nالتاريخ: ${dayDate}\nالعميل: ${customerName}\nالمواد: ${items.map((i: any) => `${i.name} (${i.quantity})`).join(' - ')}\nالمجموع: ${total} ل.س`;
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -74,7 +70,7 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
             <div className="text-center mb-4 border-b-2 border-black pb-2">
               <h2 className="text-2xl font-black mb-1 text-black">مخبز كوكيز</h2>
               <p className="text-[12px] font-black text-black uppercase tracking-widest">فاتورة مبيعات</p>
-              <div className="flex justify-between items-center mt-3 text-[11px] font-black px-1">
+              <div className="flex justify-between items-center mt-3 text-[11px] font-black px-1 tabular-nums">
                  <span>رقم الفاتورة: #{customerNumber}</span>
                  <span>{dayDate} - {timeStr}</span>
               </div>
@@ -94,20 +90,20 @@ export const InvoiceModal: React.FC<InvoiceModalProps> = ({ items, onClose }) =>
                 </tr>
               </thead>
               <tbody>
-                {items.map((item, idx) => (
-                  <tr key={idx} className="text-[13px] font-bold border-b border-black/5">
+                {items.map((item: any, idx: number) => (
+                  <tr key={idx} className="text-[13px] font-bold border-b border-black/5 tabular-nums">
                     <td className="py-3 leading-tight">{item.name}</td>
                     <td className="py-3 text-center font-black">{item.quantity}</td>
-                    <td className="py-3 text-left font-black">{ (item.price * item.quantity).toLocaleString() }</td>
+                    <td className="py-3 text-left font-black">{ (item.price * item.quantity).toLocaleString('en-US') }</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
             <div className="border-t-2 border-black pt-3 mb-8">
-              <div className="flex justify-between items-center text-2xl font-black total-text">
+              <div className="flex justify-between items-center text-2xl font-black total-text tabular-nums">
                 <span>المجموع الكلي:</span>
-                <span>{total.toLocaleString()} ل.س</span>
+                <span>{total.toLocaleString('en-US')} ل.س</span>
               </div>
             </div>
 

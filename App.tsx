@@ -103,6 +103,27 @@ const App: React.FC = () => {
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
+  // PWA Install Prompt State
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstall = async () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setInstallPrompt(null);
+    }
+  };
+  
   const [systemPassword, setSystemPassword] = useState(() => localStorage.getItem('systemPassword') || '2026');
 
   const [showBackupReminder, setShowBackupReminder] = useState(false);
@@ -129,23 +150,19 @@ const App: React.FC = () => {
 
   const completeOrder = useCallback((items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail') => {
     const orderId = Date.now().toString();
-    const time = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-    const todayDate = new Date().toLocaleDateString('ar-SY');
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const todayDate = new Date().toLocaleDateString('en-US');
     
-    // الحل الجديد: حساب رقم الفاتورة بناءً على المبيعات الحالية + الأرشيف لهذا اليوم
-    // 1. البحث عن أعلى رقم في المبيعات النشطة لليوم
     const activeTodaySales = sales.filter(s => s.date === todayDate);
     const activeMax = activeTodaySales.length > 0 
       ? Math.max(...activeTodaySales.map(s => s.customerNumber)) 
       : 0;
 
-    // 2. البحث عن أعلى رقم في الأرشيف لنفس تاريخ اليوم
     const archivedToday = history.find(h => h.date === todayDate);
     const archivedMax = (archivedToday && archivedToday.items.length > 0)
       ? Math.max(...archivedToday.items.map(s => s.customerNumber))
       : 0;
 
-    // 3. الرقم التالي هو الأكبر بينهما + 1
     const nextCustomerNumber = Math.max(activeMax, archivedMax) + 1;
 
     const newItems: SaleItem[] = items.map(item => ({
@@ -162,7 +179,7 @@ const App: React.FC = () => {
 
     setSales(prev => [...prev, ...newItems]);
     setInvoiceItems(newItems);
-  }, [sales, history]); // أضفنا التاريخ للتبع
+  }, [sales, history]);
 
   const handleUpdateProduct = (id: string, updatedProduct: Partial<Product>) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedProduct } : p));
@@ -408,6 +425,8 @@ const App: React.FC = () => {
         onManualSync={() => { setIsSyncing(true); setTimeout(() => setIsSyncing(false), 800); }} 
         onQuickBackup={handleExportData} 
         isSyncing={isSyncing}
+        installPrompt={installPrompt}
+        onInstall={handleInstall}
       />
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl no-print">
         <Summary items={sales} onPreview={() => setInvoiceItems(sales)} systemPassword={systemPassword} />

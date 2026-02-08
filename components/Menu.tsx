@@ -3,17 +3,9 @@ import React, { useState, useMemo } from 'react';
 import { Trash2, Search, User, Download, Store, Edit3, Receipt, Clock, Package, ChevronDown, ChevronUp, LayoutList, Hash } from 'lucide-react';
 import { SaleItem } from '../types';
 
-interface SalesTableProps {
-  items: SaleItem[];
-  onDeleteItem: (id: string) => void;
-  onDeleteOrder?: (orderId: string) => void;
-  onPreviewInvoice: (items: SaleItem[]) => void;
-  onUpdateItemPrice?: (itemId: string, newPrice: number) => void; 
-}
-
-export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onDeleteOrder, onPreviewInvoice, onUpdateItemPrice }) => {
+export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, onPreviewInvoice, onUpdateItemPrice }) => {
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [isExpanded, setIsExpanded] = useState(false); // حالة التوسيع للفواتير القديمة
+  const [isExpanded, setIsExpanded] = useState(false);
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [tempPrice, setTempPrice] = useState<string>('');
 
@@ -24,14 +16,12 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
         if (!groups[key]) groups[key] = [];
         groups[key].push(item);
     });
-    // ترتيب تنازلي (الأحدث أولاً)
     return Object.values(groups).sort((a, b) => b[0].orderId.localeCompare(a[0].orderId));
   }, [items]);
 
   const filteredOrders = useMemo(() => {
       const term = searchTerm.toLowerCase().trim();
       if (!term) {
-          // إذا لم يكن هناك بحث، نعرض إما الكل أو الأحدث فقط بناءً على الحالة
           return isExpanded ? groupedOrders : groupedOrders.slice(0, 1);
       }
       return groupedOrders.filter(g => 
@@ -56,7 +46,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
 
   return (
     <div className="space-y-4">
-        {/* Search Bar & Header */}
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between no-print px-2">
             <div className="relative w-full md:max-w-xs">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
@@ -93,7 +82,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                       key={first.orderId} 
                       className={`bg-gray-800 rounded-[2rem] border overflow-hidden shadow-2xl animate-fade-up flex flex-col transition-all group ${isLatest ? 'border-[#FA8072] ring-2 ring-[#FA8072]/20' : 'border-gray-700 opacity-90'}`}
                     >
-                        {/* Invoice Header */}
                         <div className={`p-4 flex justify-between items-start border-b ${isLatest ? 'bg-[#FA8072]/5 border-[#FA8072]/20' : 'bg-gray-900/50 border-gray-700/50'}`}>
                             <div className="flex gap-3">
                                 <div className={`p-2 rounded-xl ${first.saleType === 'wholesale' ? 'bg-orange-500/10 text-orange-400' : 'bg-blue-500/10 text-blue-400'}`}>
@@ -117,12 +105,11 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                             </div>
                             
                             <div className="flex flex-col items-end">
-                                <span className={`font-black text-base tabular-nums ${isLatest ? 'text-[#FA8072]' : 'text-green-400'}`}>{total.toLocaleString()}</span>
+                                <span className={`font-black text-base tabular-nums ${isLatest ? 'text-[#FA8072]' : 'text-green-400'}`}>{total.toLocaleString('en-US')}</span>
                                 <span className="text-[8px] text-gray-600 font-bold uppercase">ل.س</span>
                             </div>
                         </div>
 
-                        {/* Invoice Body (Items) */}
                         <div className="p-3 space-y-2">
                             {group.map(item => (
                                 <div key={item.id} className="flex justify-between items-center text-xs p-2.5 bg-gray-900/30 rounded-xl border border-gray-700/30 hover:bg-gray-900/60 transition-colors">
@@ -148,11 +135,11 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                                                 />
                                             ) : (
                                                 <div className="flex items-center gap-1 cursor-pointer group/price" onClick={() => { setEditingPriceId(item.id); setTempPrice(item.price.toString()); }}>
-                                                    <span className="text-[10px] text-gray-500 tabular-nums">{item.price.toLocaleString()}</span>
+                                                    <span className="text-[10px] text-gray-500 tabular-nums">{item.price.toLocaleString('en-US')}</span>
                                                     <Edit3 size={8} className="text-[#FA8072] opacity-0 group-hover/price:opacity-100" />
                                                 </div>
                                             )}
-                                            <span className="font-black text-white text-[11px] tabular-nums">{(item.price * item.quantity).toLocaleString()}</span>
+                                            <span className="font-black text-white text-[11px] tabular-nums">{(item.price * item.quantity).toLocaleString('en-US')}</span>
                                         </div>
                                         <button onClick={() => onDeleteItem(item.id)} className="text-gray-700 hover:text-red-500 transition-colors p-1"><Trash2 size={12} /></button>
                                     </div>
@@ -160,7 +147,6 @@ export const SalesTable: React.FC<SalesTableProps> = ({ items, onDeleteItem, onD
                             ))}
                         </div>
 
-                        {/* Actions */}
                         <div className="px-4 py-3 bg-gray-900/20 border-t border-gray-700/30 flex justify-between items-center no-print">
                             <button 
                               onClick={() => onPreviewInvoice(group)} 

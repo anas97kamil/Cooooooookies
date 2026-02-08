@@ -3,15 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Settings, Edit3, Trash2, CheckCircle, Plus, Minus, UserPlus, X, Check, Calculator } from 'lucide-react';
 import { Product, UnitType, SaleType, Customer } from '../types';
 
-interface POSInterfaceProps {
-  onCompleteOrder: (items: any[], customerName?: string, customerId?: string, saleType?: SaleType) => void;
-  products: Product[];
-  customers: Customer[];
-  onOpenProductManager: () => void;
-  onOpenCustomerManager: () => void;
-}
-
-export const POSInterface: React.FC<POSInterfaceProps> = ({ 
+export const POSInterface: React.FC<any> = ({ 
     onCompleteOrder, products, customers, onOpenProductManager, onOpenCustomerManager 
 }) => {
   const [cart, setCart] = useState<any[]>([]);
@@ -86,16 +78,14 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
     }
   };
 
-  // تعديل سعر الوحدة (سعر الكيلو أو سعر القطعة)
   const handleStartEditUnitPrice = (item: any) => {
     setEditingPriceId(item.tempId);
     setEditingTotalId(null);
     setTempValue(item.price.toString());
   };
 
-  // تعديل إجمالي المبلغ (لحساب الوزن)
   const handleStartEditTotalAmount = (item: any) => {
-    if (item.unitType !== 'kg') return; // هذه الميزة مفيدة للكيلو فقط
+    if (item.unitType !== 'kg') return;
     setEditingTotalId(item.tempId);
     setEditingPriceId(null);
     setTempValue((item.price * item.quantity).toString());
@@ -107,11 +97,9 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
       setCart(prev => prev.map(i => {
         if (i.tempId === tempId) {
           if (editingTotalId) {
-            // الميزة المطلوبة: تعديل الوزن بناءً على إجمالي المبلغ المدخل
             const newQty = parseFloat((val / i.price).toFixed(3));
             return { ...i, quantity: newQty };
           } else {
-            // تعديل سعر الوحدة بشكل طبيعي
             return { ...i, price: val };
           }
         }
@@ -127,7 +115,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
   const handleCheckout = () => {
     if (isCheckoutDisabled) return;
     const items = cart.map(({ name, price, costPrice, quantity, unitType }) => ({ name, price, costPrice, quantity, unitType }));
-    const name = saleType === 'wholesale' ? customers.find(c => c.id === selectedCustomerId)?.name : manualCustomerName;
+    const name = saleType === 'wholesale' ? customers.find((c: any) => c.id === selectedCustomerId)?.name : manualCustomerName;
     onCompleteOrder(items, name, selectedCustomerId || undefined, saleType);
     setCart([]); setManualCustomerName(''); setSelectedCustomerId(''); setSaleType('retail');
   };
@@ -143,12 +131,12 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {products.map(p => (
+            {products.map((p: any) => (
                 <button key={p.id} onClick={() => addToCart(p)} className="flex flex-col items-center justify-center p-4 bg-gray-800 border border-gray-700 hover:bg-gray-700 hover:border-[#FA8072] text-white rounded-2xl transition-all shadow-sm active:scale-95 h-32 relative group">
                     <div className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${p.unitType === 'kg' ? 'bg-yellow-400 text-black' : 'bg-blue-300 text-black'}`}>{p.unitType === 'kg' ? 'كغ' : 'قطعة'}</div>
                     <span className="font-bold text-sm text-center mb-1 group-hover:text-[#FA8072]">{p.name}</span>
                     <span className="text-xs text-gray-400 bg-gray-900/50 px-2 py-1 rounded-md">
-                      {(saleType === 'wholesale' ? (p.wholesalePrice || p.price) : p.price).toLocaleString()} ل.س
+                      {(saleType === 'wholesale' ? (p.wholesalePrice || p.price) : p.price).toLocaleString('en-US')} ل.س
                     </span>
                 </button>
             ))}
@@ -187,7 +175,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                     <div className="flex gap-2">
                          <select value={selectedCustomerId} onChange={e => setSelectedCustomerId(e.target.value)} className={`w-full bg-gray-800 border text-white text-sm rounded-xl px-4 py-2.5 outline-none transition-all ${!selectedCustomerId && cart.length > 0 ? 'border-orange-500 animate-pulse' : 'border-gray-700 focus:border-[#FA8072]'}`}>
                             <option value="">اختر عميل الجملة...</option>
-                            {customers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
                          </select>
                         <button onClick={onOpenCustomerManager} className="bg-blue-600 text-white px-4 rounded-xl hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/20"><UserPlus size={18} /></button>
                     </div>
@@ -225,7 +213,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                                         <div className="mt-1 flex items-center gap-1.5 cursor-pointer group/price" onClick={() => handleStartEditUnitPrice(i)}>
                                             <span className="text-[10px] text-gray-500">
                                               {i.unitType === 'kg' ? 'سعر الكيلو: ' : 'السعر: '}
-                                              <span className="text-gray-300 font-bold tabular-nums">{i.price.toLocaleString()}</span>
+                                              <span className="text-gray-300 font-bold tabular-nums">{i.price.toLocaleString('en-US')}</span>
                                             </span>
                                             <Edit3 size={10} className="text-[#FA8072] opacity-30 group-hover/price:opacity-100" />
                                         </div>
@@ -267,7 +255,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                                         >
                                             <div className="flex items-center gap-1">
                                               {i.unitType === 'kg' && <Calculator size={10} className="text-[#FA8072] opacity-0 group-hover/total:opacity-100 transition-opacity" />}
-                                              <span className="text-[#FA8072] font-black text-lg tabular-nums">{(i.price * i.quantity).toLocaleString()}</span>
+                                              <span className="text-[#FA8072] font-black text-lg tabular-nums">{(i.price * i.quantity).toLocaleString('en-US')}</span>
                                             </div>
                                             <span className="text-[8px] text-gray-600 font-bold uppercase">{i.unitType === 'kg' ? 'انقر لطلب مبلغ محدد' : 'إجمالي المادة'}</span>
                                         </div>
@@ -283,7 +271,7 @@ export const POSInterface: React.FC<POSInterfaceProps> = ({
                 <div className="flex justify-between items-center mb-5">
                     <span className="text-gray-500 font-black text-xs uppercase tracking-widest">إجمالي السلة</span>
                     <div className="text-right">
-                        <span className="text-3xl font-black text-white tabular-nums">{total.toLocaleString()}</span>
+                        <span className="text-3xl font-black text-white tabular-nums">{total.toLocaleString('en-US')}</span>
                         <span className="text-[10px] text-gray-500 font-bold mr-1">ل.س</span>
                     </div>
                 </div>
