@@ -11,7 +11,7 @@ export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, 
 
   const groupedOrders = useMemo(() => {
     const groups: { [key: string]: SaleItem[] } = {};
-    items.forEach(item => {
+    items.forEach((item: SaleItem) => {
         const key = item.orderId;
         if (!groups[key]) groups[key] = [];
         groups[key].push(item);

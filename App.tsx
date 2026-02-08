@@ -432,7 +432,13 @@ const App: React.FC = () => {
         <Summary items={sales} onPreview={() => setInvoiceItems(sales)} systemPassword={systemPassword} />
         <POSInterface products={products} customers={customers} onCompleteOrder={completeOrder} onOpenProductManager={() => setModals(m => ({...m, products: true}))} onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} />
         <div className="mt-8">
-            <SalesTable items={sales} onDeleteItem={id => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={oid => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id, p) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
+            <SalesTable 
+              items={sales} 
+              onDeleteItem={(id: string) => setSales(s => s.filter(i => i.id !== id))} 
+              onDeleteOrder={(oid: string) => setSales(s => s.filter(i => i.orderId !== oid))} 
+              onPreviewInvoice={setInvoiceItems} 
+              onUpdateItemPrice={(id: string, p: number) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} 
+            />
         </div>
       </main>
       

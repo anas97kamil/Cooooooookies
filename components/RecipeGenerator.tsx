@@ -18,8 +18,8 @@ export const POSInterface: React.FC<any> = ({
   const [tempValue, setTempValue] = useState<string>('');
 
   useEffect(() => {
-    setCart(prev => prev.map(item => {
-      const productDef = products.find(p => p.name === item.name && p.unitType === item.unitType);
+    setCart((prev: any[]) => prev.map((item: any) => {
+      const productDef = products.find((p: Product) => p.name === item.name && p.unitType === item.unitType);
       if (productDef) {
         return {
           ...item,
