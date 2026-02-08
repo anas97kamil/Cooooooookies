@@ -44,7 +44,7 @@
       @media print {
         @page {
           margin: 0 !important;
-          size: portrait !important; /* إجبار الوضع الرأسي */
+          size: portrait !important; 
         }
 
         html, body {
@@ -69,7 +69,6 @@
           padding: 0 !important;
         }
 
-        /* تحسين التباين للطباعة */
         #print-area * {
           color: #000 !important;
           background: transparent !important;
@@ -78,21 +77,22 @@
           print-color-adjust: exact !important;
         }
 
-        /* وضع الفاتورة الحرارية - ملء العرض بالكامل */
+        /* تعديل وضع 80 مم لزيادة هوامش الأمان الجانبية */
         .print-mode-80mm {
-          width: 100% !important; /* تمدد لملء عرض الورق المتاح */
+          width: 100% !important; 
           max-width: 100% !important;
-          padding: 10px 15px 40px 15px !important;
+          /* زيادة الهوامش الجانبية إلى 25 بكسل بدلاً من 15 لضمان عدم القص */
+          padding: 10px 25px 50px 25px !important;
           box-sizing: border-box !important;
           display: block !important;
           direction: rtl !important;
         }
 
-        /* زيادة أحجام النصوص في الطباعة لتكون واضحة */
-        .print-mode-80mm h2 { font-size: 24px !important; font-weight: 900 !important; }
+        .print-mode-80mm h2 { font-size: 24px !important; font-weight: 900 !important; margin-bottom: 5px !important; }
         .print-mode-80mm p { font-size: 14px !important; font-weight: 800 !important; }
-        .print-mode-80mm table { font-size: 14px !important; width: 100% !important; }
-        .print-mode-80mm .total-text { font-size: 26px !important; font-weight: 900 !important; }
+        .print-mode-80mm table { font-size: 14px !important; width: 100% !important; border-collapse: collapse !important; }
+        .print-mode-80mm th, .print-mode-80mm td { padding: 8px 4px !important; }
+        .print-mode-80mm .total-text { font-size: 26px !important; font-weight: 900 !important; margin-top: 15px !important; }
 
         .print-mode-a4 {
           width: 210mm !important;

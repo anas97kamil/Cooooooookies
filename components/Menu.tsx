@@ -105,8 +105,8 @@ export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, 
                             </div>
                             
                             <div className="flex flex-col items-end">
-                                <span className={`font-black text-base tabular-nums ${isLatest ? 'text-[#FA8072]' : 'text-green-400'}`}>{total.toLocaleString('en-US')}</span>
-                                <span className="text-[8px] text-gray-600 font-bold uppercase">ل.س</span>
+                                <span className={`font-black text-base tabular-nums ${isLatest ? 'text-[#FA8072]' : 'text-green-400'}`}>{total.toLocaleString('en-US')} <small className="text-[10px] opacity-70">ل.س</small></span>
+                                <span className="text-[8px] text-gray-600 font-bold uppercase">إجمالي الفاتورة</span>
                             </div>
                         </div>
 
@@ -135,11 +135,11 @@ export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, 
                                                 />
                                             ) : (
                                                 <div className="flex items-center gap-1 cursor-pointer group/price" onClick={() => { setEditingPriceId(item.id); setTempPrice(item.price.toString()); }}>
-                                                    <span className="text-[10px] text-gray-500 tabular-nums">{item.price.toLocaleString('en-US')}</span>
+                                                    <span className="text-[10px] text-gray-500 tabular-nums">{item.price.toLocaleString('en-US')} ل.س</span>
                                                     <Edit3 size={8} className="text-[#FA8072] opacity-0 group-hover/price:opacity-100" />
                                                 </div>
                                             )}
-                                            <span className="font-black text-white text-[11px] tabular-nums">{(item.price * item.quantity).toLocaleString('en-US')}</span>
+                                            <span className="font-black text-white text-[11px] tabular-nums">{(item.price * item.quantity).toLocaleString('en-US')} ل.س</span>
                                         </div>
                                         <button onClick={() => onDeleteItem(item.id)} className="text-gray-700 hover:text-red-500 transition-colors p-1"><Trash2 size={12} /></button>
                                     </div>

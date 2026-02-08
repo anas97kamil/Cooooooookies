@@ -213,7 +213,7 @@ export const POSInterface: React.FC<any> = ({
                                         <div className="mt-1 flex items-center gap-1.5 cursor-pointer group/price" onClick={() => handleStartEditUnitPrice(i)}>
                                             <span className="text-[10px] text-gray-500">
                                               {i.unitType === 'kg' ? 'سعر الكيلو: ' : 'السعر: '}
-                                              <span className="text-gray-300 font-bold tabular-nums">{i.price.toLocaleString('en-US')}</span>
+                                              <span className="text-gray-300 font-bold tabular-nums">{i.price.toLocaleString('en-US')} ل.س</span>
                                             </span>
                                             <Edit3 size={10} className="text-[#FA8072] opacity-30 group-hover/price:opacity-100" />
                                         </div>
@@ -255,7 +255,7 @@ export const POSInterface: React.FC<any> = ({
                                         >
                                             <div className="flex items-center gap-1">
                                               {i.unitType === 'kg' && <Calculator size={10} className="text-[#FA8072] opacity-0 group-hover/total:opacity-100 transition-opacity" />}
-                                              <span className="text-[#FA8072] font-black text-lg tabular-nums">{(i.price * i.quantity).toLocaleString('en-US')}</span>
+                                              <span className="text-[#FA8072] font-black text-lg tabular-nums">{(i.price * i.quantity).toLocaleString('en-US')} <small className="text-[10px]">ل.س</small></span>
                                             </div>
                                             <span className="text-[8px] text-gray-600 font-bold uppercase">{i.unitType === 'kg' ? 'انقر لطلب مبلغ محدد' : 'إجمالي المادة'}</span>
                                         </div>
