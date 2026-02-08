@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { X, Copy, Check, FileSpreadsheet, Printer } from 'lucide-react';
 import { SaleItem } from '../types';
@@ -66,7 +65,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-950/50 p-6 flex justify-center">
-           <div id="pos-invoice-content" className="bg-white text-black px-6 pt-8 pb-10 w-[80mm] shadow-2xl h-fit print:w-full print:shadow-none print:px-8">
+           <div id="pos-invoice-content" className="bg-white text-black px-8 pt-8 pb-10 w-[80mm] shadow-2xl h-fit print:w-full print:shadow-none print:px-0">
             <div className="text-center mb-6 border-b-2 border-black pb-4">
               <h2 className="text-2xl font-black mb-1 text-black">مخبز كوكيز</h2>
               <p className="text-[12px] font-black text-black uppercase tracking-widest">فاتورة مبيعات</p>

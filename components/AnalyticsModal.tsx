@@ -1,4 +1,3 @@
-
 import React, { useMemo, useState } from 'react';
 import { X, BarChart3, Printer, Activity, Target } from 'lucide-react';
 import { ArchivedDay, SaleItem, PurchaseInvoice } from '../types';
@@ -174,7 +173,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
           </div>
 
           <div className="flex justify-center p-4">
-             <div id="report-a4-content" className="bg-white text-black w-[210mm] p-[18mm] shadow-2xl min-h-[297mm] flex flex-col gap-10">
+             <div id="report-a4-content" className="bg-white text-black w-[210mm] p-[25mm] shadow-2xl min-h-[297mm] flex flex-col gap-10 print:p-0">
                 
                 <div className="flex justify-between items-end border-b-2 border-black pb-4">
                     <div>

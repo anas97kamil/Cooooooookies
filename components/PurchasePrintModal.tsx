@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { X, FileSpreadsheet, Printer } from 'lucide-react';
 import { PurchaseInvoice } from '../types';
@@ -52,7 +51,7 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 bg-gray-950/50 flex justify-center">
-          <div id="purchase-invoice-content" className="bg-white text-black px-6 pt-8 pb-10 w-[80mm] shadow-2xl h-fit print:w-full print:shadow-none print:px-8">
+          <div id="purchase-invoice-content" className="bg-white text-black px-8 pt-8 pb-10 w-[80mm] shadow-2xl h-fit print:w-full print:shadow-none print:px-0">
             <div className="text-center mb-6 border-b-2 border-black pb-4">
               <h2 className="text-xl font-black mb-1 text-black">مخبز كوكيز</h2>
               <p className="text-black font-black text-[10px] uppercase tracking-widest">سند استلام مشتريات</p>
