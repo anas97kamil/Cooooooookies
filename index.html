@@ -40,10 +40,10 @@
         border-radius: 10px;
       }
 
-      /* نظام الطباعة المحسن */
+      /* نظام الطباعة المحسن ليكون مرناً ويملأ الصفحة */
       @media print {
         @page {
-          margin: 0 !important;
+          margin: 10mm !important; /* هوامش الصفحة الفعلية للطابعة */
           size: auto; 
         }
 
@@ -77,30 +77,28 @@
           print-color-adjust: exact !important;
         }
 
-        /* وضع 80 مم مع هوامش أمان محسنة */
+        /* وضع الطباعة المرن - يملأ عرض الورقة سواء كانت 80 مم أو A4 */
         .print-mode-80mm {
-          width: 80mm !important; 
-          max-width: 80mm !important;
-          /* هوامش جانبية تضمن عدم قص النصوص 35px تعادل حوالي 9 ملم */
-          padding: 10px 35px 60px 35px !important;
-          margin: 0 auto !important;
+          width: 100% !important; 
+          max-width: none !important;
+          padding: 5mm 10mm 20mm 10mm !important; /* هوامش داخلية متوازنة */
+          margin: 0 !important;
           box-sizing: border-box !important;
           display: block !important;
           direction: rtl !important;
         }
 
-        .print-mode-80mm h2 { font-size: 22px !important; font-weight: 900 !important; margin-bottom: 5px !important; }
-        .print-mode-80mm p { font-size: 13px !important; font-weight: 800 !important; }
-        .print-mode-80mm table { font-size: 12px !important; width: 100% !important; border-collapse: collapse !important; }
-        .print-mode-80mm th, .print-mode-80mm td { padding: 6px 2px !important; }
-        .print-mode-80mm .total-text { font-size: 22px !important; font-weight: 900 !important; margin-top: 15px !important; }
+        .print-mode-80mm h2 { font-size: 28px !important; font-weight: 900 !important; margin-bottom: 10px !important; text-align: center !important; }
+        .print-mode-80mm p { font-size: 16px !important; font-weight: 800 !important; }
+        .print-mode-80mm table { font-size: 15px !important; width: 100% !important; border-collapse: collapse !important; margin-top: 15px !important; }
+        .print-mode-80mm th, .print-mode-80mm td { padding: 10px 5px !important; border-bottom: 1px solid #eee !important; }
+        .print-mode-80mm .total-text { font-size: 26px !important; font-weight: 900 !important; margin-top: 25px !important; border-top: 2px solid #000 !important; padding-top: 10px !important; }
 
-        /* وضع A4 للتقارير مع هوامش أمان كبيرة */
+        /* وضع A4 للتقارير الضخمة */
         .print-mode-a4 {
-          width: 210mm !important;
-          min-height: 297mm !important;
-          padding: 25mm !important; /* زيادة الهامش لـ 2.5 سم */
-          margin: 0 auto !important;
+          width: 100% !important;
+          padding: 15mm !important;
+          margin: 0 !important;
           box-sizing: border-box !important;
           display: block !important;
           background: white !important;
