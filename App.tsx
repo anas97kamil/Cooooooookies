@@ -6,7 +6,7 @@ import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
 import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
-import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, AlertCircle, Download, AlertTriangle } from 'lucide-react';
+import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, AlertCircle, Download, AlertTriangle, Heart } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
 const ProductManager = React.lazy(() => import('./components/ProductManager').then(m => ({ default: m.ProductManager })));
@@ -20,74 +20,67 @@ const ModalLoader = () => <div className="fixed inset-0 bg-black/50 z-[60] flex 
 
 const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
+    // التحميل يستغرق ثانيتين بالضبط (100ms * 20 step = 2000ms)
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(timer);
-          setTimeout(onComplete, 500);
+          setTimeout(onComplete, 300); // تأخير بسيط جداً بعد اكتمال الـ 100% لنعومة الحركة
           return 100;
         }
         return prev + 5;
       });
     }, 100);
     
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      clearInterval(timer);
-    };
+    return () => clearInterval(timer);
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-gray-900 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-      <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-[#FA8072]/10 rounded-full blur-[100px] animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] animate-pulse"></div>
-      <div className="relative z-10 max-w-sm w-full">
-        <div className="mb-8 relative">
-           <div className="w-24 h-24 bg-gradient-to-tr from-[#FA8072] to-orange-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-orange-500/20 animate-bounce">
+    <div className="fixed inset-0 bg-gray-950 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
+      {/* تأثيرات الخلفية */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#FA8072]/20 rounded-full blur-[120px] animate-pulse"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-600/10 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+      
+      <div className="relative z-10 flex flex-col items-center">
+        {/* أيقونة ترحيبية */}
+        <div className="mb-8 relative scale-110">
+           <div className="w-24 h-24 bg-gradient-to-tr from-[#FA8072] to-orange-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(250,128,114,0.3)] animate-bounce">
               <ShieldCheck className="text-white" size={48} />
            </div>
-           {progress === 100 && (
-             <div className="absolute -right-2 -bottom-2 bg-green-500 text-white p-1 rounded-full animate-fade-up">
-                <CheckCircle2 size={24} />
-             </div>
-           )}
+           <div className="absolute -bottom-2 -right-2 bg-white text-[#FA8072] p-2 rounded-full shadow-xl animate-pulse">
+              <Heart size={16} fill="currentColor" />
+           </div>
         </div>
-        <h2 className="text-2xl font-black text-white mb-2 animate-fade-up">أهلاً بك في مخبز كوكيز</h2>
-        <p className="text-gray-400 text-sm font-bold mb-8 h-10">
-          {progress < 40 && "جاري الاتصال بقاعدة البيانات المحلية..."}
-          {progress >= 40 && progress < 80 && "تأمين الملفات للعمل بوضعية الأوفلاين..."}
-          {progress >= 80 && progress < 100 && "مزامنة البيانات السحابية..."}
-          {progress === 100 && "النظام جاهز للعمل الآن"}
-        </p>
-        <div className="w-full bg-gray-800 h-3 rounded-full overflow-hidden border border-gray-700 mb-4 p-0.5">
-          <div className="h-full bg-gradient-to-r from-[#FA8072] to-orange-500 rounded-full transition-all duration-300 ease-out shadow-lg shadow-orange-500/30" style={{ width: `${progress}%` }}></div>
+
+        {/* نص الترحيب الرئيسي */}
+        <div className="space-y-2 mb-12">
+            <h1 className="text-6xl font-black text-white tracking-tighter animate-fade-up" style={{ animationDuration: '0.8s' }}>
+                مرحباً
+            </h1>
+            <p className="text-[#FA8072] text-xl font-bold opacity-80 animate-fade-up" style={{ animationDelay: '0.2s' }}>
+                بك في مخبز كوكيز
+            </p>
         </div>
-        <div className="flex justify-between items-center px-1">
-          <div className="flex items-center gap-2">
-             {isOnline ? (
-               <Wifi size={14} className={progress < 100 ? "animate-pulse text-blue-400" : "text-green-500"} />
-             ) : (
-               <WifiOff size={14} className="text-red-500 animate-pulse" />
-             )}
-             <span className={`text-[10px] font-black uppercase tracking-widest ${isOnline ? 'text-gray-500' : 'text-red-500'}`}>
-               {isOnline ? 'OFFLINE READY' : 'WORKING OFFLINE'}
-             </span>
-          </div>
-          <span className="text-[#FA8072] font-black tabular-nums">{progress}%</span>
+
+        {/* شريط التحميل السفلي */}
+        <div className="w-64 max-w-full">
+            <div className="w-full bg-gray-900 h-1.5 rounded-full overflow-hidden border border-gray-800 p-0 mb-3">
+              <div 
+                className="h-full bg-gradient-to-r from-[#FA8072] to-orange-500 rounded-full transition-all duration-300 ease-out shadow-[0_0_15px_rgba(250,128,114,0.5)]" 
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
+            <div className="flex justify-between items-center px-1">
+                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">System Booting</span>
+                <span className="text-[#FA8072] font-black tabular-nums text-xs">{progress}%</span>
+            </div>
         </div>
       </div>
-      <div className="absolute bottom-10 flex items-center gap-2 text-gray-600">
-          <CloudDownload size={14} />
-          <span className="text-[8px] font-black uppercase tracking-[0.3em]">Downloading System Assets</span>
+
+      <div className="absolute bottom-10 text-gray-700 text-[10px] font-black uppercase tracking-[0.4em]">
+          Cookie Bakery OS v2.6
       </div>
     </div>
   );
@@ -95,7 +88,7 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('isAuth') === 'true');
-  const [isInitializing, setIsInitializing] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true); // تبدأ بـ true لتظهر شاشة الترحيب دائماً عند الفتح
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(() => new Date());
   const [showLock, setShowLock] = useState<{ target: string; data?: any } | null>(null);
@@ -225,12 +218,11 @@ const App: React.FC = () => {
 
   const handleLoginSuccess = () => {
     sessionStorage.setItem('isAuth', 'true');
-    setIsInitializing(true);
+    setIsAuthenticated(true);
   };
 
-  const finalizeLogin = () => {
+  const finalizeWelcome = () => {
     setIsInitializing(false);
-    setIsAuthenticated(true);
   };
 
   useEffect(() => {
@@ -415,7 +407,7 @@ const App: React.FC = () => {
     }
   };
 
-  if (isInitializing) return <WelcomeLoader onComplete={finalizeLogin} />;
+  if (isInitializing) return <WelcomeLoader onComplete={finalizeWelcome} />;
   if (!isAuthenticated) return <Login onLogin={handleLoginSuccess} />;
 
   return (
