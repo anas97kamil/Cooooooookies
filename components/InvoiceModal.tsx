@@ -7,7 +7,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
   const [copied, setCopied] = useState(false);
   
   const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-  const timeStr = items[0]?.time || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  const timeStr = items[0]?.time || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   const dayDate = new Date().toLocaleDateString('en-US');
   const customerName = items[0]?.customerName || 'زبون عام';
   const customerNumber = items[0]?.customerNumber || 0;

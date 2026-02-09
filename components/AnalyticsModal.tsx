@@ -18,7 +18,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
 
   const allData = useMemo(() => {
-    const todayStr = now.toLocaleDateString('ar-SY');
+    const todayStr = now.toLocaleDateString('en-US');
     const combined = [
       ...history.map(day => ({
         date: day.date,
@@ -102,7 +102,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
              if (filteredData.length > 10 && i % 4 !== 0) return null;
              return (
                <text key={i} x={getX(i)} y={height - padding + 15} fontSize="8" fontWeight="bold" textAnchor="middle" fill="#999">
-                 {d.date.split('/')[0]}
+                 {d.date.split('/')[1]}
                </text>
              );
           })}
@@ -182,25 +182,25 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                     </div>
                     <div className="text-left font-black">
                         <span className="text-[9px] text-gray-400 block uppercase mb-1">Report Generated on</span>
-                        <span className="text-base tabular-nums">{now.toLocaleDateString('ar-SY')}</span>
+                        <span className="text-base tabular-nums">{now.toLocaleDateString('en-US')} {now.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit', hour12: true})}</span>
                     </div>
                 </div>
 
                 <div className="flex justify-between items-center px-2">
                     <div className="flex flex-col border-r-2 border-black/10 pr-6 last:border-0">
                         <span className="text-[9px] font-black text-gray-400 uppercase mb-2">حجم المبيعات</span>
-                        <span className="text-2xl font-black text-black tabular-nums">{totals.revenue.toLocaleString()}</span>
+                        <span className="text-2xl font-black text-black tabular-nums">{totals.revenue.toLocaleString('en-US')}</span>
                         <span className="text-[8px] text-gray-500 mt-1 font-bold">ليرة سورية</span>
                     </div>
                     <div className="flex flex-col border-r-2 border-black/10 pr-6 last:border-0">
                         <span className="text-[9px] font-black text-gray-400 uppercase mb-2">إجمالي المشتريات</span>
-                        <span className="text-2xl font-black text-red-600 tabular-nums">{totals.purchases.toLocaleString()}</span>
+                        <span className="text-2xl font-black text-red-600 tabular-nums">{totals.purchases.toLocaleString('en-US')}</span>
                         <span className="text-[8px] text-gray-500 mt-1 font-bold">ليرة سورية</span>
                     </div>
                     <div className="flex flex-col border-r-2 border-black/10 pr-6 last:border-0">
                         <span className="text-[9px] font-black text-gray-400 uppercase mb-2">صافي الربح</span>
                         <span className={`text-2xl font-black tabular-nums ${totals.profit >= 0 ? 'text-green-600' : 'text-red-700'}`}>
-                          {totals.profit.toLocaleString()}
+                          {totals.profit.toLocaleString('en-US')}
                         </span>
                         <span className="text-[8px] text-gray-500 mt-1 font-bold">ليرة سورية</span>
                     </div>
@@ -232,10 +232,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                           {productStats.map(([name, data], idx) => (
                               <tr key={idx} className="group hover:bg-gray-50">
                                   <td className="py-4 font-black text-black">{name}</td>
-                                  <td className="py-4 text-center tabular-nums font-bold text-gray-600">{data.qty.toLocaleString()}</td>
-                                  <td className="py-4 text-center tabular-nums font-bold text-gray-600">{data.revenue.toLocaleString()}</td>
+                                  <td className="py-4 text-center tabular-nums font-bold text-gray-600">{data.qty.toLocaleString('en-US')}</td>
+                                  <td className="py-4 text-center tabular-nums font-bold text-gray-600">{data.revenue.toLocaleString('en-US')}</td>
                                   <td className={`py-4 text-left font-black tabular-nums ${data.profit >= 0 ? 'text-black' : 'text-red-600'}`}>
-                                    {data.profit.toLocaleString()}
+                                    {data.profit.toLocaleString('en-US')}
                                   </td>
                               </tr>
                           ))}
@@ -249,8 +249,8 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                         <p className="text-[11px] font-bold text-gray-700 leading-relaxed italic">
                           تم استخراج هذا التقرير بناءً على البيانات المسجلة في النظام للفترة المحددة. 
                           {totals.profit >= 0 
-                            ? ` تم تحقيق صافي ربح قدره ${totals.profit.toLocaleString()} ل.س، مع مساهمة رئيسية من منتج (${productStats[0]?.[0] || '---'}).`
-                            : ` تم تسجيل عجز إجمالي قدره ${Math.abs(totals.profit).toLocaleString()} ل.س خلال هذه الفترة.`
+                            ? ` تم تحقيق صافي ربح قدره ${totals.profit.toLocaleString('en-US')} ل.س، مع مساهمة رئيسية من منتج (${productStats[0]?.[0] || '---'}).`
+                            : ` تم تسجيل عجز إجمالي قدره ${Math.abs(totals.profit).toLocaleString('en-US')} ل.س خلال هذه الفترة.`
                           }
                         </p>
                     </div>
@@ -259,7 +259,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                 <div className="mt-auto pt-6 flex justify-between items-end border-t border-gray-100">
                     <div className="text-[8px] font-bold text-gray-400">
                         <p>نظام محاسبة مخبز كوكيز | CB-2026-v2</p>
-                        <p>تاريخ الاستخراج: {now.toLocaleString('ar-SY')}</p>
+                        <p>تاريخ الاستخراج: {now.toLocaleString('en-US', {hour12: true})}</p>
                     </div>
                     <div className="text-center w-48 pt-2">
                         <div className="h-[1px] bg-black w-full mb-2"></div>

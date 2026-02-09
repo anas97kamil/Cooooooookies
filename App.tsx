@@ -17,17 +17,10 @@ const AnalyticsModal = React.lazy(() => import('./components/AnalyticsModal').th
 
 const ModalLoader = () => <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center"><div className="bg-gray-800 p-4 rounded-full border border-gray-700"><Loader2 className="animate-spin text-[#FA8072]" size={32} /></div></div>;
 
-const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
+const WelcomeLoader: React.FC<{ onComplete: () => void; lastSessionTime: string | null }> = ({ onComplete, lastSessionTime }) => {
   const [progress, setProgress] = useState(0);
-  const [lastSession, setLastSession] = useState<string | null>(null);
 
   useEffect(() => {
-    // جلب توقيت آخر جلسة من التخزين المحلي
-    const savedLastSync = localStorage.getItem('lastSessionTime');
-    if (savedLastSync) {
-      setLastSession(savedLastSync);
-    }
-
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -44,7 +37,6 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 
   return (
     <div className="fixed inset-0 bg-slate-950 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden font-['Cairo']">
-      {/* خلفية تقنية رصينة */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#FA8072_1px,transparent_1px)] [background-size:40px_40px]"></div>
       </div>
@@ -52,7 +44,6 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
       <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#FA8072]/5 rounded-full blur-[150px]"></div>
       
       <div className="relative z-10 flex flex-col items-center w-full max-w-md">
-        {/* شعار النظام بشكل رسمي */}
         <div className="mb-10 relative">
            <div className="w-24 h-24 bg-slate-900 border border-slate-800 rounded-3xl flex items-center justify-center mx-auto shadow-2xl relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-tr from-[#FA8072]/20 to-transparent opacity-50"></div>
@@ -61,7 +52,6 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#FA8072] rounded-full blur-xl opacity-50 animate-pulse"></div>
         </div>
 
-        {/* نصوص الترحيب */}
         <div className="space-y-4 mb-14">
             <h1 className="text-5xl font-black text-white tracking-tighter animate-fade-up">
                 مرحباً
@@ -69,18 +59,16 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
             <div className="h-0.5 w-12 bg-[#FA8072] mx-auto rounded-full opacity-60"></div>
         </div>
 
-        {/* معلومات الجلسة السابقة */}
-        {lastSession && (
+        {lastSessionTime && (
           <div className="mb-10 flex items-center gap-3 px-6 py-3 bg-slate-900/50 border border-slate-800 rounded-2xl animate-fade-up" style={{ animationDelay: '0.2s' }}>
             <Clock size={16} className="text-[#FA8072]" />
             <div className="flex flex-col items-start leading-none">
-              <span className="text-[10px] text-slate-500 font-bold uppercase mb-1">آخر مزامنة</span>
-              <span className="text-xs text-slate-300 font-black tabular-nums">{lastSession}</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase mb-1">آخر ظهور</span>
+              <span className="text-xs text-slate-300 font-black tabular-nums">{lastSessionTime}</span>
             </div>
           </div>
         )}
 
-        {/* مؤشر التحميل الاحترافي */}
         <div className="w-full max-w-xs px-4">
             <div className="w-full bg-slate-900 h-1 rounded-full overflow-hidden border border-slate-800/50 p-0 mb-4">
               <div 
@@ -106,6 +94,8 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 };
 
 const App: React.FC = () => {
+  const [previousSessionTime] = useState(() => localStorage.getItem('lastSessionTime'));
+  
   const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('isAuth') === 'true');
   const [isInitializing, setIsInitializing] = useState(true); 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -161,7 +151,7 @@ const App: React.FC = () => {
 
   const completeOrder = useCallback((items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail') => {
     const orderId = Date.now().toString();
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     const todayDate = new Date().toLocaleDateString('en-US');
     
     const activeTodaySales = sales.filter(s => s.date === todayDate);
@@ -258,7 +248,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const now = new Date();
-    const formattedDate = now.toLocaleDateString('ar-SY') + ' ' + now.toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' });
+    const formattedDate = now.toLocaleDateString('en-US') + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     
     localStorage.setItem('dailySales', JSON.stringify(sales));
     localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
@@ -267,8 +257,6 @@ const App: React.FC = () => {
     localStorage.setItem('customers', JSON.stringify(customers));
     localStorage.setItem('suppliers', JSON.stringify(suppliers));
     localStorage.setItem('systemPassword', systemPassword);
-    
-    // حفظ آخر وقت مزامنة لاستخدامه في شاشة الترحيب القادمة
     localStorage.setItem('lastSessionTime', formattedDate);
     
     setLastSyncTime(now);
@@ -432,7 +420,7 @@ const App: React.FC = () => {
     }
   };
 
-  if (isInitializing) return <WelcomeLoader onComplete={finalizeWelcome} />;
+  if (isInitializing) return <WelcomeLoader onComplete={finalizeWelcome} lastSessionTime={previousSessionTime} />;
   if (!isAuthenticated) return <Login onLogin={handleLoginSuccess} />;
 
   return (

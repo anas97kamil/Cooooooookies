@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { FileText, History, Database, Wifi, WifiOff, RefreshCw, Clock, DownloadCloud, BarChart3, Wallet, LogOut, AppWindow } from 'lucide-react';
 
@@ -41,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
   }, []);
 
   const formatLastSync = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   };
 
   return (
@@ -73,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({
                         </div>
                     </div>
                     <span className="text-[10px] font-black text-white px-1 tabular-nums">
-                        {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                        {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                     </span>
                  </div>
             </div>
@@ -138,7 +137,7 @@ export const Header: React.FC<HeaderProps> = ({
                     <div className="flex items-center gap-2 pr-1">
                         <div className="flex flex-col items-end leading-none">
                             <span className="font-black text-[12px] text-white tracking-tight tabular-nums">
-                                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
                             </span>
                             <span className="text-[7px] font-bold text-gray-500">
                                 {currentTime.toLocaleDateString('en-US')}
