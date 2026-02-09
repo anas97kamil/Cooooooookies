@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, Suspense, useCallback, useRef } from 'react';
 import { Header } from './components/Header';
 import { POSInterface } from './components/RecipeGenerator';
@@ -6,7 +5,7 @@ import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
 import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
-import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, AlertCircle, Download, AlertTriangle, Heart } from 'lucide-react';
+import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, AlertCircle, Download, AlertTriangle, Clock } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
 const ProductManager = React.lazy(() => import('./components/ProductManager').then(m => ({ default: m.ProductManager })));
@@ -20,67 +19,87 @@ const ModalLoader = () => <div className="fixed inset-0 bg-black/50 z-[60] flex 
 
 const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => {
   const [progress, setProgress] = useState(0);
+  const [lastSession, setLastSession] = useState<string | null>(null);
 
   useEffect(() => {
-    // التحميل يستغرق ثانيتين بالضبط (100ms * 20 step = 2000ms)
+    // جلب توقيت آخر جلسة من التخزين المحلي
+    const savedLastSync = localStorage.getItem('lastSessionTime');
+    if (savedLastSync) {
+      setLastSession(savedLastSync);
+    }
+
     const timer = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(timer);
-          setTimeout(onComplete, 300); // تأخير بسيط جداً بعد اكتمال الـ 100% لنعومة الحركة
+          setTimeout(onComplete, 500);
           return 100;
         }
-        return prev + 5;
+        return prev + 4;
       });
-    }, 100);
+    }, 80);
     
     return () => clearInterval(timer);
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 bg-gray-950 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden">
-      {/* تأثيرات الخلفية */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#FA8072]/20 rounded-full blur-[120px] animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-600/10 rounded-full blur-[150px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+    <div className="fixed inset-0 bg-slate-950 z-[300] flex flex-col items-center justify-center p-6 text-center overflow-hidden font-['Cairo']">
+      {/* خلفية تقنية رصينة */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#FA8072_1px,transparent_1px)] [background-size:40px_40px]"></div>
+      </div>
+      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[150px]"></div>
+      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#FA8072]/5 rounded-full blur-[150px]"></div>
       
-      <div className="relative z-10 flex flex-col items-center">
-        {/* أيقونة ترحيبية */}
-        <div className="mb-8 relative scale-110">
-           <div className="w-24 h-24 bg-gradient-to-tr from-[#FA8072] to-orange-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(250,128,114,0.3)] animate-bounce">
-              <ShieldCheck className="text-white" size={48} />
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md">
+        {/* شعار النظام بشكل رسمي */}
+        <div className="mb-10 relative">
+           <div className="w-24 h-24 bg-slate-900 border border-slate-800 rounded-3xl flex items-center justify-center mx-auto shadow-2xl relative overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-tr from-[#FA8072]/20 to-transparent opacity-50"></div>
+              <ShieldCheck className="text-[#FA8072] relative z-10" size={44} strokeWidth={1.5} />
            </div>
-           <div className="absolute -bottom-2 -right-2 bg-white text-[#FA8072] p-2 rounded-full shadow-xl animate-pulse">
-              <Heart size={16} fill="currentColor" />
-           </div>
+           <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#FA8072] rounded-full blur-xl opacity-50 animate-pulse"></div>
         </div>
 
-        {/* نص الترحيب الرئيسي */}
-        <div className="space-y-2 mb-12">
-            <h1 className="text-6xl font-black text-white tracking-tighter animate-fade-up" style={{ animationDuration: '0.8s' }}>
+        {/* نصوص الترحيب */}
+        <div className="space-y-4 mb-14">
+            <h1 className="text-5xl font-black text-white tracking-tighter animate-fade-up">
                 مرحباً
             </h1>
-            <p className="text-[#FA8072] text-xl font-bold opacity-80 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-                بك في مخبز كوكيز
-            </p>
+            <div className="h-0.5 w-12 bg-[#FA8072] mx-auto rounded-full opacity-60"></div>
         </div>
 
-        {/* شريط التحميل السفلي */}
-        <div className="w-64 max-w-full">
-            <div className="w-full bg-gray-900 h-1.5 rounded-full overflow-hidden border border-gray-800 p-0 mb-3">
+        {/* معلومات الجلسة السابقة */}
+        {lastSession && (
+          <div className="mb-10 flex items-center gap-3 px-6 py-3 bg-slate-900/50 border border-slate-800 rounded-2xl animate-fade-up" style={{ animationDelay: '0.2s' }}>
+            <Clock size={16} className="text-[#FA8072]" />
+            <div className="flex flex-col items-start leading-none">
+              <span className="text-[10px] text-slate-500 font-bold uppercase mb-1">آخر مزامنة</span>
+              <span className="text-xs text-slate-300 font-black tabular-nums">{lastSession}</span>
+            </div>
+          </div>
+        )}
+
+        {/* مؤشر التحميل الاحترافي */}
+        <div className="w-full max-w-xs px-4">
+            <div className="w-full bg-slate-900 h-1 rounded-full overflow-hidden border border-slate-800/50 p-0 mb-4">
               <div 
-                className="h-full bg-gradient-to-r from-[#FA8072] to-orange-500 rounded-full transition-all duration-300 ease-out shadow-[0_0_15px_rgba(250,128,114,0.5)]" 
+                className="h-full bg-[#FA8072] rounded-full transition-all duration-300 ease-out shadow-[0_0_15px_rgba(250,128,114,0.3)]" 
                 style={{ width: `${progress}%` }}
               ></div>
             </div>
             <div className="flex justify-between items-center px-1">
-                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">System Booting</span>
-                <span className="text-[#FA8072] font-black tabular-nums text-xs">{progress}%</span>
+                <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">System Authentication</span>
+                <span className="text-[#FA8072] font-black tabular-nums text-[10px]">{progress}%</span>
             </div>
         </div>
       </div>
 
-      <div className="absolute bottom-10 text-gray-700 text-[10px] font-black uppercase tracking-[0.4em]">
-          Cookie Bakery OS v2.6
+      <div className="absolute bottom-10 flex flex-col items-center gap-1 opacity-40">
+          <div className="text-slate-500 text-[9px] font-black uppercase tracking-[0.5em]">
+              Cookie Bakery Enterprise OS
+          </div>
+          <div className="text-slate-700 text-[8px] font-bold">Build v2.6.4-Pro • Secured</div>
       </div>
     </div>
   );
@@ -88,7 +107,7 @@ const WelcomeLoader: React.FC<{ onComplete: () => void }> = ({ onComplete }) => 
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('isAuth') === 'true');
-  const [isInitializing, setIsInitializing] = useState(true); // تبدأ بـ true لتظهر شاشة الترحيب دائماً عند الفتح
+  const [isInitializing, setIsInitializing] = useState(true); 
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(() => new Date());
   const [showLock, setShowLock] = useState<{ target: string; data?: any } | null>(null);
@@ -96,7 +115,6 @@ const App: React.FC = () => {
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
-  // PWA Install Prompt State
   const [installPrompt, setInstallPrompt] = useState<any>(null);
 
   useEffect(() => {
@@ -239,6 +257,9 @@ const App: React.FC = () => {
   }, [isAuthenticated]);
 
   useEffect(() => {
+    const now = new Date();
+    const formattedDate = now.toLocaleDateString('ar-SY') + ' ' + now.toLocaleTimeString('ar-SY', { hour: '2-digit', minute: '2-digit' });
+    
     localStorage.setItem('dailySales', JSON.stringify(sales));
     localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
     localStorage.setItem('salesHistory', JSON.stringify(history));
@@ -246,7 +267,11 @@ const App: React.FC = () => {
     localStorage.setItem('customers', JSON.stringify(customers));
     localStorage.setItem('suppliers', JSON.stringify(suppliers));
     localStorage.setItem('systemPassword', systemPassword);
-    setLastSyncTime(new Date());
+    
+    // حفظ آخر وقت مزامنة لاستخدامه في شاشة الترحيب القادمة
+    localStorage.setItem('lastSessionTime', formattedDate);
+    
+    setLastSyncTime(now);
   }, [sales, purchaseInvoices, history, products, customers, suppliers, systemPassword]);
 
   const verifyLock = () => {
