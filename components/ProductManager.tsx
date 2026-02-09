@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Trash2, Settings, X, Scale, Box, Edit2, Check, RotateCcw, Store, TrendingUp } from 'lucide-react';
+import { Plus, Trash2, Settings, X, Scale, Box, Edit2, Check, RotateCcw, Store, TrendingUp, Barcode } from 'lucide-react';
 import { Product, UnitType } from '../types';
 
 interface ProductManagerProps {
@@ -25,9 +25,10 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
   const [wholesalePrice, setWholesalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
   const [unitType, setUnitType] = useState<UnitType>('piece');
+  const [barcode, setBarcode] = useState('');
   
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', price: '', wholesalePrice: '', costPrice: '', unitType: 'piece' as UnitType });
+  const [editForm, setEditForm] = useState({ name: '', price: '', wholesalePrice: '', costPrice: '', unitType: 'piece' as UnitType, barcode: '' });
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -45,7 +46,8 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       price: parseFloat(price),
       wholesalePrice: parseFloat(wholesalePrice),
       costPrice: parseFloat(costPrice),
-      unitType
+      unitType,
+      barcode: barcode.trim() || undefined
     });
 
     setName('');
@@ -53,6 +55,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
     setWholesalePrice('');
     setCostPrice('');
     setUnitType('piece');
+    setBarcode('');
   };
 
   const startEdit = (p: Product) => {
@@ -62,7 +65,8 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       price: p.price.toString(), 
       wholesalePrice: (p.wholesalePrice || p.price).toString(), 
       costPrice: p.costPrice.toString(), 
-      unitType: p.unitType 
+      unitType: p.unitType,
+      barcode: p.barcode || ''
     });
   };
 
@@ -73,7 +77,8 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       price: parseFloat(editForm.price),
       wholesalePrice: parseFloat(editForm.wholesalePrice),
       costPrice: parseFloat(editForm.costPrice),
-      unitType: editForm.unitType
+      unitType: editForm.unitType,
+      barcode: editForm.barcode.trim() || undefined
     });
     setEditingId(null);
   };
@@ -94,19 +99,31 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto">
+        <div className="p-6 overflow-y-auto custom-scrollbar">
           {!editingId && (
               <form onSubmit={handleSubmit} className="mb-6 bg-gray-700/30 p-4 rounded-xl border border-gray-600">
                 <h4 className="text-sm font-bold text-gray-300 mb-3">إضافة مادة جديدة</h4>
                 <div className="flex flex-col gap-3">
-                    <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="اسم المادة..."
-                        className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg outline-none text-sm"
-                        required
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input
+                            type="text"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="اسم المادة..."
+                            className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg outline-none text-sm"
+                            required
+                        />
+                        <div className="relative">
+                            <Barcode size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                            <input
+                                type="text"
+                                value={barcode}
+                                onChange={(e) => setBarcode(e.target.value)}
+                                placeholder="الباركود (اختياري)"
+                                className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg outline-none text-sm dir-ltr text-right"
+                            />
+                        </div>
+                    </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div className="space-y-1">
@@ -159,7 +176,10 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
               <div className="mb-6 bg-blue-900/20 p-4 rounded-xl border border-blue-500/30 animate-fade-up">
                   <h4 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2"><Edit2 size={16} /> تعديل بيانات: {editForm.name}</h4>
                   <div className="space-y-3">
-                      <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm" />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm" placeholder="الاسم" />
+                          <input type="text" value={editForm.barcode} onChange={e => setEditForm({...editForm, barcode: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm dir-ltr text-right" placeholder="الباركود" />
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                           <div className="space-y-1">
                               <label className="text-[10px] text-gray-400">التكلفة</label>
@@ -195,6 +215,12 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                         <div className="flex items-center gap-2">
                             <span className="text-white font-bold">{product.name}</span>
                             <span className={`text-[9px] px-1.5 py-0.5 rounded text-black font-bold ${product.unitType === 'kg' ? 'bg-yellow-400' : 'bg-blue-300'}`}>{product.unitType === 'kg' ? 'كغ' : 'قطعة'}</span>
+                            {product.barcode && (
+                                <div className="flex items-center gap-1 bg-black/30 px-2 py-0.5 rounded border border-white/5">
+                                    <Barcode size={10} className="text-gray-500" />
+                                    <span className="text-[9px] text-gray-400 tabular-nums">{product.barcode}</span>
+                                </div>
+                            )}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
                             <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">التكلفة:</span><span className="text-red-400 text-xs font-bold">{product.costPrice.toLocaleString()}</span></div>

@@ -30,6 +30,7 @@ export interface SaleItem {
   unitType: UnitType;
   time: string;
   date: string; 
+  barcode?: string;
 }
 
 export interface PurchaseItem {
@@ -57,6 +58,7 @@ export interface Product {
   wholesalePrice: number; 
   costPrice: number; 
   unitType: UnitType;
+  barcode?: string;
 }
 
 export interface SummaryData {
