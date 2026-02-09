@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { X, ChevronDown, ChevronUp, ArrowRight, Folder, CalendarDays, ShoppingBag, Zap, Store, User, Filter, TrendingUp, PieChart, Info, Clock, Download, Search, Trash2, Edit3, Check, Save, Hash } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, ArrowRight, Folder, CalendarDays, ShoppingBag, Zap, Store, User, Filter, TrendingUp, PieChart, Info, Clock, Download, Search, Trash2, Edit3, Check, Save, Hash, Eraser, AlertCircle } from 'lucide-react';
 import { ArchivedDay, SaleItem, SaleType } from '../types';
 
 interface HistoryModalProps {
@@ -11,6 +11,7 @@ interface HistoryModalProps {
   onPreviewInvoice: (items: SaleItem[]) => void;
   onUpdateOrder: (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => void;
   onDeleteArchivedOrder: (dayId: string, orderId: string) => void;
+  onDeleteArchivedDay: (dayId: string) => void;
 }
 
 type NavStep = 'years' | 'months' | 'days';
@@ -18,7 +19,7 @@ type FilterType = 'all' | SaleType;
 type TabMode = 'archive' | 'profit-report';
 
 export const HistoryModal: React.FC<HistoryModalProps> = ({ 
-  history, currentSales = [], onClose, onClearHistory, onPreviewInvoice, onUpdateOrder, onDeleteArchivedOrder 
+  history, currentSales = [], onClose, onClearHistory, onPreviewInvoice, onUpdateOrder, onDeleteArchivedOrder, onDeleteArchivedDay 
 }) => {
   const [tab, setTab] = useState<TabMode>('archive');
   const [step, setStep] = useState<NavStep>('years');
@@ -32,9 +33,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
   const [editCustomerName, setEditCustomerName] = useState('');
   const [editOrderItems, setEditOrderItems] = useState<SaleItem[]>([]);
 
-  // تعديل منطق دمج البيانات: نعرض الأرشيف الحقيقي فقط
   const fullHistory = useMemo(() => {
-      // إذا أردت عرض مبيعات اليوم الحالية كـ "يوم غير مؤرشف"، نستخدم المنطق التالي:
       const today = new Date();
       const todayStr = today.toLocaleDateString('ar-SY');
       
@@ -138,6 +137,14 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
       }));
   };
 
+  const handleRemoveItemFromEdit = (itemId: string) => {
+      if (editOrderItems.length <= 1) {
+          alert("لا يمكن حذف آخر مادة في الفاتورة، يرجى حذف الفاتورة كاملة بدلاً من ذلك.");
+          return;
+      }
+      setEditOrderItems(prev => prev.filter(it => it.id !== itemId));
+  };
+
   const handleSaveOrderEdit = (dayId: string) => {
       if (!editingOrderId) return;
       onUpdateOrder(dayId, editingOrderId, editOrderItems, editCustomerName);
@@ -146,17 +153,31 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
   const renderArchive = () => {
     if (step === 'years') return (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 animate-fade-up">
-            {years.length > 0 ? years.map(year => (
-                <button key={year} onClick={() => { setSelectedYear(year); setStep('months'); }} className="bg-gray-700/50 hover:bg-gray-600 border border-gray-600 p-8 rounded-2xl flex flex-col items-center gap-3 transition-all group">
-                    <Folder size={48} className="text-[#FA8072] group-hover:scale-110 transition-transform" />
-                    <span className="text-xl font-black text-white">{year}</span>
-                </button>
-            )) : (
-              <div className="col-span-full py-20 text-center flex flex-col items-center gap-4">
-                  <div className="bg-gray-700/30 p-6 rounded-full"><Zap size={48} className="text-gray-600" /></div>
-                  <p className="text-gray-500 font-bold">لا توجد عمليات بيع مؤرشفة بعد</p>
-              </div>
+        <div className="flex flex-col gap-6 animate-fade-up h-full">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {years.length > 0 ? years.map(year => (
+                    <button key={year} onClick={() => { setSelectedYear(year); setStep('months'); }} className="bg-gray-700/50 hover:bg-gray-600 border border-gray-600 p-8 rounded-2xl flex flex-col items-center gap-3 transition-all group">
+                        <Folder size={48} className="text-[#FA8072] group-hover:scale-110 transition-transform" />
+                        <span className="text-xl font-black text-white">{year}</span>
+                    </button>
+                )) : (
+                  <div className="col-span-full py-20 text-center flex flex-col items-center gap-4">
+                      <div className="bg-gray-700/30 p-6 rounded-full"><Zap size={48} className="text-gray-600" /></div>
+                      <p className="text-gray-500 font-bold">لا توجد عمليات بيع مؤرشفة بعد</p>
+                  </div>
+                )}
+            </div>
+            
+            {history.length > 0 && (
+                <div className="mt-auto pt-6 border-t border-gray-700">
+                    <button 
+                        onClick={() => { if(window.confirm('خطر! هل أنت متأكد من مسح كافة سجلات المبيعات المؤرشفة تماماً؟ لا يمكن التراجع عن هذا الإجراء.')) onClearHistory(); }}
+                        className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white transition-all font-black text-sm border border-red-600/20 group"
+                    >
+                        <Eraser size={18} className="group-hover:animate-bounce" />
+                        مسح كافة السجلات التاريخية وتصفير الأرشيف
+                    </button>
+                </div>
             )}
         </div>
     );
@@ -203,15 +224,26 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
 
                     return (
                         <div key={day.id} className={`rounded-xl border overflow-hidden shadow-sm transition-all ${isTodayActive ? 'border-orange-500/50 bg-orange-500/5' : 'border-gray-700 bg-gray-800'}`}>
-                            <div onClick={() => setExpandedDayId(expandedDayId === day.id ? null : day.id)} className={`p-4 flex justify-between items-center cursor-pointer ${isTodayActive ? 'bg-orange-500/10' : 'bg-gray-900/50 hover:bg-gray-900'}`}>
-                                <div className="flex items-center gap-3">
+                            <div className={`p-4 flex justify-between items-center ${isTodayActive ? 'bg-orange-500/10' : 'bg-gray-900/50'}`}>
+                                <div onClick={() => setExpandedDayId(expandedDayId === day.id ? null : day.id)} className="flex items-center gap-3 cursor-pointer flex-grow">
                                     <div className="text-gray-500">{(expandedDayId === day.id || searchTerm) ? <ChevronUp size={18} /> : <ChevronDown size={18} />}</div>
                                     <span className={`font-bold ${isTodayActive ? 'text-orange-400' : 'text-white'}`}>{day.date}</span>
-                                    {searchTerm && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">تم العثور على {groupedOrders.length} نتيجة</span>}
+                                    {searchTerm && <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full font-bold">{groupedOrders.length} نتيجة</span>}
                                 </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="font-black text-lg text-green-400">{dayTotal.toLocaleString()} <small className="text-[10px] text-gray-500 font-normal">ل.س</small></span>
-                                    {day.totalExpenses > 0 && <span className="text-[10px] text-red-400 font-bold">مشتريات: {day.totalExpenses.toLocaleString()}</span>}
+                                <div className="flex items-center gap-4">
+                                    <div className="flex flex-col items-end">
+                                        <span className="font-black text-lg text-green-400">{dayTotal.toLocaleString()} <small className="text-[10px] text-gray-500 font-normal">ل.س</small></span>
+                                        {day.totalExpenses > 0 && <span className="text-[10px] text-red-400 font-bold">مشتريات: {day.totalExpenses.toLocaleString()}</span>}
+                                    </div>
+                                    {!isTodayActive && (
+                                        <button 
+                                            onClick={() => { if(window.confirm(`تنبيه أمان: هل أنت متأكد من حذف يوم "${day.date}" بالكامل بجميع فواتيره؟ سيؤدي هذا لمسحه من الأرشيف نهائياً.`)) onDeleteArchivedDay(day.id); }}
+                                            className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+                                            title="حذف اليوم بالكامل"
+                                        >
+                                            <Trash2 size={20} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                             {(expandedDayId === day.id || searchTerm) && (
@@ -264,7 +296,13 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                                  {!isTodayActive && (
                                                                    <button onClick={() => handleStartOrderEdit(orderItems)} className="text-gray-500 hover:text-[#FA8072] transition-colors" title="تعديل الفاتورة"><Edit3 size={14}/></button>
                                                                  )}
-                                                                 <button onClick={() => { if(window.confirm('هل أنت متأكد من حذف هذه الفاتورة من الأرشيف؟')){ onDeleteArchivedOrder(day.id, first.orderId); } }} className="text-gray-500 hover:text-red-400 transition-colors" title="حذف الفاتورة"><Trash2 size={14}/></button>
+                                                                 <button 
+                                                                    onClick={() => { if(window.confirm(`هل أنت متأكد من حذف هذه الفاتورة (رقم ${first.customerNumber}) نهائياً من الأرشيف؟`)){ onDeleteArchivedOrder(day.id, first.orderId); } }} 
+                                                                    className="text-gray-500 hover:text-red-400 transition-all p-1.5 hover:bg-red-500/10 rounded-lg" 
+                                                                    title="حذف الفاتورة"
+                                                                 >
+                                                                    <Trash2 size={14}/>
+                                                                 </button>
                                                                </>
                                                            )}
                                                         </div>
@@ -274,6 +312,11 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                     {(isEditing ? editOrderItems : orderItems).map((item, iIdx) => (
                                                         <div key={iIdx} className="flex justify-between items-center text-[10px] px-2 py-1.5 bg-gray-900/20 rounded group/row">
                                                             <div className="flex items-center gap-2 flex-1">
+                                                                {isEditing && (
+                                                                    <button onClick={() => handleRemoveItemFromEdit(item.id)} className="text-red-400/50 hover:text-red-500 p-1" title="حذف المادة من الفاتورة">
+                                                                        <Trash2 size={10} />
+                                                                    </button>
+                                                                )}
                                                                 <span className="text-gray-300 font-bold min-w-[80px]">{item.name}</span>
                                                                 {isEditing && (
                                                                     <div className="flex items-center gap-2">

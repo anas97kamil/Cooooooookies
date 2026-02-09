@@ -98,7 +98,7 @@ const App: React.FC = () => {
   const [isInitializing, setIsInitializing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<Date>(() => new Date());
-  const [showLock, setShowLock] = useState<{ target: string } | null>(null);
+  const [showLock, setShowLock] = useState<{ target: string; data?: any } | null>(null);
   const [lockPass, setLockPass] = useState('');
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -144,8 +144,8 @@ const App: React.FC = () => {
     setIsAuthenticated(false);
   };
 
-  const handleOpenProtected = (target: string) => {
-    setShowLock({ target });
+  const handleOpenProtected = (target: string, data?: any) => {
+    setShowLock({ target, data });
   };
 
   const completeOrder = useCallback((items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail') => {
@@ -219,6 +219,10 @@ const App: React.FC = () => {
     });
   };
 
+  const handleDeleteArchivedDay = (dayId: string) => {
+    setHistory(prev => prev.filter(day => day.id !== dayId));
+  };
+
   const handleLoginSuccess = () => {
     sessionStorage.setItem('isAuth', 'true');
     setIsInitializing(true);
@@ -258,6 +262,8 @@ const App: React.FC = () => {
       if (showLock?.target === 'full_reset') {
           localStorage.clear();
           window.location.reload();
+      } else if (showLock?.target === 'clear_all_history') {
+          setHistory([]);
       } else if (showLock) {
           setModals(m => ({ ...m, [showLock.target]: true }));
       }
@@ -462,7 +468,7 @@ const App: React.FC = () => {
       <Suspense fallback={<ModalLoader />}>
         {modals.analytics && <AnalyticsModal history={history} currentSales={sales} currentPurchases={purchaseInvoices} onClose={() => setModals(m => ({ ...m, analytics: false }))} />}
         {modals.expenses && <ExpensesModal isOpen={modals.expenses} onClose={() => setModals(m => ({...m, expenses: false}))} currentPurchases={purchaseInvoices} archivedHistory={history} onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} onUpdateInvoice={v => setPurchaseInvoices(p => p.map(inv => inv.id === v.id ? v : inv))} onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} suppliers={suppliers} onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} />}
-        {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onClearHistory={() => setHistory([])} onPreviewInvoice={setInvoiceItems} onUpdateOrder={handleUpdateArchivedOrder} onDeleteArchivedOrder={handleDeleteArchivedOrder} />}
+        {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onClearHistory={() => handleOpenProtected('clear_all_history')} onPreviewInvoice={setInvoiceItems} onUpdateOrder={handleUpdateArchivedOrder} onDeleteArchivedOrder={handleDeleteArchivedOrder} onDeleteArchivedDay={handleDeleteArchivedDay} />}
         {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={handleUpdateProduct} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
         {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} setSystemPassword={setSystemPassword} />}

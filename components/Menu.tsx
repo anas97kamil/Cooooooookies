@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Trash2, Search, User, Download, Store, Edit3, Receipt, Clock, Package, ChevronDown, ChevronUp, LayoutList, Hash } from 'lucide-react';
+import { Trash2, Search, User, Download, Store, Edit3, Receipt, Clock, Package, ChevronDown, ChevronUp, LayoutList, Hash, AlertTriangle } from 'lucide-react';
 import { SaleItem } from '../types';
 
 export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, onPreviewInvoice, onUpdateItemPrice }) => {
@@ -35,6 +35,18 @@ export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, 
     const price = parseFloat(tempPrice);
     if (!isNaN(price) && onUpdateItemPrice) onUpdateItemPrice(itemId, price);
     setEditingPriceId(null);
+  };
+
+  const handleDeleteOrderWithConfirm = (orderId: string, customerName: string) => {
+    if (window.confirm(`تنبيه: هل أنت متأكد من حذف فاتورة "${customerName || 'زبون عام'}" بالكامل من مبيعات اليوم؟\n\nلا يمكن التراجع عن هذا الإجراء.`)) {
+      onDeleteOrder && onDeleteOrder(orderId);
+    }
+  };
+
+  const handleDeleteItemWithConfirm = (itemId: string, itemName: string) => {
+    if (window.confirm(`هل أنت متأكد من حذف مادة "${itemName}" من الفاتورة؟`)) {
+      onDeleteItem(itemId);
+    }
   };
 
   if (items.length === 0) return (
@@ -141,7 +153,7 @@ export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, 
                                             )}
                                             <span className="font-black text-white text-[11px] tabular-nums">{(item.price * item.quantity).toLocaleString('en-US')} ل.س</span>
                                         </div>
-                                        <button onClick={() => onDeleteItem(item.id)} className="text-gray-700 hover:text-red-500 transition-colors p-1"><Trash2 size={12} /></button>
+                                        <button onClick={() => handleDeleteItemWithConfirm(item.id, item.name)} className="text-gray-700 hover:text-red-500 transition-colors p-1"><Trash2 size={12} /></button>
                                     </div>
                                 </div>
                             ))}
@@ -155,7 +167,7 @@ export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, 
                                 <Download size={12} /> تصدير
                             </button>
                             <button 
-                              onClick={() => onDeleteOrder && onDeleteOrder(first.orderId)} 
+                              onClick={() => handleDeleteOrderWithConfirm(first.orderId, first.customerName || 'زبون عام')} 
                               className="flex items-center gap-1.5 text-[10px] font-black text-red-400/50 hover:text-red-400 transition-colors"
                             >
                                 <Trash2 size={12} /> حذف الفاتورة
