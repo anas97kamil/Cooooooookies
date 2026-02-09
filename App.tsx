@@ -62,8 +62,8 @@ const WelcomeLoader: React.FC<{ onComplete: () => void; lastSessionTime: string 
         {lastSessionTime && (
           <div className="mb-10 flex items-center gap-3 px-6 py-3 bg-slate-900/50 border border-slate-800 rounded-2xl animate-fade-up" style={{ animationDelay: '0.2s' }}>
             <Clock size={16} className="text-[#FA8072]" />
-            <div className="flex flex-col items-start leading-none">
-              <span className="text-[10px] text-slate-500 font-bold uppercase mb-1">آخر ظهور</span>
+            <div className="flex flex-col items-start leading-none text-right">
+              <span className="text-[10px] text-slate-500 font-bold uppercase mb-1">آخر نشاط مسجل</span>
               <span className="text-xs text-slate-300 font-black tabular-nums">{lastSessionTime}</span>
             </div>
           </div>
@@ -87,7 +87,7 @@ const WelcomeLoader: React.FC<{ onComplete: () => void; lastSessionTime: string 
           <div className="text-slate-500 text-[9px] font-black uppercase tracking-[0.5em]">
               Cookie Bakery Enterprise OS
           </div>
-          <div className="text-slate-700 text-[8px] font-bold">Build v2.6.4-Pro • Secured</div>
+          <div className="text-slate-700 text-[8px] font-bold">Build v2.6.5-Pro • Secured</div>
       </div>
     </div>
   );
@@ -104,6 +104,8 @@ const App: React.FC = () => {
   const [lockPass, setLockPass] = useState('');
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  const [ordersCountSinceBackup, setOrdersCountSinceBackup] = useState(() => Number(localStorage.getItem('backupCounter') || 0));
   
   const [installPrompt, setInstallPrompt] = useState<any>(null);
 
@@ -180,7 +182,14 @@ const App: React.FC = () => {
 
     setSales(prev => [...prev, ...newItems]);
     setInvoiceItems(newItems);
-  }, [sales, history]);
+    
+    const nextCount = ordersCountSinceBackup + 1;
+    setOrdersCountSinceBackup(nextCount);
+    // تنبيه عند الوصول لـ 40 فاتورة
+    if (nextCount >= 40) {
+      setShowBackupReminder(true);
+    }
+  }, [sales, history, ordersCountSinceBackup]);
 
   const handleUpdateProduct = (id: string, updatedProduct: Partial<Product>) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedProduct } : p));
@@ -234,19 +243,6 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    const CHECK_INTERVAL = 60 * 1000; 
-    const REMINDER_INTERVAL = 60 * 60 * 1000; 
-    const intervalId = setInterval(() => {
-      const now = Date.now();
-      if (now - lastBackupTimestamp.current >= REMINDER_INTERVAL) {
-        setShowBackupReminder(true);
-      }
-    }, CHECK_INTERVAL);
-    return () => clearInterval(intervalId);
-  }, [isAuthenticated]);
-
-  useEffect(() => {
     const now = new Date();
     const formattedDate = now.toLocaleDateString('en-US') + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     
@@ -257,10 +253,12 @@ const App: React.FC = () => {
     localStorage.setItem('customers', JSON.stringify(customers));
     localStorage.setItem('suppliers', JSON.stringify(suppliers));
     localStorage.setItem('systemPassword', systemPassword);
+    localStorage.setItem('backupCounter', ordersCountSinceBackup.toString());
+    
     localStorage.setItem('lastSessionTime', formattedDate);
     
     setLastSyncTime(now);
-  }, [sales, purchaseInvoices, history, products, customers, suppliers, systemPassword]);
+  }, [sales, purchaseInvoices, history, products, customers, suppliers, systemPassword, ordersCountSinceBackup]);
 
   const verifyLock = () => {
     if (lockPass === systemPassword) {
@@ -382,8 +380,10 @@ const App: React.FC = () => {
       link.download = `cookies-bakery-pro-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.bak`;
       link.click();
       URL.revokeObjectURL(url);
-      lastBackupTimestamp.current = Date.now();
+      
+      setOrdersCountSinceBackup(0);
       setShowBackupReminder(false);
+      lastBackupTimestamp.current = Date.now();
     } catch (err) {
       const blob = new Blob([jsonString], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -392,6 +392,8 @@ const App: React.FC = () => {
       link.download = `cookies-bakery-legacy-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.json`;
       link.click();
       URL.revokeObjectURL(url);
+      setOrdersCountSinceBackup(0);
+      setShowBackupReminder(false);
     }
   };
 
@@ -457,18 +459,18 @@ const App: React.FC = () => {
         <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-80 bg-gray-800 border border-orange-500/50 p-5 rounded-[2rem] shadow-2xl z-[150] animate-fade-up flex flex-col gap-4 no-print">
             <div className="flex items-start gap-4">
                 <div className="bg-orange-500/20 p-3 rounded-2xl text-orange-500 shrink-0"><AlertCircle size={24} /></div>
-                <div className="flex-1">
-                    <h4 className="text-white font-black text-sm">تذكير أمان البيانات</h4>
-                    <p className="text-gray-400 text-[10px] font-bold mt-1 leading-relaxed">لقد مر وقت طويل منذ آخر نسخة احتياطية.</p>
+                <div className="flex-1 text-right">
+                    <h4 className="text-white font-black text-sm">تأمين البيانات مطلوب</h4>
+                    <p className="text-gray-400 text-[10px] font-bold mt-1 leading-relaxed">يرجى أخذ نسخة احتياطية الآن لضمان سلامة بيانات مبيعاتك.</p>
                 </div>
                 <button onClick={() => setShowBackupReminder(false)} className="text-gray-500 hover:text-white"><X size={18} /></button>
             </div>
-            <button onClick={handleExportData} className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all"><Download size={14} /> نسخ مضغوط الآن</button>
+            <button onClick={handleExportData} className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"><Download size={14} /> نسخ مضغوط الآن</button>
         </div>
       )}
 
       <footer className="mt-12 py-8 border-t border-gray-800/50 text-center no-print">
-         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.6 • 2026</button>
+         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.6.5 • 2026</button>
       </footer>
       <Suspense fallback={<ModalLoader />}>
         {modals.analytics && <AnalyticsModal history={history} currentSales={sales} currentPurchases={purchaseInvoices} onClose={() => setModals(m => ({ ...m, analytics: false }))} />}
