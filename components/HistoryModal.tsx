@@ -7,7 +7,6 @@ interface HistoryModalProps {
   history: ArchivedDay[];
   currentSales?: SaleItem[];
   onClose: () => void;
-  onClearHistory: () => void;
   onPreviewInvoice: (items: SaleItem[]) => void;
   onUpdateOrder: (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => void;
   onDeleteArchivedOrder: (dayId: string, orderId: string) => void;
@@ -19,7 +18,7 @@ type FilterType = 'all' | SaleType;
 type TabMode = 'archive' | 'profit-report';
 
 export const HistoryModal: React.FC<HistoryModalProps> = ({ 
-  history, currentSales = [], onClose, onClearHistory, onPreviewInvoice, onUpdateOrder, onDeleteArchivedOrder, onDeleteArchivedDay 
+  history, currentSales = [], onClose, onPreviewInvoice, onUpdateOrder, onDeleteArchivedOrder, onDeleteArchivedDay 
 }) => {
   const [tab, setTab] = useState<TabMode>('archive');
   const [step, setStep] = useState<NavStep>('years');
@@ -167,18 +166,6 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                   </div>
                 )}
             </div>
-            
-            {history.length > 0 && (
-                <div className="mt-auto pt-6 border-t border-gray-700">
-                    <button 
-                        onClick={() => { if(window.confirm('خطر! هل أنت متأكد من مسح كافة سجلات المبيعات المؤرشفة تماماً؟ لا يمكن التراجع عن هذا الإجراء.')) onClearHistory(); }}
-                        className="flex items-center justify-center gap-2 w-full py-4 rounded-2xl bg-red-600/10 hover:bg-red-600 text-red-500 hover:text-white transition-all font-black text-sm border border-red-600/20 group"
-                    >
-                        <Eraser size={18} className="group-hover:animate-bounce" />
-                        مسح كافة السجلات التاريخية وتصفير الأرشيف
-                    </button>
-                </div>
-            )}
         </div>
     );
 
