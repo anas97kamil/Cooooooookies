@@ -46,66 +46,64 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
       <div className="bg-gray-800 rounded-2xl w-full max-w-xl shadow-2xl flex flex-col h-[90vh] animate-fade-up border border-gray-700">
         
         <div className="p-4 border-b border-gray-700 flex justify-between items-center bg-gray-900 rounded-t-2xl">
-          <h3 className="font-black text-sm text-white">معاينة مشتريات (80mm)</h3>
+          <h3 className="font-black text-sm text-white">معاينة مشتريات</h3>
           <button onClick={onClose} className="p-2 hover:bg-gray-700 rounded-full transition-colors"><X size={20} className="text-gray-400" /></button>
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 bg-gray-950/50 flex justify-center">
-          <div id="purchase-invoice-content" className="bg-white text-black px-8 pt-8 pb-10 w-[80mm] shadow-2xl h-fit print:w-full print:shadow-none print:px-0">
-            <div className="text-center mb-6 border-b-2 border-black pb-4">
-              <h2 className="text-xl font-black mb-1 text-black">مخبز كوكيز</h2>
-              <p className="text-black font-black text-[10px] uppercase tracking-widest">سند استلام مشتريات</p>
-              <div className="flex justify-between items-center mt-4 text-[10px] font-black border border-black p-3 tabular-nums text-black">
+          <div id="purchase-invoice-content" className="bg-white text-black px-4 pt-4 pb-6 w-[80mm] shadow-2xl h-fit print:w-full print:shadow-none print:px-0">
+            <div className="text-center mb-4 border-b border-black pb-2">
+              <h2 className="text-[14px] font-black mb-0.5 text-black">مخبز كوكيز</h2>
+              <p className="text-black font-black text-[12px]">سند استلام مشتريات</p>
+              <div className="flex justify-between items-center mt-2 text-[10px] font-bold px-1 tabular-nums text-black">
                   <span>التاريخ: {invoice.date}</span>
                   <span>#{invoice.id.slice(-4)}</span>
               </div>
-              <div className="mt-3 text-center border border-black/10 p-3 rounded">
-                  <p className="text-black font-black text-sm">{invoice.supplierName}</p>
-                  <p className="text-[9px] font-black text-black">{invoice.paymentStatus === 'paid' ? 'نقدي' : 'آجل'}</p>
+              <div className="mt-2 text-center border border-black/10 p-2 rounded">
+                  <p className="text-black font-black text-[12px]">{invoice.supplierName}</p>
+                  <p className="text-[9px] font-bold text-black">{invoice.paymentStatus === 'paid' ? 'نقدي' : 'آجل'}</p>
               </div>
             </div>
 
-            <table className="w-full mb-6 text-right border-collapse">
+            <table className="w-full mb-4 text-right border-collapse">
                <thead>
-                   <tr className="border-b-2 border-black text-black">
-                       <th className="py-3 text-[10px] font-black">المادة</th>
-                       <th className="py-3 text-center text-[10px] font-black">الكمية</th>
-                       <th className="py-3 text-left text-[10px] font-black">الإجمالي</th>
+                   <tr className="border-b border-black text-black">
+                       <th className="py-2 text-[10px] font-black">المادة</th>
+                       <th className="py-2 text-center text-[10px] font-black">الكمية</th>
+                       <th className="py-2 text-left text-[10px] font-black">الإجمالي</th>
                    </tr>
                </thead>
-               <tbody className="divide-y divide-black/10">
+               <tbody className="divide-y divide-black/5">
                   {invoice.items.map((item) => (
-                    <tr key={item.id} className="text-[11px] font-black tabular-nums text-black">
-                      <td className="py-3 pr-1">{item.name}</td>
-                      <td className="py-3 text-center">{item.quantity}</td>
-                      <td className="py-3 text-left pl-1">{item.total.toLocaleString('en-US')} ل.س</td>
+                    <tr key={item.id} className="text-[10px] font-bold tabular-nums text-black">
+                      <td className="py-1.5 pr-1">{item.name}</td>
+                      <td className="py-1.5 text-center">{item.quantity}</td>
+                      <td className="py-1.5 text-left pl-1">{item.total.toLocaleString('en-US')}</td>
                     </tr>
                   ))}
                </tbody>
             </table>
 
-            <div className="border-t-2 border-black pt-4 mb-10">
-              <div className="flex justify-between items-center text-xl font-black tabular-nums px-1 text-black">
+            <div className="border-t border-black pt-2 mb-6">
+              <div className="flex justify-between items-center text-[14px] font-black tabular-nums px-1 text-black">
                   <span>المجموع:</span>
                   <span>{invoice.totalAmount.toLocaleString('en-US')} ل.س</span>
               </div>
             </div>
 
-            <div className="mt-10 text-center text-[9px] font-black border-t border-dashed border-black pt-5 mb-8 text-black">
-              تم الاستلام - مخبز كوكيز
+            <div className="mt-6 text-center text-[10px] font-bold border-t border-dashed border-black pt-4 mb-4 text-black">
+              تم الاستلام
             </div>
           </div>
         </div>
 
         <div className="p-5 border-t border-gray-700 flex flex-col gap-3 bg-gray-900 shrink-0">
-            <div className="grid grid-cols-2 gap-3">
-                <button onClick={handlePrint} className="bg-[#FA8072] text-white py-4 rounded-xl font-black text-xs flex items-center justify-center gap-2">
-                    <Printer size={16} /> طباعة المشتريات
-                </button>
-                <button onClick={handleDownloadExcel} className="bg-green-700 text-white py-4 rounded-xl font-black text-xs flex items-center justify-center gap-2">
-                    <FileSpreadsheet size={16} /> تصدير Excel
-                </button>
-            </div>
+            <button onClick={handlePrint} className="bg-[#FA8072] text-white py-4 rounded-xl font-black text-xs flex items-center justify-center gap-2">
+                <Printer size={16} /> طباعة المشتريات
+            </button>
+            <button onClick={handleDownloadExcel} className="bg-green-700 text-white py-4 rounded-xl font-black text-xs flex items-center justify-center gap-2">
+                <FileSpreadsheet size={16} /> Excel
+            </button>
         </div>
       </div>
     </div>

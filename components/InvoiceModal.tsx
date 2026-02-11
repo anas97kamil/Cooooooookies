@@ -45,7 +45,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
   };
 
   const handleCopy = () => {
-    const text = `مخبز كوكيز - فاتورة مبيعات\nرقم الفاتورة: ${customerNumber}\nالتاريخ: ${dayDate}\nالعميل: ${customerName}\nالمواد: ${items.map((i: any) => `${i.name} (${i.quantity})`).join(' - ')}\nالمجموع: ${total} ل.س`;
+    const text = `مخبز كوكيز - فاتورة مبيعات\nرقم الفاتورة: ${customerNumber}\nالتاريخ: ${dayDate}\nالمواد: ${items.map((i: any) => `${i.name} (${i.quantity})`).join(' - ')}\nالمجموع: ${total} ل.س`;
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -65,51 +65,46 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-950/50 p-6 flex justify-center">
-           <div id="pos-invoice-content" className="bg-white text-black px-8 pt-8 pb-10 w-full max-w-[80mm] shadow-2xl h-fit print:w-full print:max-w-none print:shadow-none print:px-0">
-            <div className="text-center mb-6 border-b-2 border-black pb-4">
-              <h2 className="text-2xl font-black mb-1 text-black">مخبز كوكيز</h2>
-              <p className="text-[12px] font-black text-black uppercase tracking-widest">فاتورة مبيعات</p>
-              <div className="flex justify-between items-center mt-4 text-[11px] font-black px-1 tabular-nums text-black">
-                 <span>رقم الفاتورة: #{customerNumber}</span>
+           <div id="pos-invoice-content" className="bg-white text-black px-4 pt-4 pb-6 w-full max-w-[80mm] shadow-2xl h-fit print:w-full print:max-w-none print:shadow-none print:px-0">
+            <div className="text-center mb-4 border-b border-black pb-2">
+              <h2 className="text-[14px] font-black mb-0.5 text-black">مخبز كوكيز</h2>
+              <p className="text-[12px] font-black text-black">فاتورة مبيعات</p>
+              <div className="flex justify-between items-center mt-2 text-[10px] font-bold px-1 tabular-nums text-black">
+                 <span>رقم: #{customerNumber}</span>
                  <span>{dayDate} - {timeStr}</span>
               </div>
             </div>
 
-            <div className="mb-6 border-b border-black/10 pb-2">
-              <span className="text-[10px] font-black block text-black">اسم الزبون:</span>
-              <p className="text-xl font-black text-black leading-tight">{customerName}</p>
-            </div>
-
-            <table className="w-full text-right mb-8 border-t border-black">
+            <table className="w-full text-right mb-4 border-t border-black">
               <thead>
-                <tr className="text-[12px] font-black border-b border-black text-black">
-                  <th className="py-3">المادة</th>
-                  <th className="py-3 text-center">الكمية</th>
-                  <th className="py-3 text-left">الإجمالي</th>
+                <tr className="text-[10px] font-black border-b border-black text-black">
+                  <th className="py-2">المادة</th>
+                  <th className="py-2 text-center">الكمية</th>
+                  <th className="py-2 text-left">الإجمالي</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item: any, idx: number) => (
-                  <tr key={idx} className="text-[13px] font-bold border-b border-black/10 tabular-nums text-black">
-                    <td className="py-3 leading-tight pr-1">{item.name}</td>
-                    <td className="py-3 text-center font-black">{item.quantity}</td>
-                    <td className="py-3 text-left font-black text-[12px] whitespace-nowrap pl-1">
-                      { (item.price * item.quantity).toLocaleString('en-US') } <span className="text-[9px] font-normal">ل.س</span>
+                  <tr key={idx} className="text-[10px] font-bold border-b border-black/5 tabular-nums text-black">
+                    <td className="py-1.5 leading-tight pr-1">{item.name}</td>
+                    <td className="py-1.5 text-center font-black">{item.quantity}</td>
+                    <td className="py-1.5 text-left font-black whitespace-nowrap pl-1">
+                      { (item.price * item.quantity).toLocaleString('en-US') }
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="border-t-2 border-black pt-4 mb-10">
-              <div className="flex justify-between items-center text-2xl font-black total-text tabular-nums px-1 text-black">
+            <div className="border-t border-black pt-2 mb-6">
+              <div className="flex justify-between items-center text-[14px] font-black tabular-nums px-1 text-black">
                 <span>المجموع الكلي:</span>
                 <span>{total.toLocaleString('en-US')} ل.س</span>
               </div>
             </div>
 
-            <div className="text-center text-[12px] font-black border-t border-dashed border-black pt-6 mb-12 italic text-black">
-              صُنع يدوياً بكل حُب
+            <div className="text-center text-[10px] font-bold border-t border-dashed border-black pt-4 mb-4 text-black">
+              شكراً لزيارتكم
             </div>
           </div>
         </div>
@@ -117,7 +112,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
         <div className="p-6 bg-gray-900 border-t border-gray-700 shrink-0">
             <div className="grid grid-cols-2 gap-3 mb-3">
                 <button onClick={handlePrint} className="bg-[#FA8072] hover:bg-orange-500 text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all">
-                    <Printer size={20} /> طباعة الآن
+                    <Printer size={20} /> طباعة
                 </button>
                 <button onClick={handleDownloadExcel} className="bg-green-700 hover:bg-green-600 text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all">
                     <FileSpreadsheet size={20} /> Excel
@@ -125,7 +120,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
             </div>
             <button onClick={handleCopy} className={`w-full py-4 rounded-2xl font-black text-[11px] flex items-center justify-center gap-2 transition-all border border-gray-700 ${copied ? 'bg-indigo-600 text-white' : 'bg-gray-800 text-gray-400'}`}>
                 {copied ? <Check size={18} /> : <Copy size={18} />} 
-                {copied ? 'تم النسخ بنجاح' : 'نسخ الفاتورة كـنص'}
+                {copied ? 'تم النسخ' : 'نسخ النص'}
             </button>
         </div>
       </div>
