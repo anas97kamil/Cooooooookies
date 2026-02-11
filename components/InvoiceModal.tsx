@@ -64,32 +64,31 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-950/50 p-6 flex justify-center">
-           {/* Wrapper for Print Area to ensure everything is one block */}
            <div id="pos-invoice-print-wrapper" className="w-full max-w-[80mm]">
-             <div id="pos-invoice-content" className="bg-white text-black px-3 pt-3 pb-6 w-full shadow-2xl h-fit print:shadow-none print:p-0">
-                <div className="text-center mb-2 border-b-2 border-black pb-1">
+             <div id="pos-invoice-content" className="bg-white text-black px-4 pt-4 pb-8 w-full shadow-2xl h-fit print:shadow-none print:p-0">
+                <div className="text-center mb-4 border-b-2 border-black pb-2">
                   <h2 className="text-[10px] font-black mb-0 text-black">مخبز كوكيز</h2>
                   <p className="text-[10px] font-black text-black">فاتورة مبيعات</p>
-                  <div className="flex justify-between items-center mt-1 text-[9px] font-bold px-1 tabular-nums text-black">
+                  <div className="flex justify-between items-center mt-2 text-[9px] font-bold px-1 tabular-nums text-black">
                      <span>رقم: #{customerNumber}</span>
                      <span>{dayDate} - {timeStr}</span>
                   </div>
                 </div>
 
-                <table className="w-full text-right mb-2 border-b border-black">
+                <table className="w-full text-right mb-4 border-b border-black">
                   <thead>
                     <tr className="text-[8px] font-black border-b border-black text-black">
-                      <th className="py-1">المادة</th>
-                      <th className="py-1 text-center">الكمية</th>
-                      <th className="py-1 text-left">الإجمالي</th>
+                      <th className="py-2">المادة</th>
+                      <th className="py-2 text-center">الكمية</th>
+                      <th className="py-2 text-left">الإجمالي</th>
                     </tr>
                   </thead>
                   <tbody>
                     {items.map((item: any, idx: number) => (
                       <tr key={idx} className="text-[8px] font-bold border-b border-black/5 tabular-nums text-black">
-                        <td className="py-1 leading-tight pr-1">{item.name}</td>
-                        <td className="py-1 text-center font-black">{item.quantity}</td>
-                        <td className="py-1 text-left font-black pl-1">
+                        <td className="py-1.5 leading-tight pr-1">{item.name}</td>
+                        <td className="py-1.5 text-center font-black">{item.quantity}</td>
+                        <td className="py-1.5 text-left font-black pl-1">
                           { (item.price * item.quantity).toLocaleString('en-US') }
                         </td>
                       </tr>
@@ -97,14 +96,14 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
                   </tbody>
                 </table>
 
-                <div className="mb-4">
+                <div className="mb-6">
                   <div className="flex justify-between items-center text-[10px] font-black tabular-nums px-1 text-black">
                     <span>المجموع الكلي:</span>
                     <span>{total.toLocaleString('en-US')} ل.س</span>
                   </div>
                 </div>
 
-                <div className="text-center text-[8px] font-bold border-t border-dashed border-black pt-2 text-black">
+                <div className="text-center text-[8px] font-bold border-t border-dashed border-black pt-4 text-black">
                   شكراً لزيارتكم
                 </div>
               </div>
