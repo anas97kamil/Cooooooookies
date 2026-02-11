@@ -43,14 +43,15 @@
       @media print {
         @page {
           margin: 0 !important;
-          size: auto;
+          size: 80mm auto;
         }
 
         html, body {
           background: #fff !important;
           margin: 0 !important;
           padding: 0 !important;
-          width: 100% !important;
+          height: auto !important;
+          overflow: visible !important;
         }
 
         #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md {
@@ -61,24 +62,28 @@
           display: block !important;
           visibility: visible !important;
           width: 80mm !important;
-          margin: 0 auto !important;
+          margin: 0 !important;
           padding: 0 !important;
+          float: none !important;
         }
 
         .print-mode-80mm {
           width: 80mm !important;
           max-width: 80mm !important;
-          padding: 2mm !important;
           margin: 0 !important;
+          padding: 2mm !important;
           display: block !important;
           direction: rtl !important;
+          /* منع تقطيع الصفحة لضمان عدم طباعة المجموع في صفحة مستقلة */
+          break-inside: avoid !important;
           page-break-inside: avoid !important;
         }
 
-        /* تحسين النصوص للطباعة الحرارية */
+        /* تحسين النصوص للطباعة الحرارية لتكون شديدة السواد وصغيرة */
         .print-mode-80mm * {
           color: #000 !important;
           font-family: 'Cairo', sans-serif !important;
+          text-shadow: none !important;
         }
       }
     </style>
