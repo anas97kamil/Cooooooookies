@@ -9,7 +9,6 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
   const total = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
   const timeStr = items[0]?.time || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   const dayDate = new Date().toLocaleDateString('en-US');
-  const customerName = items[0]?.customerName || 'زبون عام';
   const customerNumber = items[0]?.customerNumber || 0;
 
   const handleDownloadExcel = () => {
@@ -23,7 +22,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
     const ws = utils.json_to_sheet(data);
     const wb = utils.book_new();
     utils.book_append_sheet(wb, ws, "Invoice");
-    writeFile(wb, `فاتورة-${customerNumber}-${customerName}-${dayDate}.xlsx`);
+    writeFile(wb, `فاتورة-${customerNumber}-${dayDate}.xlsx`);
   };
 
   const handlePrint = () => {
@@ -65,30 +64,30 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-950/50 p-6 flex justify-center">
-           <div id="pos-invoice-content" className="bg-white text-black px-4 pt-4 pb-6 w-full max-w-[80mm] shadow-2xl h-fit print:w-full print:max-w-none print:shadow-none print:px-0">
-            <div className="text-center mb-4 border-b border-black pb-2">
-              <h2 className="text-[14px] font-black mb-0.5 text-black">مخبز كوكيز</h2>
-              <p className="text-[12px] font-black text-black">فاتورة مبيعات</p>
-              <div className="flex justify-between items-center mt-2 text-[10px] font-bold px-1 tabular-nums text-black">
+           <div id="pos-invoice-content" className="bg-white text-black px-2 pt-2 pb-4 w-full max-w-[80mm] shadow-2xl h-fit print:w-full print:max-w-none print:shadow-none print:px-0">
+            <div className="text-center mb-2 border-b-2 border-black pb-1">
+              <h2 className="text-[12px] font-black mb-0 text-black">مخبز كوكيز</h2>
+              <p className="text-[10px] font-black text-black">فاتورة مبيعات</p>
+              <div className="flex justify-between items-center mt-1 text-[9px] font-black px-1 tabular-nums text-black">
                  <span>رقم: #{customerNumber}</span>
                  <span>{dayDate} - {timeStr}</span>
               </div>
             </div>
 
-            <table className="w-full text-right mb-4 border-t border-black">
+            <table className="w-full text-right mb-2 border-b border-black">
               <thead>
-                <tr className="text-[10px] font-black border-b border-black text-black">
-                  <th className="py-2">المادة</th>
-                  <th className="py-2 text-center">الكمية</th>
-                  <th className="py-2 text-left">الإجمالي</th>
+                <tr className="text-[9px] font-black border-b border-black text-black">
+                  <th className="py-1">المادة</th>
+                  <th className="py-1 text-center">الكمية</th>
+                  <th className="py-1 text-left">الإجمالي</th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item: any, idx: number) => (
-                  <tr key={idx} className="text-[10px] font-bold border-b border-black/5 tabular-nums text-black">
-                    <td className="py-1.5 leading-tight pr-1">{item.name}</td>
-                    <td className="py-1.5 text-center font-black">{item.quantity}</td>
-                    <td className="py-1.5 text-left font-black whitespace-nowrap pl-1">
+                  <tr key={idx} className="text-[9px] font-bold border-b border-black/10 tabular-nums text-black">
+                    <td className="py-1 leading-tight pr-1">{item.name}</td>
+                    <td className="py-1 text-center font-black">{item.quantity}</td>
+                    <td className="py-1 text-left font-black whitespace-nowrap pl-1">
                       { (item.price * item.quantity).toLocaleString('en-US') }
                     </td>
                   </tr>
@@ -96,14 +95,14 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
               </tbody>
             </table>
 
-            <div className="border-t border-black pt-2 mb-6">
-              <div className="flex justify-between items-center text-[14px] font-black tabular-nums px-1 text-black">
+            <div className="mb-2">
+              <div className="flex justify-between items-center text-[11px] font-black tabular-nums px-1 text-black">
                 <span>المجموع الكلي:</span>
                 <span>{total.toLocaleString('en-US')} ل.س</span>
               </div>
             </div>
 
-            <div className="text-center text-[10px] font-bold border-t border-dashed border-black pt-4 mb-4 text-black">
+            <div className="text-center text-[9px] font-black border-t border-dashed border-black pt-2 text-black">
               شكراً لزيارتكم
             </div>
           </div>
