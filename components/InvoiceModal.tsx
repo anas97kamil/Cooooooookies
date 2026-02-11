@@ -26,14 +26,13 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
   };
 
   const handlePrint = () => {
-    const printContent = document.getElementById('pos-invoice-content');
+    const printContent = document.getElementById('pos-invoice-print-wrapper');
     const printArea = document.getElementById('print-area');
     
     if (printContent && printArea) {
       printArea.innerHTML = printContent.innerHTML;
       printArea.className = 'print-mode-80mm';
       
-      // نستخدم Timeout لضمان تحميل المحتوى قبل إرسال أمر الطباعة
       setTimeout(() => {
         window.print();
         setTimeout(() => {
@@ -65,48 +64,51 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto bg-gray-950/50 p-6 flex justify-center">
-           <div id="pos-invoice-content" className="bg-white text-black px-3 pt-3 pb-6 w-full max-w-[80mm] shadow-2xl h-fit print:w-full print:max-w-none print:shadow-none print:px-0 print:m-0">
-            <div className="text-center mb-2 border-b-2 border-black pb-1">
-              <h2 className="text-[10px] font-black mb-0 text-black">مخبز كوكيز</h2>
-              <p className="text-[10px] font-black text-black">فاتورة مبيعات</p>
-              <div className="flex justify-between items-center mt-1 text-[9px] font-bold px-1 tabular-nums text-black">
-                 <span>رقم: #{customerNumber}</span>
-                 <span>{dayDate} - {timeStr}</span>
+           {/* Wrapper for Print Area to ensure everything is one block */}
+           <div id="pos-invoice-print-wrapper" className="w-full max-w-[80mm]">
+             <div id="pos-invoice-content" className="bg-white text-black px-3 pt-3 pb-6 w-full shadow-2xl h-fit print:shadow-none print:p-0">
+                <div className="text-center mb-2 border-b-2 border-black pb-1">
+                  <h2 className="text-[10px] font-black mb-0 text-black">مخبز كوكيز</h2>
+                  <p className="text-[10px] font-black text-black">فاتورة مبيعات</p>
+                  <div className="flex justify-between items-center mt-1 text-[9px] font-bold px-1 tabular-nums text-black">
+                     <span>رقم: #{customerNumber}</span>
+                     <span>{dayDate} - {timeStr}</span>
+                  </div>
+                </div>
+
+                <table className="w-full text-right mb-2 border-b border-black">
+                  <thead>
+                    <tr className="text-[8px] font-black border-b border-black text-black">
+                      <th className="py-1">المادة</th>
+                      <th className="py-1 text-center">الكمية</th>
+                      <th className="py-1 text-left">الإجمالي</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item: any, idx: number) => (
+                      <tr key={idx} className="text-[8px] font-bold border-b border-black/5 tabular-nums text-black">
+                        <td className="py-1 leading-tight pr-1">{item.name}</td>
+                        <td className="py-1 text-center font-black">{item.quantity}</td>
+                        <td className="py-1 text-left font-black pl-1">
+                          { (item.price * item.quantity).toLocaleString('en-US') }
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                <div className="mb-4">
+                  <div className="flex justify-between items-center text-[10px] font-black tabular-nums px-1 text-black">
+                    <span>المجموع الكلي:</span>
+                    <span>{total.toLocaleString('en-US')} ل.س</span>
+                  </div>
+                </div>
+
+                <div className="text-center text-[8px] font-bold border-t border-dashed border-black pt-2 text-black">
+                  شكراً لزيارتكم
+                </div>
               </div>
-            </div>
-
-            <table className="w-full text-right mb-2 border-b border-black">
-              <thead>
-                <tr className="text-[8px] font-black border-b border-black text-black uppercase">
-                  <th className="py-1">المادة</th>
-                  <th className="py-1 text-center">الكمية</th>
-                  <th className="py-1 text-left">الإجمالي</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item: any, idx: number) => (
-                  <tr key={idx} className="text-[8px] font-bold border-b border-black/5 tabular-nums text-black">
-                    <td className="py-1 leading-tight pr-1">{item.name}</td>
-                    <td className="py-1 text-center font-black">{item.quantity}</td>
-                    <td className="py-1 text-left font-black whitespace-nowrap pl-1">
-                      { (item.price * item.quantity).toLocaleString('en-US') }
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            <div className="mb-4">
-              <div className="flex justify-between items-center text-[10px] font-black tabular-nums px-1 text-black">
-                <span>المجموع الكلي:</span>
-                <span>{total.toLocaleString('en-US')} ل.س</span>
-              </div>
-            </div>
-
-            <div className="text-center text-[8px] font-bold border-t border-dashed border-black pt-2 text-black">
-              شكراً لزيارتكم
-            </div>
-          </div>
+           </div>
         </div>
 
         <div className="p-6 bg-gray-900 border-t border-gray-700 shrink-0">

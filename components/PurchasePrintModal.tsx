@@ -24,7 +24,7 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
   };
 
   const handlePrint = () => {
-    const printContent = document.getElementById('purchase-invoice-content');
+    const printContent = document.getElementById('purchase-invoice-print-wrapper');
     const printArea = document.getElementById('print-area');
     
     if (printContent && printArea) {
@@ -51,49 +51,51 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 bg-gray-950/50 p-6 flex justify-center">
-          <div id="purchase-invoice-content" className="bg-white text-black px-3 pt-3 pb-6 w-[80mm] shadow-2xl h-fit print:w-full print:shadow-none print:px-0 print:m-0">
-            <div className="text-center mb-2 border-b-2 border-black pb-1">
-              <h2 className="text-[10px] font-black mb-0 text-black">مخبز كوكيز</h2>
-              <p className="text-black font-black text-[10px]">سند استلام مشتريات</p>
-              <div className="flex justify-between items-center mt-1 text-[9px] font-bold px-1 tabular-nums text-black">
-                  <span>التاريخ: {invoice.date}</span>
-                  <span>#{invoice.id.slice(-4)}</span>
-              </div>
-              <div className="mt-1 text-center border border-black/10 p-1 rounded">
-                  <p className="text-black font-black text-[10px]">{invoice.supplierName}</p>
-                  <p className="text-[8px] font-bold text-black">{invoice.paymentStatus === 'paid' ? 'نقدي' : 'آجل'}</p>
-              </div>
-            </div>
+          <div id="purchase-invoice-print-wrapper" className="w-full max-w-[80mm]">
+            <div id="purchase-invoice-content" className="bg-white text-black px-3 pt-3 pb-6 w-full shadow-2xl h-fit print:shadow-none print:p-0">
+                <div className="text-center mb-2 border-b-2 border-black pb-1">
+                  <h2 className="text-[10px] font-black mb-0 text-black">مخبز كوكيز</h2>
+                  <p className="text-black font-black text-[10px]">سند استلام مشتريات</p>
+                  <div className="flex justify-between items-center mt-1 text-[9px] font-bold px-1 tabular-nums text-black">
+                      <span>التاريخ: {invoice.date}</span>
+                      <span>#{invoice.id.slice(-4)}</span>
+                  </div>
+                  <div className="mt-1 text-center border border-black/10 p-1 rounded">
+                      <p className="text-black font-black text-[10px]">{invoice.supplierName}</p>
+                      <p className="text-[8px] font-bold text-black">{invoice.paymentStatus === 'paid' ? 'نقدي' : 'آجل'}</p>
+                  </div>
+                </div>
 
-            <table className="w-full mb-2 text-right border-collapse border-b border-black">
-               <thead>
-                   <tr className="border-b border-black text-black">
-                       <th className="py-1 text-[8px] font-black">المادة</th>
-                       <th className="py-1 text-center text-[8px] font-black">الكمية</th>
-                       <th className="py-1 text-left text-[8px] font-black">الإجمالي</th>
-                   </tr>
-               </thead>
-               <tbody className="divide-y divide-black/10">
-                  {invoice.items.map((item) => (
-                    <tr key={item.id} className="text-[8px] font-bold tabular-nums text-black">
-                      <td className="py-1 pr-1 leading-tight">{item.name}</td>
-                      <td className="py-1 text-center">{item.quantity}</td>
-                      <td className="py-1 text-left pl-1">{item.total.toLocaleString('en-US')}</td>
-                    </tr>
-                  ))}
-               </tbody>
-            </table>
+                <table className="w-full mb-2 text-right border-collapse border-b border-black">
+                   <thead>
+                       <tr className="border-b border-black text-black">
+                           <th className="py-1 text-[8px] font-black">المادة</th>
+                           <th className="py-1 text-center text-[8px] font-black">الكمية</th>
+                           <th className="py-1 text-left text-[8px] font-black">الإجمالي</th>
+                       </tr>
+                   </thead>
+                   <tbody className="divide-y divide-black/10">
+                      {invoice.items.map((item) => (
+                        <tr key={item.id} className="text-[8px] font-bold tabular-nums text-black">
+                          <td className="py-1 pr-1 leading-tight">{item.name}</td>
+                          <td className="py-1 text-center">{item.quantity}</td>
+                          <td className="py-1 text-left pl-1">{item.total.toLocaleString('en-US')}</td>
+                        </tr>
+                      ))}
+                   </tbody>
+                </table>
 
-            <div className="mb-4">
-              <div className="flex justify-between items-center text-[10px] font-black tabular-nums px-1 text-black">
-                  <span>المجموع:</span>
-                  <span>{invoice.totalAmount.toLocaleString('en-US')} ل.س</span>
+                <div className="mb-4">
+                  <div className="flex justify-between items-center text-[10px] font-black tabular-nums px-1 text-black">
+                      <span>المجموع:</span>
+                      <span>{invoice.totalAmount.toLocaleString('en-US')} ل.س</span>
+                  </div>
+                </div>
+
+                <div className="mt-2 text-center text-[8px] font-bold border-t border-dashed border-black pt-2 text-black">
+                  تم الاستلام
+                </div>
               </div>
-            </div>
-
-            <div className="mt-2 text-center text-[8px] font-bold border-t border-dashed border-black pt-2 text-black">
-              تم الاستلام
-            </div>
           </div>
         </div>
 

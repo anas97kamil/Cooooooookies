@@ -54,7 +54,7 @@
           overflow: visible !important;
         }
 
-        #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md {
+        #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md, header, footer, main {
           display: none !important;
         }
 
@@ -64,22 +64,23 @@
           width: 80mm !important;
           margin: 0 !important;
           padding: 0 !important;
-          float: none !important;
         }
 
         .print-mode-80mm {
           width: 80mm !important;
           max-width: 80mm !important;
           margin: 0 !important;
-          padding: 2mm !important;
+          padding: 2mm !important; /* الهوامش السابقة */
           display: block !important;
           direction: rtl !important;
-          /* منع تقطيع الصفحة لضمان عدم طباعة المجموع في صفحة مستقلة */
+          /* منع التجزئة لضمان طباعة الفاتورة ككتلة واحدة وبالترتيب الصحيح */
           break-inside: avoid !important;
           page-break-inside: avoid !important;
+          height: auto !important;
+          background: white !important;
+          color: black !important;
         }
 
-        /* تحسين النصوص للطباعة الحرارية لتكون شديدة السواد وصغيرة */
         .print-mode-80mm * {
           color: #000 !important;
           font-family: 'Cairo', sans-serif !important;
