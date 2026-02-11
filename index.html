@@ -52,6 +52,8 @@
           padding: 0 !important;
           height: auto !important;
           overflow: visible !important;
+          /* ضمان عدم وجود تباعدات افتراضية من المتصفح */
+          box-sizing: border-box !important;
         }
 
         #root, .no-print, [role="dialog"], .fixed, .backdrop-blur-md, header, footer, main {
@@ -67,12 +69,14 @@
         }
 
         .print-mode-80mm {
-          width: 80mm !important;
-          max-width: 80mm !important;
-          margin: 0 !important;
-          padding: 5mm !important; /* زيادة الهوامش إلى 5مم لضمان عدم القص */
+          /* العرض الفعلي المطبوع لمعظم طابعات 80 مم هو 72 مم */
+          width: 72mm !important;
+          max-width: 72mm !important;
+          margin: 0 auto !important; /* توسيط الفاتورة لضمان هوامش جانبية متساوية */
+          padding: 0 !important;
           display: block !important;
           direction: rtl !important;
+          box-sizing: border-box !important;
           break-inside: avoid !important;
           page-break-inside: avoid !important;
           height: auto !important;
@@ -84,6 +88,7 @@
           color: #000 !important;
           font-family: 'Cairo', sans-serif !important;
           text-shadow: none !important;
+          box-sizing: border-box !important;
         }
       }
     </style>

@@ -51,8 +51,8 @@ export const PurchasePrintModal: React.FC<PurchasePrintModalProps> = ({ invoice,
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 bg-gray-950/50 p-6 flex justify-center">
-          <div id="purchase-invoice-print-wrapper" className="w-full max-w-[80mm]">
-            <div id="purchase-invoice-content" className="bg-white text-black px-4 pt-4 pb-8 w-full shadow-2xl h-fit print:shadow-none print:p-0">
+          <div id="purchase-invoice-print-wrapper" className="w-full max-w-[72mm] print:max-w-none">
+            <div id="purchase-invoice-content" className="bg-white text-black px-4 pt-4 pb-8 w-full shadow-2xl h-fit print:shadow-none print:px-2 print:py-0">
                 <div className="text-center mb-4 border-b-2 border-black pb-2">
                   <h2 className="text-[10px] font-black mb-0 text-black">مخبز كوكيز</h2>
                   <p className="text-black font-black text-[10px]">سند استلام مشتريات</p>
