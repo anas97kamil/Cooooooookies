@@ -127,7 +127,8 @@ const App: React.FC = () => {
     }
   };
   
-  const [systemPassword, setSystemPassword] = useState(() => localStorage.getItem('systemPassword') || '2026');
+  const [loginPassword, setLoginPassword] = useState(() => localStorage.getItem('loginPassword') || '2026');
+  const [systemPassword, setSystemPassword] = useState(() => localStorage.getItem('systemPassword') || '@@A2026A@@');
 
   const [showBackupReminder, setShowBackupReminder] = useState(false);
   const lastBackupTimestamp = useRef<number>(Date.now());
@@ -185,7 +186,6 @@ const App: React.FC = () => {
     
     const nextCount = ordersCountSinceBackup + 1;
     setOrdersCountSinceBackup(nextCount);
-    // تنبيه عند الوصول لـ 40 فاتورة
     if (nextCount >= 40) {
       setShowBackupReminder(true);
     }
@@ -252,13 +252,14 @@ const App: React.FC = () => {
     localStorage.setItem('products', JSON.stringify(products));
     localStorage.setItem('customers', JSON.stringify(customers));
     localStorage.setItem('suppliers', JSON.stringify(suppliers));
+    localStorage.setItem('loginPassword', loginPassword);
     localStorage.setItem('systemPassword', systemPassword);
     localStorage.setItem('backupCounter', ordersCountSinceBackup.toString());
     
     localStorage.setItem('lastSessionTime', formattedDate);
     
     setLastSyncTime(now);
-  }, [sales, purchaseInvoices, history, products, customers, suppliers, systemPassword, ordersCountSinceBackup]);
+  }, [sales, purchaseInvoices, history, products, customers, suppliers, loginPassword, systemPassword, ordersCountSinceBackup]);
 
   const verifyLock = () => {
     if (lockPass === systemPassword) {
@@ -365,6 +366,7 @@ const App: React.FC = () => {
       products, 
       customers, 
       suppliers, 
+      loginPassword,
       systemPassword,
       exportDate: new Date().toISOString() 
     };
@@ -415,6 +417,7 @@ const App: React.FC = () => {
       if (data.products) setProducts(data.products);
       if (data.customers) setCustomers(data.customers);
       if (data.suppliers) setSuppliers(data.suppliers);
+      if (data.loginPassword) setLoginPassword(data.loginPassword);
       if (data.systemPassword) setSystemPassword(data.systemPassword);
       alert('تمت استعادة البيانات بنجاح.');
     } catch (err) { 
@@ -478,7 +481,7 @@ const App: React.FC = () => {
         {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onPreviewInvoice={setInvoiceItems} onUpdateOrder={handleUpdateArchivedOrder} onDeleteArchivedOrder={handleDeleteArchivedOrder} onDeleteArchivedDay={handleDeleteArchivedDay} />}
         {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={handleUpdateProduct} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
-        {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} setSystemPassword={setSystemPassword} />}
+        {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} setSystemPassword={setSystemPassword} loginPassword={loginPassword} setLoginPassword={setLoginPassword} />}
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
       </Suspense>
       {showLock && (

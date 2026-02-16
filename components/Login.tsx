@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { LogIn, AlertCircle, ShieldCheck } from 'lucide-react';
 
@@ -13,10 +12,10 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // قراءة كلمة المرور من localStorage للتأكد من المزامنة
-    const savedPass = localStorage.getItem('systemPassword') || '2026';
+    // التحقق من كلمة مرور الدخول loginPassword
+    const savedLoginPass = localStorage.getItem('loginPassword') || '2026';
     
-    if (username === 'Admin' && password === savedPass) {
+    if (username === 'Admin' && password === savedLoginPass) {
       onLogin();
     } else {
       setError('بيانات الدخول غير صحيحة');
@@ -26,7 +25,6 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4 font-['Cairo'] relative overflow-hidden">
-      {/* Dynamic Background Effects */}
       <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#FA8072]/10 rounded-full blur-[120px] animate-pulse"></div>
       <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '2s' }}></div>
 
