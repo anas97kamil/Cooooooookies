@@ -16,6 +16,30 @@ export interface Supplier {
   notes?: string;
 }
 
+export interface Employee {
+  id: string;
+  name: string;
+  position?: string;
+}
+
+export interface SalaryPayment {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  amount: number;
+  date: string;
+  month: string;
+  notes?: string;
+}
+
+export interface GeneralExpense {
+  id: string;
+  category: string;
+  amount: number;
+  date: string;
+  notes?: string;
+}
+
 export interface SaleItem {
   id: string;
   orderId: string;
@@ -61,9 +85,13 @@ export interface Product {
   barcode?: string;
 }
 
-export interface SummaryData {
-  totalItems: number;
-  totalRevenue: number;
+export interface StockItem {
+  id: string;
+  name: string;
+  currentQuantity: number;
+  unitType: UnitType;
+  minThreshold: number; 
+  lastUpdated: string;
 }
 
 export interface ArchivedDay {
@@ -75,4 +103,6 @@ export interface ArchivedDay {
   totalItems: number;
   items: SaleItem[];
   purchaseInvoices: PurchaseInvoice[];
+  salaryPayments?: SalaryPayment[];
+  generalExpenses?: GeneralExpense[];
 }

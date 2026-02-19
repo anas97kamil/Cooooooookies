@@ -4,7 +4,7 @@ import { POSInterface } from './components/RecipeGenerator';
 import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
-import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier } from './types';
+import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier, StockItem, Employee, SalaryPayment, GeneralExpense } from './types';
 import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, AlertCircle, Download, AlertTriangle, Clock } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
@@ -40,27 +40,19 @@ const WelcomeLoader: React.FC<{ onComplete: () => void; lastSessionTime: string 
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#FA8072_1px,transparent_1px)] [background-size:40px_40px]"></div>
       </div>
-      <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-600/5 rounded-full blur-[150px]"></div>
-      <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] bg-[#FA8072]/5 rounded-full blur-[150px]"></div>
-      
       <div className="relative z-10 flex flex-col items-center w-full max-w-md">
         <div className="mb-10 relative">
            <div className="w-24 h-24 bg-slate-900 border border-slate-800 rounded-3xl flex items-center justify-center mx-auto shadow-2xl relative overflow-hidden group">
               <div className="absolute inset-0 bg-gradient-to-tr from-[#FA8072]/20 to-transparent opacity-50"></div>
               <ShieldCheck className="text-[#FA8072] relative z-10" size={44} strokeWidth={1.5} />
            </div>
-           <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-[#FA8072] rounded-full blur-xl opacity-50 animate-pulse"></div>
         </div>
-
         <div className="space-y-4 mb-14">
-            <h1 className="text-5xl font-black text-white tracking-tighter animate-fade-up">
-                مرحباً
-            </h1>
+            <h1 className="text-5xl font-black text-white tracking-tighter animate-fade-up">مرحباً</h1>
             <div className="h-0.5 w-12 bg-[#FA8072] mx-auto rounded-full opacity-60"></div>
         </div>
-
         {lastSessionTime && (
-          <div className="mb-10 flex items-center gap-3 px-6 py-3 bg-slate-900/50 border border-slate-800 rounded-2xl animate-fade-up" style={{ animationDelay: '0.2s' }}>
+          <div className="mb-10 flex items-center gap-3 px-6 py-3 bg-slate-900/50 border border-slate-800 rounded-2xl animate-fade-up">
             <Clock size={16} className="text-[#FA8072]" />
             <div className="flex flex-col items-start leading-none text-right">
               <span className="text-[10px] text-slate-500 font-bold uppercase mb-1">آخر نشاط مسجل</span>
@@ -68,13 +60,9 @@ const WelcomeLoader: React.FC<{ onComplete: () => void; lastSessionTime: string 
             </div>
           </div>
         )}
-
         <div className="w-full max-w-xs px-4">
             <div className="w-full bg-slate-900 h-1 rounded-full overflow-hidden border border-slate-800/50 p-0 mb-4">
-              <div 
-                className="h-full bg-[#FA8072] rounded-full transition-all duration-300 ease-out shadow-[0_0_15px_rgba(250,128,114,0.3)]" 
-                style={{ width: `${progress}%` }}
-              ></div>
+              <div className="h-full bg-[#FA8072] rounded-full transition-all duration-300 ease-out" style={{ width: `${progress}%` }}></div>
             </div>
             <div className="flex justify-between items-center px-1">
                 <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">System Authentication</span>
@@ -82,20 +70,12 @@ const WelcomeLoader: React.FC<{ onComplete: () => void; lastSessionTime: string 
             </div>
         </div>
       </div>
-
-      <div className="absolute bottom-10 flex flex-col items-center gap-1 opacity-40">
-          <div className="text-slate-500 text-[9px] font-black uppercase tracking-[0.5em]">
-              Cookie Bakery Enterprise OS
-          </div>
-          <div className="text-slate-700 text-[8px] font-bold">Build v2.6.5-Pro • Secured</div>
-      </div>
     </div>
   );
 };
 
 const App: React.FC = () => {
   const [previousSessionTime] = useState(() => localStorage.getItem('lastSessionTime'));
-  
   const [isAuthenticated, setIsAuthenticated] = useState(() => sessionStorage.getItem('isAuth') === 'true');
   const [isInitializing, setIsInitializing] = useState(true); 
   const [isSyncing, setIsSyncing] = useState(false);
@@ -105,68 +85,63 @@ const App: React.FC = () => {
   const [lockError, setLockError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
-  const [ordersCountSinceBackup, setOrdersCountSinceBackup] = useState(() => Number(localStorage.getItem('backupCounter') || 0));
-  
-  const [installPrompt, setInstallPrompt] = useState<any>(null);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setInstallPrompt(e);
-    };
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-  }, []);
-
-  const handleInstall = async () => {
-    if (!installPrompt) return;
-    installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setInstallPrompt(null);
-    }
-  };
-  
   const [loginPassword, setLoginPassword] = useState(() => localStorage.getItem('loginPassword') || '2026');
   const [systemPassword, setSystemPassword] = useState(() => localStorage.getItem('systemPassword') || '@@A2026A@@');
 
-  const [showBackupReminder, setShowBackupReminder] = useState(false);
-  const lastBackupTimestamp = useRef<number>(Date.now());
-
+  // State Management
   const [sales, setSales] = useState<SaleItem[]>(() => JSON.parse(localStorage.getItem('dailySales') || '[]'));
   const [purchaseInvoices, setPurchaseInvoices] = useState<PurchaseInvoice[]>(() => JSON.parse(localStorage.getItem('dailyPurchaseInvoices') || '[]'));
+  const [salaryPayments, setSalaryPayments] = useState<SalaryPayment[]>(() => JSON.parse(localStorage.getItem('dailySalaries') || '[]'));
+  const [generalExpenses, setGeneralExpenses] = useState<GeneralExpense[]>(() => JSON.parse(localStorage.getItem('dailyGeneralExpenses') || '[]'));
   const [history, setHistory] = useState<ArchivedDay[]>(() => JSON.parse(localStorage.getItem('salesHistory') || '[]'));
   const [products, setProducts] = useState<Product[]>(() => JSON.parse(localStorage.getItem('products') || '[]'));
   const [customers, setCustomers] = useState<Customer[]>(() => JSON.parse(localStorage.getItem('customers') || '[]'));
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => JSON.parse(localStorage.getItem('suppliers') || '[]'));
+  const [employees, setEmployees] = useState<Employee[]>(() => JSON.parse(localStorage.getItem('employees') || '[]'));
+  const [inventory, setInventory] = useState<StockItem[]>(() => JSON.parse(localStorage.getItem('inventory') || '[]'));
   
+  // New: Expense Categories Management
+  const [expenseCategories, setExpenseCategories] = useState<string[]>(() => {
+    const saved = localStorage.getItem('expenseCategories');
+    return saved ? JSON.parse(saved) : ['كهرباء', 'ماء', 'نظافة', 'صيانة', 'مواصلات', 'قرطاسية', 'إيجار', 'إنترنت', 'أخرى'];
+  });
+
   const [invoiceItems, setInvoiceItems] = useState<SaleItem[] | null>(null);
   const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false, analytics: false });
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('isAuth');
-    setIsAuthenticated(false);
-  };
+  // Sync with LocalStorage
+  useEffect(() => {
+    localStorage.setItem('dailySales', JSON.stringify(sales));
+    localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
+    localStorage.setItem('dailySalaries', JSON.stringify(salaryPayments));
+    localStorage.setItem('dailyGeneralExpenses', JSON.stringify(generalExpenses));
+    localStorage.setItem('salesHistory', JSON.stringify(history));
+    localStorage.setItem('products', JSON.stringify(products));
+    localStorage.setItem('customers', JSON.stringify(customers));
+    localStorage.setItem('suppliers', JSON.stringify(suppliers));
+    localStorage.setItem('employees', JSON.stringify(employees));
+    localStorage.setItem('inventory', JSON.stringify(inventory));
+    localStorage.setItem('expenseCategories', JSON.stringify(expenseCategories));
+    localStorage.setItem('loginPassword', loginPassword);
+    localStorage.setItem('systemPassword', systemPassword);
+    
+    const now = new Date();
+    localStorage.setItem('lastSessionTime', now.toLocaleString('en-US'));
+    setLastSyncTime(now);
+  }, [sales, purchaseInvoices, salaryPayments, generalExpenses, history, products, customers, suppliers, employees, inventory, expenseCategories, loginPassword, systemPassword]);
 
-  const handleOpenProtected = (target: string, data?: any) => {
-    setShowLock({ target, data });
-  };
+  const handleLogout = () => { sessionStorage.removeItem('isAuth'); setIsAuthenticated(false); };
+  const handleOpenProtected = (target: string, data?: any) => { setShowLock({ target, data }); };
+  const handleLoginSuccess = () => { sessionStorage.setItem('isAuth', 'true'); setIsAuthenticated(true); };
+  const finalizeWelcome = () => setIsInitializing(false);
 
   const completeOrder = useCallback((items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail') => {
     const orderId = Date.now().toString();
     const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     const todayDate = new Date().toLocaleDateString('en-US');
-    
-    const activeTodaySales = sales.filter(s => s.date === todayDate);
-    const activeMax = activeTodaySales.length > 0 
-      ? Math.max(...activeTodaySales.map(s => s.customerNumber)) 
-      : 0;
-
+    const activeMax = sales.filter(s => s.date === todayDate).reduce((max, s) => Math.max(max, s.customerNumber), 0);
     const archivedToday = history.find(h => h.date === todayDate);
-    const archivedMax = (archivedToday && archivedToday.items.length > 0)
-      ? Math.max(...archivedToday.items.map(s => s.customerNumber))
-      : 0;
-
+    const archivedMax = archivedToday ? archivedToday.items.reduce((max, s) => Math.max(max, s.customerNumber), 0) : 0;
     const nextCustomerNumber = Math.max(activeMax, archivedMax) + 1;
 
     const newItems: SaleItem[] = items.map(item => ({
@@ -183,246 +158,74 @@ const App: React.FC = () => {
 
     setSales(prev => [...prev, ...newItems]);
     setInvoiceItems(newItems);
-    
-    const nextCount = ordersCountSinceBackup + 1;
-    setOrdersCountSinceBackup(nextCount);
-    if (nextCount >= 40) {
-      setShowBackupReminder(true);
-    }
-  }, [sales, history, ordersCountSinceBackup]);
+  }, [sales, history]);
 
-  const handleUpdateProduct = (id: string, updatedProduct: Partial<Product>) => {
-    setProducts(prev => prev.map(p => p.id === id ? { ...p, ...updatedProduct } : p));
+  const handleArchiveDay = useCallback(() => {
+      if (sales.length === 0 && purchaseInvoices.length === 0 && salaryPayments.length === 0 && generalExpenses.length === 0) return alert('لا توجد بيانات للترحيل');
+      const confirmed = window.confirm('ترحيل مبيعات ومصاريف اليوم للأرشيف؟');
+      if (!confirmed) return;
+
+      const dateStr = new Date().toLocaleDateString('en-US');
+      setHistory(prev => [{
+          id: `arch-${Date.now()}`,
+          date: dateStr,
+          timestamp: Date.now(),
+          items: sales,
+          purchaseInvoices: purchaseInvoices,
+          salaryPayments: salaryPayments,
+          generalExpenses: generalExpenses,
+          totalRevenue: sales.reduce((s, i) => s + (i.price * i.quantity), 0),
+          totalExpenses: purchaseInvoices.reduce((s, i) => s + i.totalAmount, 0) + salaryPayments.reduce((s, i) => s + i.amount, 0) + generalExpenses.reduce((s, i) => s + i.amount, 0),
+          totalItems: sales.length
+      }, ...prev]);
+
+      setSales([]);
+      setPurchaseInvoices([]);
+      setSalaryPayments([]);
+      setGeneralExpenses([]);
+      alert('تم الترحيل بنجاح');
+  }, [sales, purchaseInvoices, salaryPayments, generalExpenses]);
+
+  const handleExportData = async () => {
+    const backup = { sales, purchaseInvoices, salaryPayments, generalExpenses, history, products, customers, suppliers, employees, inventory, expenseCategories, loginPassword, systemPassword };
+    const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cookies-bakery-backup-${new Date().toLocaleDateString()}.json`;
+    link.click();
   };
 
-  const handleUpdateArchivedOrder = (dayId: string, orderId: string, updatedItems: SaleItem[], newCustomerName?: string) => {
-    setHistory(prev => prev.map(day => {
-      if (day.id === dayId) {
-        const otherItems = day.items.filter(item => item.orderId !== orderId);
-        const finalItems = [...otherItems, ...updatedItems.map(it => ({ ...it, customerName: newCustomerName || it.customerName }))];
-        return {
-          ...day,
-          items: finalItems,
-          totalRevenue: finalItems.reduce((s, i) => s + (i.price * i.quantity), 0),
-          totalItems: finalItems.length
-        };
-      }
-      return day;
-    }));
+  const handleImportData = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target?.result as string);
+            if (data.sales) setSales(data.sales);
+            if (data.inventory) setInventory(data.inventory);
+            if (data.products) setProducts(data.products);
+            if (data.history) setHistory(data.history);
+            if (data.purchaseInvoices) setPurchaseInvoices(data.purchaseInvoices);
+            if (data.salaryPayments) setSalaryPayments(data.salaryPayments);
+            if (data.generalExpenses) setGeneralExpenses(data.generalExpenses);
+            if (data.customers) setCustomers(data.customers);
+            if (data.suppliers) setSuppliers(data.suppliers);
+            if (data.employees) setEmployees(data.employees);
+            if (data.expenseCategories) setExpenseCategories(data.expenseCategories);
+            if (data.loginPassword) setLoginPassword(data.loginPassword);
+            if (data.systemPassword) setSystemPassword(data.systemPassword);
+            alert('تم استيراد البيانات');
+        } catch (err) { alert('خطأ في الملف'); }
+    };
+    reader.readAsText(file);
   };
-
-  const handleDeleteArchivedOrder = (dayId: string, orderId: string) => {
-    setHistory(prev => {
-      const updated = prev.map(day => {
-        if (day.id === dayId) {
-          const finalItems = day.items.filter(item => item.orderId !== orderId);
-          return {
-            ...day,
-            items: finalItems,
-            totalRevenue: finalItems.reduce((s, i) => s + (i.price * i.quantity), 0),
-            totalItems: finalItems.length
-          };
-        }
-        return day;
-      });
-      return updated.filter(day => day.items.length > 0 || (day.purchaseInvoices && day.purchaseInvoices.length > 0));
-    });
-  };
-
-  const handleDeleteArchivedDay = (dayId: string) => {
-    setHistory(prev => prev.filter(day => day.id !== dayId));
-  };
-
-  const handleLoginSuccess = () => {
-    sessionStorage.setItem('isAuth', 'true');
-    setIsAuthenticated(true);
-  };
-
-  const finalizeWelcome = () => {
-    setIsInitializing(false);
-  };
-
-  useEffect(() => {
-    const now = new Date();
-    const formattedDate = now.toLocaleDateString('en-US') + ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-    
-    localStorage.setItem('dailySales', JSON.stringify(sales));
-    localStorage.setItem('dailyPurchaseInvoices', JSON.stringify(purchaseInvoices));
-    localStorage.setItem('salesHistory', JSON.stringify(history));
-    localStorage.setItem('products', JSON.stringify(products));
-    localStorage.setItem('customers', JSON.stringify(customers));
-    localStorage.setItem('suppliers', JSON.stringify(suppliers));
-    localStorage.setItem('loginPassword', loginPassword);
-    localStorage.setItem('systemPassword', systemPassword);
-    localStorage.setItem('backupCounter', ordersCountSinceBackup.toString());
-    
-    localStorage.setItem('lastSessionTime', formattedDate);
-    
-    setLastSyncTime(now);
-  }, [sales, purchaseInvoices, history, products, customers, suppliers, loginPassword, systemPassword, ordersCountSinceBackup]);
 
   const verifyLock = () => {
     if (lockPass === systemPassword) {
-      if (showLock?.target === 'full_reset') {
-          localStorage.clear();
-          window.location.reload();
-      } else if (showLock?.target === 'clear_all_history') {
-          setHistory([]);
-      } else if (showLock) {
-          setModals(m => ({ ...m, [showLock.target]: true }));
-      }
-      setShowLock(null);
-      setLockPass('');
-      setLockError(false);
-    } else {
-      setLockError(true);
-    }
-  };
-
-  const handleArchiveDay = useCallback(() => {
-      if (sales.length === 0 && purchaseInvoices.length === 0) {
-          alert('لا توجد عمليات مبيعات أو مشتريات نشطة حالياً لترحيلها.');
-          return;
-      }
-      
-      const confirmed = window.confirm('هل أنت متأكد من ترحيل المبيعات للأرشيف وتصفير اليوم؟ \n\nسيتم توزيع كل فاتورة حسب تاريخها الأصلي في السجلات التاريخية.');
-      if (!confirmed) return;
-
-      try {
-          const currentSales = [...sales];
-          const currentPurchases = [...purchaseInvoices];
-
-          const salesMap = new Map<string, SaleItem[]>();
-          currentSales.forEach(s => {
-              const d = s.date;
-              if (!salesMap.has(d)) salesMap.set(d, []);
-              salesMap.get(d)!.push(s);
-          });
-
-          const purchaseMap = new Map<string, PurchaseInvoice[]>();
-          currentPurchases.forEach(p => {
-              const d = p.date;
-              if (!purchaseMap.has(d)) purchaseMap.set(d, []);
-              purchaseMap.get(d)!.push(p);
-          });
-
-          const allUniqueDates = Array.from(new Set([...salesMap.keys(), ...purchaseMap.keys()]));
-
-          setHistory(prev => {
-              const newHistory = [...prev];
-              
-              allUniqueDates.forEach(dateStr => {
-                  const daySales = salesMap.get(dateStr) || [];
-                  const dayPurchases = purchaseMap.get(dateStr) || [];
-                  
-                  const rev = daySales.reduce((s, i) => s + (i.price * i.quantity), 0);
-                  const exp = dayPurchases.reduce((s, i) => s + i.totalAmount, 0);
-                  
-                  const existingIdx = newHistory.findIndex(h => h.date === dateStr);
-                  
-                  if (existingIdx !== -1) {
-                      newHistory[existingIdx] = {
-                          ...newHistory[existingIdx],
-                          items: [...newHistory[existingIdx].items, ...daySales],
-                          purchaseInvoices: [...(newHistory[existingIdx].purchaseInvoices || []), ...dayPurchases],
-                          totalRevenue: newHistory[existingIdx].totalRevenue + rev,
-                          totalExpenses: newHistory[existingIdx].totalExpenses + exp,
-                          totalItems: newHistory[existingIdx].totalItems + daySales.length
-                      };
-                  } else {
-                      const refItem = daySales[0];
-                      const ts = refItem ? parseInt(refItem.orderId) : Date.now();
-                      
-                      newHistory.push({
-                          id: `arch-${dateStr.replace(/[^0-9]/g, '')}-${Date.now()}`,
-                          date: dateStr,
-                          timestamp: ts,
-                          items: daySales,
-                          purchaseInvoices: dayPurchases,
-                          totalRevenue: rev,
-                          totalExpenses: exp,
-                          totalItems: daySales.length
-                      });
-                  }
-              });
-
-              return newHistory.sort((a, b) => b.timestamp - a.timestamp);
-          });
-
-          setSales([]);
-          setPurchaseInvoices([]);
-          alert('تم ترحيل البيانات وتصفير اليوم بنجاح!');
-      } catch (error) {
-          console.error('Archive Error:', error);
-          alert('حدث خطأ أثناء الترحيل.');
-      }
-  }, [sales, purchaseInvoices]);
-
-  const handleExportData = async () => {
-    const backup = { 
-      dailySales: sales, 
-      dailyPurchaseInvoices: purchaseInvoices, 
-      salesHistory: history, 
-      products, 
-      customers, 
-      suppliers, 
-      loginPassword,
-      systemPassword,
-      exportDate: new Date().toISOString() 
-    };
-    const jsonString = JSON.stringify(backup);
-    try {
-      const stream = new Blob([jsonString]).stream();
-      const compressedStream = stream.pipeThrough(new (window as any).CompressionStream('gzip'));
-      const response = new Response(compressedStream);
-      const compressedBlob = await response.blob();
-      const url = URL.createObjectURL(compressedBlob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `cookies-bakery-pro-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.bak`;
-      link.click();
-      URL.revokeObjectURL(url);
-      
-      setOrdersCountSinceBackup(0);
-      setShowBackupReminder(false);
-      lastBackupTimestamp.current = Date.now();
-    } catch (err) {
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `cookies-bakery-legacy-${new Date().toLocaleDateString('en-GB').replace(/\//g, '-')}.json`;
-      link.click();
-      URL.revokeObjectURL(url);
-      setOrdersCountSinceBackup(0);
-      setShowBackupReminder(false);
-    }
-  };
-
-  const handleImportData = async (file: File) => {
-    try {
-      let jsonString = '';
-      if (file.name.endsWith('.bak')) {
-        const stream = file.stream();
-        const decompressedStream = stream.pipeThrough(new (window as any).DecompressionStream('gzip'));
-        const response = new Response(decompressedStream);
-        jsonString = await response.text();
-      } else {
-        jsonString = await file.text();
-      }
-      const data = JSON.parse(jsonString);
-      if (data.dailySales) setSales(data.dailySales);
-      if (data.dailyPurchaseInvoices) setPurchaseInvoices(data.dailyPurchaseInvoices);
-      if (data.salesHistory) setHistory(data.salesHistory);
-      if (data.products) setProducts(data.products);
-      if (data.customers) setCustomers(data.customers);
-      if (data.suppliers) setSuppliers(data.suppliers);
-      if (data.loginPassword) setLoginPassword(data.loginPassword);
-      if (data.systemPassword) setSystemPassword(data.systemPassword);
-      alert('تمت استعادة البيانات بنجاح.');
-    } catch (err) { 
-      alert('خطأ في استعادة البيانات.'); 
-    }
+      if (showLock?.target === 'full_reset') { localStorage.clear(); window.location.reload(); }
+      else if (showLock) setModals(m => ({ ...m, [showLock.target]: true }));
+      setShowLock(null); setLockPass(''); setLockError(false);
+    } else setLockError(true);
   };
 
   if (isInitializing) return <WelcomeLoader onComplete={finalizeWelcome} lastSessionTime={previousSessionTime} />;
@@ -441,49 +244,57 @@ const App: React.FC = () => {
         onManualSync={() => { setIsSyncing(true); setTimeout(() => setIsSyncing(false), 800); }} 
         onQuickBackup={handleExportData} 
         isSyncing={isSyncing}
-        installPrompt={installPrompt}
-        onInstall={handleInstall}
       />
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl no-print">
         <Summary items={sales} onPreview={() => setInvoiceItems(sales)} systemPassword={systemPassword} />
         <POSInterface products={products} customers={customers} onCompleteOrder={completeOrder} onOpenProductManager={() => setModals(m => ({...m, products: true}))} onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} />
         <div className="mt-8">
-            <SalesTable 
-              items={sales} 
-              onDeleteItem={(id: string) => setSales(s => s.filter(i => i.id !== id))} 
-              onDeleteOrder={(oid: string) => setSales(s => s.filter(i => i.orderId !== oid))} 
-              onPreviewInvoice={setInvoiceItems} 
-              onUpdateItemPrice={(id: string, p: number) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} 
-            />
+            <SalesTable items={sales} onDeleteItem={(id: string) => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={(oid: string) => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id: string, p: number) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
         </div>
       </main>
-      
-      {showBackupReminder && (
-        <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-80 bg-gray-800 border border-orange-500/50 p-5 rounded-[2rem] shadow-2xl z-[150] animate-fade-up flex flex-col gap-4 no-print">
-            <div className="flex items-start gap-4">
-                <div className="bg-orange-500/20 p-3 rounded-2xl text-orange-500 shrink-0"><AlertCircle size={24} /></div>
-                <div className="flex-1 text-right">
-                    <h4 className="text-white font-black text-sm">تأمين البيانات مطلوب</h4>
-                    <p className="text-gray-400 text-[10px] font-bold mt-1 leading-relaxed">يرجى أخذ نسخة احتياطية الآن لضمان سلامة بيانات مبيعاتك.</p>
-                </div>
-                <button onClick={() => setShowBackupReminder(false)} className="text-gray-500 hover:text-white"><X size={18} /></button>
-            </div>
-            <button onClick={handleExportData} className="w-full bg-orange-600 hover:bg-orange-500 text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"><Download size={14} /> نسخ مضغوط الآن</button>
-        </div>
-      )}
 
-      <footer className="mt-12 py-8 border-t border-gray-800/50 text-center no-print">
-         <button onClick={() => handleOpenProtected('full_reset')} className="text-gray-700 text-[10px] font-bold tracking-widest uppercase">نظام مبيعات كوكيز v2.6.5 • 2026</button>
-      </footer>
       <Suspense fallback={<ModalLoader />}>
-        {modals.analytics && <AnalyticsModal history={history} currentSales={sales} currentPurchases={purchaseInvoices} onClose={() => setModals(m => ({ ...m, analytics: false }))} />}
-        {modals.expenses && <ExpensesModal isOpen={modals.expenses} onClose={() => setModals(m => ({...m, expenses: false}))} currentPurchases={purchaseInvoices} archivedHistory={history} onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} onUpdateInvoice={v => setPurchaseInvoices(p => p.map(inv => inv.id === v.id ? v : inv))} onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} suppliers={suppliers} onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} />}
-        {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onPreviewInvoice={setInvoiceItems} onUpdateOrder={handleUpdateArchivedOrder} onDeleteArchivedOrder={handleDeleteArchivedOrder} onDeleteArchivedDay={handleDeleteArchivedDay} />}
-        {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={handleUpdateProduct} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
+        {modals.analytics && <AnalyticsModal 
+          history={history} 
+          currentSales={sales} 
+          currentPurchases={purchaseInvoices} 
+          currentSalaries={salaryPayments} 
+          currentGeneralExpenses={generalExpenses}
+          onClose={() => setModals(m => ({ ...m, analytics: false }))} 
+        />}
+        {modals.expenses && <ExpensesModal 
+          isOpen={modals.expenses} 
+          onClose={() => setModals(m => ({...m, expenses: false}))} 
+          currentPurchases={purchaseInvoices} 
+          archivedHistory={history} 
+          onAddInvoice={v => setPurchaseInvoices(p => [...p, v])} 
+          onUpdateInvoice={v => setPurchaseInvoices(p => p.map(inv => inv.id === v.id ? v : inv))} 
+          onDeleteInvoice={id => setPurchaseInvoices(p => p.filter(v => v.id !== id))} 
+          suppliers={suppliers} 
+          onAddSupplier={s => setSuppliers(p => [...p, {...s, id: Date.now().toString()}])} 
+          onDeleteSupplier={id => setSuppliers(p => p.filter(s => s.id !== id))} 
+          employees={employees}
+          onAddEmployee={e => setEmployees(prev => [...prev, {...e, id: Date.now().toString()}])}
+          onDeleteEmployee={id => setEmployees(prev => prev.filter(e => e.id !== id))}
+          salaryPayments={salaryPayments}
+          onAddSalaryPayment={p => setSalaryPayments(prev => [...prev, {...p, id: Date.now().toString()}])}
+          onDeleteSalaryPayment={id => setSalaryPayments(prev => prev.filter(p => p.id !== id))}
+          generalExpenses={generalExpenses}
+          onAddGeneralExpense={e => setGeneralExpenses(prev => [...prev, {...e, id: Date.now().toString()}])}
+          onDeleteGeneralExpense={id => setGeneralExpenses(prev => prev.filter(e => e.id !== id))}
+          expenseCategories={expenseCategories}
+          onAddExpenseCategory={cat => setExpenseCategories(prev => Array.from(new Set([...prev, cat])))}
+          onDeleteExpenseCategory={cat => setExpenseCategories(prev => prev.filter(c => c !== cat))}
+          inventory={inventory} 
+          setInventory={setInventory} 
+        />}
+        {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onPreviewInvoice={setInvoiceItems} onUpdateOrder={(dayId, orderId, items, name) => setHistory(prev => prev.map(day => day.id === dayId ? {...day, items: [...day.items.filter(it => it.orderId !== orderId), ...items]} : day))} onDeleteArchivedOrder={(dayId, orderId) => setHistory(prev => prev.map(day => day.id === dayId ? {...day, items: day.items.filter(it => it.orderId !== orderId)} : day))} onDeleteArchivedDay={id => setHistory(prev => prev.filter(d => d.id !== id))} />}
+        {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={(id, up) => setProducts(p => p.map(it => it.id === id ? {...it, ...up} : it))} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
         {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
         {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} setSystemPassword={setSystemPassword} loginPassword={loginPassword} setLoginPassword={setLoginPassword} />}
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
       </Suspense>
+
       {showLock && (
         <div className="fixed inset-0 bg-black/90 z-[200] flex items-center justify-center p-4 backdrop-blur-sm no-print">
           <div className="bg-gray-800 border border-gray-700 p-6 rounded-3xl w-full max-w-xs shadow-2xl animate-fade-up relative">
