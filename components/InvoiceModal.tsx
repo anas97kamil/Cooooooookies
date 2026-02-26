@@ -14,8 +14,8 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
   const handleDownloadExcel = () => {
     const data = items.map((i: any) => ({ 
       "المادة": i.name, 
-      "الكمية": i.quantity, 
       "السعر": i.price, 
+      "الكمية": i.quantity, 
       "الإجمالي": i.price * i.quantity 
     }));
     data.push({ "المادة": "المجموع الكلي", "الكمية": 0, "السعر": 0, "الإجمالي": total });
@@ -79,6 +79,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
                   <thead>
                     <tr className="text-[8px] font-black border-b border-black text-black">
                       <th className="py-2">المادة</th>
+                      <th className="py-2 text-center">السعر</th>
                       <th className="py-2 text-center">الكمية</th>
                       <th className="py-2 text-left">الإجمالي</th>
                     </tr>
@@ -87,6 +88,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
                     {items.map((item: any, idx: number) => (
                       <tr key={idx} className="text-[8px] font-bold border-b border-black/5 tabular-nums text-black">
                         <td className="py-1.5 leading-tight pr-1">{item.name}</td>
+                        <td className="py-1.5 text-center font-black">{item.price.toLocaleString('en-US')}</td>
                         <td className="py-1.5 text-center font-black">{item.quantity}</td>
                         <td className="py-1.5 text-left font-black pl-1">
                           { (item.price * item.quantity).toLocaleString('en-US') }

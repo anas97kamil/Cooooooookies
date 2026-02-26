@@ -160,12 +160,20 @@ const App: React.FC = () => {
     setInvoiceItems(newItems);
   }, [sales, history]);
 
-  const handleArchiveDay = useCallback(() => {
-      if (sales.length === 0 && purchaseInvoices.length === 0 && salaryPayments.length === 0 && generalExpenses.length === 0) return alert('لا توجد بيانات للترحيل');
-      const confirmed = window.confirm('ترحيل مبيعات ومصاريف اليوم للأرشيف؟');
-      if (!confirmed) return;
+  const handleArchiveDay = useCallback((isAutoArg: any = false) => {
+      const isAuto = isAutoArg === true;
+      if (sales.length === 0 && purchaseInvoices.length === 0 && salaryPayments.length === 0 && generalExpenses.length === 0) {
+          if (!isAuto) alert('لا توجد بيانات للترحيل');
+          return;
+      }
+      
+      if (!isAuto) {
+          const confirmed = window.confirm('ترحيل مبيعات ومصاريف اليوم للأرشيف؟');
+          if (!confirmed) return;
+      }
 
-      const dateStr = new Date().toLocaleDateString('en-US');
+      const dateStr = sales[0]?.date || purchaseInvoices[0]?.date || salaryPayments[0]?.date || generalExpenses[0]?.date || new Date().toLocaleDateString('en-US');
+      
       setHistory(prev => [{
           id: `arch-${Date.now()}`,
           date: dateStr,
@@ -183,8 +191,29 @@ const App: React.FC = () => {
       setPurchaseInvoices([]);
       setSalaryPayments([]);
       setGeneralExpenses([]);
-      alert('تم الترحيل بنجاح');
+      if (!isAuto) alert('تم الترحيل بنجاح');
   }, [sales, purchaseInvoices, salaryPayments, generalExpenses]);
+
+  // Auto-archive logic
+  useEffect(() => {
+    const checkAndArchive = () => {
+      const todayDate = new Date().toLocaleDateString('en-US');
+      const hasOldData = [
+        ...sales, 
+        ...purchaseInvoices, 
+        ...salaryPayments, 
+        ...generalExpenses
+      ].some(item => item.date && item.date !== todayDate);
+
+      if (hasOldData) {
+        handleArchiveDay(true);
+      }
+    };
+
+    checkAndArchive();
+    const interval = setInterval(checkAndArchive, 60000);
+    return () => clearInterval(interval);
+  }, [sales, purchaseInvoices, salaryPayments, generalExpenses, handleArchiveDay]);
 
   const handleExportData = async () => {
     const backup = { sales, purchaseInvoices, salaryPayments, generalExpenses, history, products, customers, suppliers, employees, inventory, expenseCategories, loginPassword, systemPassword };

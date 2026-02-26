@@ -19,6 +19,15 @@
         background-color: #111827;
         color: #F3F4F6;
         -webkit-tap-highlight-color: transparent;
+        /* Force English digits */
+        font-variant-numeric: tabular-nums;
+      }
+      
+      /* Ensure all numbers use English digits */
+      * {
+        font-variant-numeric: tabular-nums;
+        -webkit-font-feature-settings: "tnum" 1, "lnum" 1;
+        font-feature-settings: "tnum" 1, "lnum" 1;
       }
       
       .animate-fade-up {
