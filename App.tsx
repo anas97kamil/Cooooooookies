@@ -4,7 +4,7 @@ import { POSInterface } from './components/RecipeGenerator';
 import { SalesTable } from './components/Menu';
 import { Summary } from './components/InfoBox';
 import { Login } from './components/Login';
-import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier, StockItem, Employee, SalaryPayment, GeneralExpense } from './types';
+import { SaleItem, Product, ArchivedDay, SaleType, Customer, PurchaseInvoice, Supplier, StockItem, Employee, SalaryPayment, GeneralExpense, PaymentStatus } from './types';
 import { Loader2, X, ShieldCheck, Wifi, WifiOff, CloudDownload, CheckCircle2, AlertCircle, Download, AlertTriangle, Clock } from 'lucide-react';
 
 const InvoiceModal = React.lazy(() => import('./components/InvoiceModal').then(m => ({ default: m.InvoiceModal })));
@@ -14,6 +14,7 @@ const DataManagementModal = React.lazy(() => import('./components/DataManagement
 const CustomerManager = React.lazy(() => import('./components/CustomerManager').then(m => ({ default: m.CustomerManager })));
 const ExpensesModal = React.lazy(() => import('./components/ExpensesModal').then(m => ({ default: m.ExpensesModal })));
 const AnalyticsModal = React.lazy(() => import('./components/AnalyticsModal').then(m => ({ default: m.AnalyticsModal })));
+const CustomerAccountsModal = React.lazy(() => import('./components/CustomerAccountsModal').then(m => ({ default: m.CustomerAccountsModal })));
 
 const ModalLoader = () => <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center"><div className="bg-gray-800 p-4 rounded-full border border-gray-700"><Loader2 className="animate-spin text-[#FA8072]" size={32} /></div></div>;
 
@@ -94,8 +95,18 @@ const App: React.FC = () => {
   const [salaryPayments, setSalaryPayments] = useState<SalaryPayment[]>(() => JSON.parse(localStorage.getItem('dailySalaries') || '[]'));
   const [generalExpenses, setGeneralExpenses] = useState<GeneralExpense[]>(() => JSON.parse(localStorage.getItem('dailyGeneralExpenses') || '[]'));
   const [history, setHistory] = useState<ArchivedDay[]>(() => JSON.parse(localStorage.getItem('salesHistory') || '[]'));
-  const [products, setProducts] = useState<Product[]>(() => JSON.parse(localStorage.getItem('products') || '[]'));
-  const [customers, setCustomers] = useState<Customer[]>(() => JSON.parse(localStorage.getItem('customers') || '[]'));
+  const [products, setProducts] = useState<Product[]>(() => {
+    const saved = JSON.parse(localStorage.getItem('products') || '[]');
+    return saved.map((p: any, idx: number) => ({ ...p, sortOrder: p.sortOrder ?? idx }));
+  });
+  const [customers, setCustomers] = useState<Customer[]>(() => {
+    const saved = JSON.parse(localStorage.getItem('customers') || '[]');
+    return saved.map((c: any) => ({ ...c, balance: c.balance ?? 0 }));
+  });
+  const [productCategories, setProductCategories] = useState<string[]>(() => {
+    const saved = localStorage.getItem('productCategories');
+    return saved ? JSON.parse(saved) : ['حلويات', 'معجنات', 'خبز', 'أخرى'];
+  });
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => JSON.parse(localStorage.getItem('suppliers') || '[]'));
   const [employees, setEmployees] = useState<Employee[]>(() => JSON.parse(localStorage.getItem('employees') || '[]'));
   const [inventory, setInventory] = useState<StockItem[]>(() => JSON.parse(localStorage.getItem('inventory') || '[]'));
@@ -107,7 +118,7 @@ const App: React.FC = () => {
   });
 
   const [invoiceItems, setInvoiceItems] = useState<SaleItem[] | null>(null);
-  const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false, analytics: false });
+  const [modals, setModals] = useState({ products: false, customers: false, history: false, data: false, expenses: false, analytics: false, accounts: false });
 
   // Sync with LocalStorage
   useEffect(() => {
@@ -122,6 +133,7 @@ const App: React.FC = () => {
     localStorage.setItem('employees', JSON.stringify(employees));
     localStorage.setItem('inventory', JSON.stringify(inventory));
     localStorage.setItem('expenseCategories', JSON.stringify(expenseCategories));
+    localStorage.setItem('productCategories', JSON.stringify(productCategories));
     localStorage.setItem('loginPassword', loginPassword);
     localStorage.setItem('systemPassword', systemPassword);
     
@@ -135,7 +147,7 @@ const App: React.FC = () => {
   const handleLoginSuccess = () => { sessionStorage.setItem('isAuth', 'true'); setIsAuthenticated(true); };
   const finalizeWelcome = () => setIsInitializing(false);
 
-  const completeOrder = useCallback((items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail') => {
+  const completeOrder = useCallback((items: any[], customerName?: string, customerId?: string, saleType: SaleType = 'retail', paymentStatus: PaymentStatus = 'paid') => {
     const orderId = Date.now().toString();
     const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
     const todayDate = new Date().toLocaleDateString('en-US');
@@ -143,6 +155,8 @@ const App: React.FC = () => {
     const archivedToday = history.find(h => h.date === todayDate);
     const archivedMax = archivedToday ? archivedToday.items.reduce((max, s) => Math.max(max, s.customerNumber), 0) : 0;
     const nextCustomerNumber = Math.max(activeMax, archivedMax) + 1;
+
+    const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
     const newItems: SaleItem[] = items.map(item => ({
       ...item,
@@ -152,9 +166,14 @@ const App: React.FC = () => {
       customerName,
       customerId,
       saleType,
+      paymentStatus,
       time,
       date: todayDate
     }));
+
+    if (paymentStatus === 'credit' && customerId) {
+      setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, balance: (c.balance || 0) + totalAmount, isAccount: true } : c));
+    }
 
     setSales(prev => [...prev, ...newItems]);
     setInvoiceItems(newItems);
@@ -257,6 +276,16 @@ const App: React.FC = () => {
     } else setLockError(true);
   };
 
+  const handleAddCategory = (cat: string) => {
+    if (!productCategories.includes(cat)) {
+      setProductCategories(prev => [...prev, cat]);
+    }
+  };
+
+  const handleDeleteCategory = (cat: string) => {
+    setProductCategories(prev => prev.filter(c => c !== cat));
+  };
+
   if (isInitializing) return <WelcomeLoader onComplete={finalizeWelcome} lastSessionTime={previousSessionTime} />;
   if (!isAuthenticated) return <Login onLogin={handleLoginSuccess} />;
 
@@ -267,6 +296,7 @@ const App: React.FC = () => {
         onOpenDataManagement={() => handleOpenProtected('data')} 
         onOpenExpenses={() => handleOpenProtected('expenses')}
         onOpenAnalytics={() => handleOpenProtected('analytics')}
+        onOpenAccounts={() => handleOpenProtected('accounts')}
         onLogout={handleLogout}
         isOnline={isOnline} 
         lastSyncTime={lastSyncTime} 
@@ -276,7 +306,15 @@ const App: React.FC = () => {
       />
       <main className="flex-grow container mx-auto px-4 py-6 max-w-5xl no-print">
         <Summary items={sales} onPreview={() => setInvoiceItems(sales)} systemPassword={systemPassword} />
-        <POSInterface products={products} customers={customers} onCompleteOrder={completeOrder} onOpenProductManager={() => setModals(m => ({...m, products: true}))} onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} />
+        <POSInterface 
+          products={products} 
+          customers={customers} 
+          categories={productCategories}
+          onUpdateProductOrder={setProducts}
+          onCompleteOrder={completeOrder} 
+          onOpenProductManager={() => setModals(m => ({...m, products: true}))} 
+          onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} 
+        />
         <div className="mt-8">
             <SalesTable items={sales} onDeleteItem={(id: string) => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={(oid: string) => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id: string, p: number) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
         </div>
@@ -318,8 +356,37 @@ const App: React.FC = () => {
           setInventory={setInventory} 
         />}
         {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onPreviewInvoice={setInvoiceItems} onUpdateOrder={(dayId, orderId, items, name) => setHistory(prev => prev.map(day => day.id === dayId ? {...day, items: [...day.items.filter(it => it.orderId !== orderId), ...items]} : day))} onDeleteArchivedOrder={(dayId, orderId) => setHistory(prev => prev.map(day => day.id === dayId ? {...day, items: day.items.filter(it => it.orderId !== orderId)} : day))} onDeleteArchivedDay={id => setHistory(prev => prev.filter(d => d.id !== id))} />}
-        {modals.products && <ProductManager isOpen={modals.products} onClose={() => setModals(m => ({...m, products: false}))} products={products} onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} onUpdateProduct={(id, up) => setProducts(p => p.map(it => it.id === id ? {...it, ...up} : it))} onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} />}
-        {modals.customers && <CustomerManager isOpen={modals.customers} onClose={() => setModals(m => ({...m, customers: false}))} customers={customers} onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString()}])} onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} />}
+        {modals.products && (
+          <ProductManager 
+            isOpen={modals.products} 
+            onClose={() => setModals(m => ({...m, products: false}))} 
+            products={products} 
+            categories={productCategories}
+            onAddCategory={handleAddCategory}
+            onDeleteCategory={handleDeleteCategory}
+            onAddProduct={p => setProducts(s => [...s, {...p, id: Date.now().toString()}])} 
+            onUpdateProduct={(id, up) => setProducts(p => p.map(it => it.id === id ? {...it, ...up} : it))} 
+            onDeleteProduct={id => setProducts(s => s.filter(p => p.id !== id))} 
+          />
+        )}
+        {modals.customers && (
+          <CustomerManager 
+            isOpen={modals.customers} 
+            onClose={() => setModals(m => ({...m, customers: false}))} 
+            customers={customers} 
+            onAddCustomer={c => setCustomers(s => [...s, {...c, id: Date.now().toString(), balance: 0, isAccount: false}])} 
+            onDeleteCustomer={id => setCustomers(s => s.filter(c => c.id !== id))} 
+          />
+        )}
+        {modals.accounts && (
+          <CustomerAccountsModal
+            customers={customers}
+            history={history}
+            currentSales={sales}
+            onUpdateCustomer={(updated) => setCustomers(prev => prev.map(c => c.id === updated.id ? updated : c))}
+            onClose={() => setModals(m => ({ ...m, accounts: false }))}
+          />
+        )}
         {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} setSystemPassword={setSystemPassword} loginPassword={loginPassword} setLoginPassword={setLoginPassword} />}
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
       </Suspense>

@@ -7,6 +7,17 @@ export interface Customer {
   id: string;
   name: string;
   phone?: string;
+  balance: number; 
+  isAccount?: boolean; 
+  payments?: CustomerPayment[]; // New: track payments
+}
+
+export interface CustomerPayment {
+  id: string;
+  amount: number;
+  date: string;
+  time: string;
+  notes?: string;
 }
 
 export interface Supplier {
@@ -47,6 +58,7 @@ export interface SaleItem {
   customerName?: string; 
   customerId?: string; 
   saleType: SaleType; 
+  paymentStatus: PaymentStatus; // New: track if paid or credit
   name: string;
   price: number;
   costPrice: number; 
@@ -83,6 +95,8 @@ export interface Product {
   costPrice: number; 
   unitType: UnitType;
   barcode?: string;
+  category?: string; // New: for grouping
+  sortOrder?: number; // New: for drag and drop
 }
 
 export interface StockItem {

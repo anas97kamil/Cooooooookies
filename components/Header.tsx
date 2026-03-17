@@ -6,6 +6,7 @@ interface HeaderProps {
   onOpenDataManagement: () => void;
   onOpenExpenses: () => void;
   onOpenAnalytics: () => void;
+  onOpenAccounts: () => void;
   onLogout: () => void;
   isOnline: boolean;
   lastSyncTime: Date;
@@ -21,6 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenDataManagement, 
   onOpenExpenses,
   onOpenAnalytics,
+  onOpenAccounts,
   onLogout,
   isOnline,
   lastSyncTime,
@@ -82,6 +84,10 @@ export const Header: React.FC<HeaderProps> = ({
                 <button onClick={onOpenAnalytics} className="flex flex-col items-center justify-center w-12 h-10 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all group">
                     <BarChart3 size={16} className="group-hover:text-green-400" />
                     <span className="text-[8px] font-bold mt-0.5">التحليلات</span>
+                </button>
+                <button onClick={onOpenAccounts} className="flex flex-col items-center justify-center w-12 h-10 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all group">
+                    <Wallet size={16} className="group-hover:text-indigo-400" />
+                    <span className="text-[8px] font-bold mt-0.5">الحسابات</span>
                 </button>
                 <button onClick={onOpenExpenses} className="flex flex-col items-center justify-center w-12 h-10 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition-all group">
                     <Wallet size={16} className="group-hover:text-red-400" />

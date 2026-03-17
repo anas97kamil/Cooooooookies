@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, Settings, Edit3, Trash2, CheckCircle, Plus, Minus, UserPlus, X, Check, Calculator, Barcode, Search, Sparkles } from 'lucide-react';
-import { Product, UnitType, SaleType, Customer } from '../types';
+import { Product, UnitType, SaleType, Customer, PaymentStatus } from '../types';
 
 export const POSInterface: React.FC<any> = ({ 
-    onCompleteOrder, products, customers, onOpenProductManager, onOpenCustomerManager 
+    onCompleteOrder, products, customers, onOpenProductManager, onOpenCustomerManager, categories, onUpdateProductOrder
 }) => {
   const [cart, setCart] = useState<any[]>([]);
   const [saleType, setSaleType] = useState<SaleType>('retail');
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('paid');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [activeCategory, setActiveCategory] = useState(categories[0] || '');
   const [manualCustomerName, setManualCustomerName] = useState(''); 
   const [showCustomInput, setShowCustomInput] = useState(false);
   const [customForm, setCustomForm] = useState({ name: '', price: '', cost: '', unit: 'piece' as UnitType, barcode: '' });
@@ -20,6 +22,12 @@ export const POSInterface: React.FC<any> = ({
   const [editingPriceId, setEditingPriceId] = useState<string | null>(null);
   const [editingTotalId, setEditingTotalId] = useState<string | null>(null);
   const [tempValue, setTempValue] = useState<string>('');
+
+  const [draggedProductId, setDraggedProductId] = useState<string | null>(null);
+
+  const filteredProducts = products
+    .filter((p: any) => !activeCategory || p.category === activeCategory)
+    .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 
   useEffect(() => {
     setCart((prev: any[]) => prev.map((item: any) => {
@@ -140,8 +148,37 @@ export const POSInterface: React.FC<any> = ({
     if (isCheckoutDisabled) return;
     const items = cart.map(({ name, price, costPrice, quantity, unitType, barcode }) => ({ name, price, costPrice, quantity, unitType, barcode }));
     const name = saleType === 'wholesale' ? customers.find((c: any) => c.id === selectedCustomerId)?.name : manualCustomerName;
-    onCompleteOrder(items, name, selectedCustomerId || undefined, saleType);
-    setCart([]); setManualCustomerName(''); setSelectedCustomerId(''); setSaleType('retail');
+    onCompleteOrder(items, name, selectedCustomerId || undefined, saleType, paymentStatus);
+    setCart([]); setManualCustomerName(''); setSelectedCustomerId(''); setSaleType('retail'); setPaymentStatus('paid');
+  };
+
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedProductId(id);
+    e.dataTransfer.setData('productId', id);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const sourceId = e.dataTransfer.getData('productId');
+    if (sourceId === targetId) return;
+
+    const sourceIdx = products.findIndex((p: any) => p.id === sourceId);
+    const targetIdx = products.findIndex((p: any) => p.id === targetId);
+    
+    if (sourceIdx === -1 || targetIdx === -1) return;
+
+    const newProducts = [...products];
+    const [movedProduct] = newProducts.splice(sourceIdx, 1);
+    newProducts.splice(targetIdx, 0, movedProduct);
+
+    // Update sort orders
+    const updatedProducts = newProducts.map((p, idx) => ({ ...p, sortOrder: idx }));
+    onUpdateProductOrder(updatedProducts);
+    setDraggedProductId(null);
   };
 
   const total = cart.reduce((s, i) => s + (i.price * i.quantity), 0);
@@ -159,10 +196,33 @@ export const POSInterface: React.FC<any> = ({
              <button onClick={onOpenProductManager} className="text-[10px] font-black uppercase bg-gray-700 hover:bg-gray-600 text-gray-300 px-4 py-2 rounded-xl transition-all border border-gray-600">تعريف الأصناف</button>
         </div>
 
+        {/* Categories Tabs */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 custom-scrollbar">
+          <button
+            onClick={() => setActiveCategory('')}
+            className={`px-6 py-2.5 rounded-2xl font-black text-xs whitespace-nowrap transition-all border ${!activeCategory ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-900/20' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'}`}
+          >الكل</button>
+          {categories.map((cat: string) => (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`px-6 py-2.5 rounded-2xl font-black text-xs whitespace-nowrap transition-all border ${activeCategory === cat ? 'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-900/20' : 'bg-gray-800 text-gray-400 border-gray-700 hover:bg-gray-700'}`}
+            >{cat}</button>
+          ))}
+        </div>
+
         {/* Products Grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[550px] overflow-y-auto custom-scrollbar p-1">
-            {products.map((p: any) => (
-                <button key={p.id} onClick={() => addToCart(p)} className="flex flex-col items-center justify-center p-4 bg-gray-800 border border-gray-700 hover:bg-gray-700 hover:border-[#FA8072] text-white rounded-[1.5rem] transition-all shadow-sm active:scale-95 h-32 relative group overflow-hidden">
+            {filteredProducts.map((p: any) => (
+                <button 
+                  key={p.id} 
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, p.id)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, p.id)}
+                  onClick={() => addToCart(p)} 
+                  className={`flex flex-col items-center justify-center p-4 bg-gray-800 border ${draggedProductId === p.id ? 'border-indigo-500 opacity-50' : 'border-gray-700'} hover:bg-gray-700 hover:border-[#FA8072] text-white rounded-[1.5rem] transition-all shadow-sm active:scale-95 h-32 relative group overflow-hidden cursor-grab active:cursor-grabbing`}
+                >
                     <div className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-black ${p.unitType === 'kg' ? 'bg-yellow-400 text-black' : 'bg-blue-300 text-black'}`}>{p.unitType === 'kg' ? 'كغ' : 'قطعة'}</div>
                     <span className="font-black text-xs text-center mb-1 group-hover:text-[#FA8072] line-clamp-2 leading-tight">{p.name}</span>
                     <span className="text-[11px] font-bold text-gray-400 tabular-nums">
@@ -213,17 +273,42 @@ export const POSInterface: React.FC<any> = ({
                     <button onClick={() => setSaleType('retail')} className={`py-2 text-xs font-black rounded-xl transition-all ${saleType === 'retail' ? 'bg-white text-black shadow-lg scale-[1.02]' : 'text-gray-500 hover:text-gray-300'}`}>مـفـرق</button>
                     <button onClick={() => setSaleType('wholesale')} className={`py-2 text-xs font-black rounded-xl transition-all ${saleType === 'wholesale' ? 'bg-[#FA8072] text-white shadow-lg scale-[1.02]' : 'text-gray-500 hover:text-gray-300'}`}>جـمـلـة</button>
                 </div>
-                {saleType === 'retail' ? (
-                     <input type="text" value={manualCustomerName} onChange={e => setManualCustomerName(e.target.value)} placeholder="اسم الزبون (اختياري)..." className="w-full bg-gray-950 border border-gray-700 text-white text-xs rounded-2xl px-5 py-2.5 outline-none focus:border-[#FA8072] font-bold" />
-                ) : (
-                    <div className="flex gap-2">
-                         <select value={selectedCustomerId} onChange={e => setSelectedCustomerId(e.target.value)} className={`w-full bg-gray-950 border text-white text-xs rounded-2xl px-5 py-2.5 outline-none transition-all font-bold ${!selectedCustomerId && cart.length > 0 ? 'border-orange-500 animate-pulse' : 'border-gray-700 focus:border-[#FA8072]'}`}>
-                            <option value="">اختر عميل الجملة...</option>
-                            {customers.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                         </select>
-                        <button onClick={onOpenCustomerManager} className="bg-blue-600 text-white px-4 rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20 active:scale-90"><UserPlus size={18} /></button>
+                <div className="grid grid-cols-2 bg-gray-800 p-1.5 rounded-2xl border border-gray-700">
+                    <button onClick={() => setPaymentStatus('paid')} className={`py-2 text-[10px] font-black rounded-xl transition-all ${paymentStatus === 'paid' ? 'bg-green-600 text-white shadow-lg' : 'text-gray-500'}`}>نقداً</button>
+                    <button 
+                      onClick={() => { if(selectedCustomerId || manualCustomerName) setPaymentStatus('credit'); else alert('يجب اختيار عميل أولاً'); }} 
+                      className={`py-2 text-[10px] font-black rounded-xl transition-all ${paymentStatus === 'credit' ? 'bg-red-600 text-white shadow-lg' : 'text-gray-500'}`}
+                    >دين (على الحساب)</button>
+                </div>
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <select 
+                            value={selectedCustomerId} 
+                            onChange={e => {
+                                setSelectedCustomerId(e.target.value);
+                                if (e.target.value) setManualCustomerName('');
+                            }} 
+                            className={`w-full bg-gray-950 border text-white text-xs rounded-2xl px-5 py-2.5 outline-none transition-all font-bold ${!selectedCustomerId && saleType === 'wholesale' && cart.length > 0 ? 'border-orange-500 animate-pulse' : 'border-gray-700 focus:border-[#FA8072]'}`}
+                        >
+                            <option value="">{saleType === 'retail' ? 'اختر عميل / حساب...' : 'اختر عميل الجملة...'}</option>
+                            {customers.map((c: any) => (
+                                <option key={c.id} value={c.id}>
+                                    {c.name} {c.isAccount ? '(حساب)' : ''}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                )}
+                    {!selectedCustomerId && saleType === 'retail' && (
+                        <input 
+                            type="text" 
+                            value={manualCustomerName} 
+                            onChange={e => setManualCustomerName(e.target.value)} 
+                            placeholder="اسم زبون جديد..." 
+                            className="flex-1 bg-gray-950 border border-gray-700 text-white text-xs rounded-2xl px-5 py-2.5 outline-none focus:border-[#FA8072] font-bold" 
+                        />
+                    )}
+                    <button onClick={onOpenCustomerManager} className="bg-blue-600 text-white px-4 rounded-2xl hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/20 active:scale-90" title="إدارة العملاء"><UserPlus size={18} /></button>
+                </div>
             </div>
 
             {/* BARCODE INPUT: Under Header, Above Added Items */}

@@ -23,7 +23,7 @@ export const CustomerManager: React.FC<CustomerManagerProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name) return;
-    onAddCustomer({ name, phone });
+    onAddCustomer({ name, phone, balance: 0, isAccount: false });
     setName('');
     setPhone('');
   };

@@ -8,6 +8,9 @@ interface ProductManagerProps {
   onAddProduct: (product: Omit<Product, 'id'>) => void;
   onUpdateProduct: (id: string, product: Partial<Product>) => void;
   onDeleteProduct: (id: string) => void;
+  categories: string[];
+  onAddCategory: (cat: string) => void;
+  onDeleteCategory: (cat: string) => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -17,6 +20,9 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
   onAddProduct, 
   onUpdateProduct,
   onDeleteProduct,
+  categories,
+  onAddCategory,
+  onDeleteCategory,
   isOpen,
   onClose
 }) => {
@@ -26,9 +32,11 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
   const [costPrice, setCostPrice] = useState('');
   const [unitType, setUnitType] = useState<UnitType>('piece');
   const [barcode, setBarcode] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(categories[0] || '');
+  const [newCategory, setNewCategory] = useState('');
   
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', price: '', wholesalePrice: '', costPrice: '', unitType: 'piece' as UnitType, barcode: '' });
+  const [editForm, setEditForm] = useState({ name: '', price: '', wholesalePrice: '', costPrice: '', unitType: 'piece' as UnitType, barcode: '', category: '' });
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -47,7 +55,9 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       wholesalePrice: parseFloat(wholesalePrice),
       costPrice: parseFloat(costPrice),
       unitType,
-      barcode: barcode.trim() || undefined
+      barcode: barcode.trim() || undefined,
+      category: selectedCategory,
+      sortOrder: products.length
     });
 
     setName('');
@@ -66,7 +76,8 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       wholesalePrice: (p.wholesalePrice || p.price).toString(), 
       costPrice: p.costPrice.toString(), 
       unitType: p.unitType,
-      barcode: p.barcode || ''
+      barcode: p.barcode || '',
+      category: p.category || ''
     });
   };
 
@@ -78,7 +89,8 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       wholesalePrice: parseFloat(editForm.wholesalePrice),
       costPrice: parseFloat(editForm.costPrice),
       unitType: editForm.unitType,
-      barcode: editForm.barcode.trim() || undefined
+      barcode: editForm.barcode.trim() || undefined,
+      category: editForm.category
     });
     setEditingId(null);
   };
@@ -100,6 +112,32 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
         </div>
 
         <div className="p-6 overflow-y-auto custom-scrollbar">
+          {/* Category Management */}
+          <div className="mb-6 bg-gray-900/40 p-4 rounded-xl border border-gray-700">
+            <h4 className="text-xs font-black text-gray-400 mb-3 uppercase tracking-widest">إدارة التصنيفات</h4>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {categories.map(cat => (
+                <div key={cat} className="flex items-center gap-1 bg-gray-800 px-3 py-1.5 rounded-xl border border-gray-700 group">
+                  <span className="text-xs font-bold text-gray-300">{cat}</span>
+                  <button onClick={() => onDeleteCategory(cat)} className="text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"><X size={12} /></button>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="تصنيف جديد..."
+                className="flex-1 bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-xs outline-none focus:border-[#FA8072]"
+              />
+              <button 
+                onClick={() => { if(newCategory) { onAddCategory(newCategory); setNewCategory(''); } }}
+                className="bg-gray-700 text-white px-4 py-2 rounded-lg text-xs font-bold hover:bg-gray-600"
+              >إضافة</button>
+            </div>
+          </div>
+
           {!editingId && (
               <form onSubmit={handleSubmit} className="mb-6 bg-gray-700/30 p-4 rounded-xl border border-gray-600">
                 <h4 className="text-sm font-bold text-gray-300 mb-3">إضافة مادة جديدة</h4>
@@ -113,6 +151,16 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                             className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg outline-none text-sm"
                             required
                         />
+                        <select
+                          value={selectedCategory}
+                          onChange={(e) => setSelectedCategory(e.target.value)}
+                          className="w-full px-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg outline-none text-sm"
+                        >
+                          <option value="">بدون تصنيف</option>
+                          {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div className="relative">
                             <Barcode size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                             <input
@@ -176,9 +224,17 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
               <div className="mb-6 bg-blue-900/20 p-4 rounded-xl border border-blue-500/30 animate-fade-up">
                   <h4 className="text-sm font-bold text-blue-400 mb-3 flex items-center gap-2"><Edit2 size={16} /> تعديل بيانات: {editForm.name}</h4>
                   <div className="space-y-3">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                           <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm" placeholder="الاسم" />
                           <input type="text" value={editForm.barcode} onChange={e => setEditForm({...editForm, barcode: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm dir-ltr text-right" placeholder="الباركود" />
+                          <select
+                            value={editForm.category}
+                            onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                            className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm"
+                          >
+                            <option value="">بدون تصنيف</option>
+                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          </select>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                           <div className="space-y-1">
