@@ -155,21 +155,34 @@ export const POSInterface: React.FC<any> = ({
   const handleDragStart = (e: React.DragEvent, id: string) => {
     setDraggedProductId(id);
     e.dataTransfer.setData('productId', id);
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDragEnd = () => {
+    setDraggedProductId(null);
   };
 
   const handleDrop = (e: React.DragEvent, targetId: string) => {
     e.preventDefault();
-    const sourceId = e.dataTransfer.getData('productId');
-    if (sourceId === targetId) return;
+    const sourceId = draggedProductId || e.dataTransfer.getData('productId');
+    
+    if (!sourceId || sourceId === targetId) {
+      setDraggedProductId(null);
+      return;
+    }
 
     const sourceIdx = products.findIndex((p: any) => p.id === sourceId);
     const targetIdx = products.findIndex((p: any) => p.id === targetId);
     
-    if (sourceIdx === -1 || targetIdx === -1) return;
+    if (sourceIdx === -1 || targetIdx === -1) {
+      setDraggedProductId(null);
+      return;
+    }
 
     const newProducts = [...products];
     const [movedProduct] = newProducts.splice(sourceIdx, 1);
@@ -219,9 +232,10 @@ export const POSInterface: React.FC<any> = ({
                   draggable
                   onDragStart={(e) => handleDragStart(e, p.id)}
                   onDragOver={handleDragOver}
+                  onDragEnd={handleDragEnd}
                   onDrop={(e) => handleDrop(e, p.id)}
                   onClick={() => addToCart(p)} 
-                  className={`flex flex-col items-center justify-center p-4 bg-gray-800 border ${draggedProductId === p.id ? 'border-indigo-500 opacity-50' : 'border-gray-700'} hover:bg-gray-700 hover:border-[#FA8072] text-white rounded-[1.5rem] transition-all shadow-sm active:scale-95 h-32 relative group overflow-hidden cursor-grab active:cursor-grabbing`}
+                  className={`flex flex-col items-center justify-center p-4 bg-gray-800 border ${draggedProductId === p.id ? 'border-indigo-500 opacity-50 scale-95' : 'border-gray-700'} hover:bg-gray-700 hover:border-[#FA8072] text-white rounded-[1.5rem] transition-all shadow-sm active:scale-95 h-32 relative group overflow-hidden cursor-grab active:cursor-grabbing`}
                 >
                     <div className={`absolute top-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-black ${p.unitType === 'kg' ? 'bg-yellow-400 text-black' : 'bg-blue-300 text-black'}`}>{p.unitType === 'kg' ? 'كغ' : 'قطعة'}</div>
                     <span className="font-black text-xs text-center mb-1 group-hover:text-[#FA8072] line-clamp-2 leading-tight">{p.name}</span>
