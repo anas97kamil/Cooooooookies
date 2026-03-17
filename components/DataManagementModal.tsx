@@ -3,6 +3,8 @@ import { X, Download, Upload, Database, AlertTriangle, FileJson, Trash2, Lock, K
 
 interface DataManagementModalProps {
   onExport: () => void;
+  onExportProducts: () => void;
+  onFullReset: () => void;
   onImport: (file: File) => void;
   onArchiveDay: () => void;
   onClose: () => void;
@@ -13,7 +15,7 @@ interface DataManagementModalProps {
 }
 
 export const DataManagementModal: React.FC<DataManagementModalProps> = ({ 
-  onExport, onImport, onArchiveDay, onClose, systemPassword, setSystemPassword, loginPassword, setLoginPassword 
+  onExport, onExportProducts, onFullReset, onImport, onArchiveDay, onClose, systemPassword, setSystemPassword, loginPassword, setLoginPassword 
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -121,10 +123,19 @@ export const DataManagementModal: React.FC<DataManagementModalProps> = ({
                     <ChevronDown size={18} className="text-gray-600 group-hover:text-[#FA8072] -rotate-90" />
                 </button>
 
-                <div className="bg-gray-900/40 p-5 rounded-2xl border border-gray-700">
-                    <h4 className="text-white font-black mb-3 text-sm flex items-center gap-2"><Download size={16} className="text-blue-400" /> نسخة احتياطية (.bak)</h4>
-                    <p className="text-gray-500 text-[10px] mb-4 font-bold leading-relaxed">تصدير قاعدة البيانات بصيغة مضغوطة تشمل (المبيعات، المشتريات، المنتجات، وكلمات المرور).</p>
-                    <button onClick={onExport} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-xl font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95"><FileJson size={20} /> تصدير نسخة مضغوطة</button>
+                <div className="bg-gray-900/40 p-5 rounded-2xl border border-gray-700 space-y-3">
+                    <h4 className="text-white font-black text-sm flex items-center gap-2"><Download size={16} className="text-blue-400" /> تصدير البيانات</h4>
+                    <p className="text-gray-500 text-[10px] font-bold leading-relaxed">تصدير قاعدة البيانات بصيغة مضغوطة تشمل كافة البيانات أو المنتجات فقط.</p>
+                    <div className="grid grid-cols-1 gap-2">
+                        <button onClick={onExport} className="w-full bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-black flex items-center justify-center gap-2 transition-all shadow-lg active:scale-95 text-xs"><FileJson size={16} /> تصدير نسخة كاملة (.bak)</button>
+                        <button onClick={onExportProducts} className="w-full bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-xl font-black flex items-center justify-center gap-2 transition-all text-xs"><FileJson size={16} /> تصدير المنتجات فقط</button>
+                    </div>
+                </div>
+
+                <div className="bg-red-500/5 p-5 rounded-2xl border border-red-500/20 space-y-3">
+                    <h4 className="text-red-400 font-black text-sm flex items-center gap-2"><Trash2 size={16} /> تهيئة النظام (ريسيت)</h4>
+                    <p className="text-gray-500 text-[10px] font-bold leading-relaxed">سيتم حذف كافة البيانات والمنتجات والإعدادات وإعادة النظام لحالته الأصلية.</p>
+                    <button onClick={onFullReset} className="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white py-3 rounded-xl font-black text-xs transition-all border border-red-500/30">إعادة ضبط المصنع (حذف شامل)</button>
                 </div>
 
                 <div className="bg-gray-900/40 p-5 rounded-2xl border border-gray-700">

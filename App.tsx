@@ -87,7 +87,7 @@ const App: React.FC = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
   const [loginPassword, setLoginPassword] = useState(() => localStorage.getItem('loginPassword') || '2026');
-  const [systemPassword, setSystemPassword] = useState(() => localStorage.getItem('systemPassword') || '@@A2026A@@');
+  const [systemPassword, setSystemPassword] = useState(() => localStorage.getItem('systemPassword') || '2026');
 
   // State Management
   const [sales, setSales] = useState<SaleItem[]>(() => JSON.parse(localStorage.getItem('dailySales') || '[]'));
@@ -244,6 +244,16 @@ const App: React.FC = () => {
     link.click();
   };
 
+  const handleExportProducts = async () => {
+    const backup = { products, productCategories };
+    const blob = new Blob([JSON.stringify(backup)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `products-backup-${new Date().toLocaleDateString()}.json`;
+    link.click();
+  };
+
   const handleImportData = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -387,7 +397,7 @@ const App: React.FC = () => {
             onClose={() => setModals(m => ({ ...m, accounts: false }))}
           />
         )}
-        {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onImport={handleImportData} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} setSystemPassword={setSystemPassword} loginPassword={loginPassword} setLoginPassword={setLoginPassword} />}
+        {modals.data && <DataManagementModal onClose={() => setModals(m => ({...m, data: false}))} onExport={handleExportData} onExportProducts={handleExportProducts} onFullReset={() => handleOpenProtected('full_reset')} onImport={handleImportData} onArchiveDay={handleArchiveDay} systemPassword={systemPassword} setSystemPassword={setSystemPassword} loginPassword={loginPassword} setLoginPassword={setLoginPassword} />}
         {invoiceItems && <InvoiceModal items={invoiceItems} onClose={() => setInvoiceItems(null)} />}
       </Suspense>
 
