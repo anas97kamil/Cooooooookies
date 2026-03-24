@@ -175,6 +175,15 @@ const App: React.FC = () => {
       setCustomers(prev => prev.map(c => c.id === customerId ? { ...c, balance: (c.balance || 0) + totalAmount, isAccount: true } : c));
     }
 
+    // Update Stock
+    setProducts(prev => prev.map(p => {
+      const soldItem = items.find(item => item.name === p.name && item.unitType === p.unitType);
+      if (soldItem && p.trackStock) {
+        return { ...p, stock: Math.max(0, (p.stock || 0) - soldItem.quantity) };
+      }
+      return p;
+    }));
+
     setSales(prev => [...prev, ...newItems]);
     setInvoiceItems(newItems);
   }, [sales, history]);

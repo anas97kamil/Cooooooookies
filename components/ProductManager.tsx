@@ -30,13 +30,25 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
   const [price, setPrice] = useState('');
   const [wholesalePrice, setWholesalePrice] = useState('');
   const [costPrice, setCostPrice] = useState('');
+  const [stock, setStock] = useState('');
+  const [trackStock, setTrackStock] = useState(false);
   const [unitType, setUnitType] = useState<UnitType>('piece');
   const [barcode, setBarcode] = useState('');
   const [selectedCategory, setSelectedCategory] = useState(categories[0] || '');
   const [newCategory, setNewCategory] = useState('');
   
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', price: '', wholesalePrice: '', costPrice: '', unitType: 'piece' as UnitType, barcode: '', category: '' });
+  const [editForm, setEditForm] = useState({ 
+    name: '', 
+    price: '', 
+    wholesalePrice: '', 
+    costPrice: '', 
+    unitType: 'piece' as UnitType, 
+    barcode: '', 
+    category: '',
+    stock: '',
+    trackStock: false
+  });
 
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -57,13 +69,17 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       unitType,
       barcode: barcode.trim() || undefined,
       category: selectedCategory,
-      sortOrder: products.length
+      sortOrder: products.length,
+      stock: trackStock ? parseFloat(stock) || 0 : undefined,
+      trackStock
     });
 
     setName('');
     setPrice('');
     setWholesalePrice('');
     setCostPrice('');
+    setStock('');
+    setTrackStock(false);
     setUnitType('piece');
     setBarcode('');
   };
@@ -77,7 +93,9 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       costPrice: p.costPrice.toString(), 
       unitType: p.unitType,
       barcode: p.barcode || '',
-      category: p.category || ''
+      category: p.category || '',
+      stock: (p.stock ?? 0).toString(),
+      trackStock: p.trackStock ?? false
     });
   };
 
@@ -90,7 +108,9 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       costPrice: parseFloat(editForm.costPrice),
       unitType: editForm.unitType,
       barcode: editForm.barcode.trim() || undefined,
-      category: editForm.category
+      category: editForm.category,
+      stock: editForm.trackStock ? parseFloat(editForm.stock) || 0 : undefined,
+      trackStock: editForm.trackStock
     });
     setEditingId(null);
   };
@@ -171,6 +191,26 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                                 className="w-full pl-9 pr-3 py-2 bg-gray-900 border border-gray-600 text-white rounded-lg outline-none text-sm dir-ltr text-right"
                             />
                         </div>
+                        <div className="flex items-center gap-3 bg-gray-900 border border-gray-600 rounded-lg px-3 py-1.5">
+                            <label className="text-[10px] text-gray-400 font-bold flex items-center gap-1 cursor-pointer">
+                                <input 
+                                    type="checkbox" 
+                                    checked={trackStock} 
+                                    onChange={(e) => setTrackStock(e.target.checked)}
+                                    className="accent-[#FA8072]"
+                                />
+                                تتبع المخزون
+                            </label>
+                            {trackStock && (
+                                <input
+                                    type="number"
+                                    value={stock}
+                                    onChange={(e) => setStock(e.target.value)}
+                                    placeholder="الكمية الحالية"
+                                    className="flex-1 bg-transparent text-white text-xs outline-none border-l border-gray-700 pl-2 font-bold"
+                                />
+                            )}
+                        </div>
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -227,16 +267,37 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                           <input type="text" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm" placeholder="الاسم" />
                           <input type="text" value={editForm.barcode} onChange={e => setEditForm({...editForm, barcode: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm dir-ltr text-right" placeholder="الباركود" />
-                          <select
-                            value={editForm.category}
-                            onChange={(e) => setEditForm({...editForm, category: e.target.value})}
-                            className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm"
-                          >
-                            <option value="">بدون تصنيف</option>
-                            {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                          </select>
+                          <div className="flex items-center gap-2 bg-gray-900 border border-gray-600 rounded-lg px-2">
+                              <input 
+                                type="checkbox" 
+                                checked={editForm.trackStock} 
+                                onChange={e => setEditForm({...editForm, trackStock: e.target.checked})}
+                                className="accent-[#FA8072]"
+                              />
+                              <span className="text-[10px] text-gray-400">تتبع</span>
+                              {editForm.trackStock && (
+                                  <input 
+                                    type="number" 
+                                    value={editForm.stock} 
+                                    onChange={e => setEditForm({...editForm, stock: e.target.value})} 
+                                    className="flex-1 bg-transparent text-white text-xs p-1 outline-none font-bold" 
+                                    placeholder="الكمية"
+                                  />
+                              )}
+                          </div>
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                          <div className="space-y-1">
+                              <label className="text-[10px] text-gray-400">التصنيف</label>
+                              <select
+                                value={editForm.category}
+                                onChange={(e) => setEditForm({...editForm, category: e.target.value})}
+                                className="w-full bg-gray-900 border border-gray-600 text-white p-2 rounded-lg text-sm"
+                              >
+                                <option value="">بدون تصنيف</option>
+                                {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                              </select>
+                          </div>
                           <div className="space-y-1">
                               <label className="text-[10px] text-gray-400">التكلفة</label>
                               <input type="number" value={editForm.costPrice} onChange={e => setEditForm({...editForm, costPrice: e.target.value})} className="w-full bg-gray-900 border border-gray-600 text-[#FA8072] p-2 rounded-lg font-bold" />
@@ -294,6 +355,14 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                                     <span className="text-[10px] text-blue-500/80 bg-blue-500/10 px-1 rounded flex items-center gap-0.5"><TrendingUp size={8}/>{wholesaleMargin.toFixed(0)}%</span>
                                 </div>
                             </div>
+                            {product.trackStock && (
+                                <div className="flex flex-col">
+                                    <span className="text-[9px] text-gray-500 uppercase">المخزون:</span>
+                                    <span className={`text-xs font-bold ${(product.stock ?? 0) <= 5 ? 'text-red-400' : 'text-indigo-400'}`}>
+                                        {(product.stock ?? 0).toLocaleString()} {product.unitType === 'kg' ? 'كغ' : 'قطعة'}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                       </div>
                       

@@ -97,6 +97,8 @@ export interface Product {
   barcode?: string;
   category?: string; // New: for grouping
   sortOrder?: number; // New: for drag and drop
+  stock?: number; // New: current stock
+  trackStock?: boolean; // New: whether to track stock for this product
 }
 
 export interface StockItem {

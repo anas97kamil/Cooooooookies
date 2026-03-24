@@ -242,6 +242,11 @@ export const POSInterface: React.FC<any> = ({
                     <span className="text-[11px] font-bold text-gray-400 tabular-nums">
                       {(saleType === 'wholesale' ? (p.wholesalePrice || p.price) : p.price).toLocaleString('en-US')}
                     </span>
+                    {p.trackStock && (
+                      <div className={`absolute bottom-2 right-2 px-1.5 py-0.5 rounded-[6px] text-[8px] font-black border ${p.stock <= 5 ? 'bg-red-500/10 border-red-500/30 text-red-400' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'}`}>
+                        {p.stock?.toLocaleString()} {p.unitType === 'kg' ? 'كغ' : 'ق'}
+                      </div>
+                    )}
                     {p.barcode && <Barcode size={10} className="absolute bottom-2 left-2 text-gray-600 opacity-30" />}
                 </button>
             ))}
