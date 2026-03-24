@@ -89,7 +89,7 @@ export const InvoiceModal: React.FC<any> = ({ items, onClose }) => {
                       <tr key={idx} className="text-[8px] font-bold border-b border-black/5 tabular-nums text-black">
                         <td className="py-1.5 leading-tight pr-1">{item.name}</td>
                         <td className="py-1.5 text-center font-black">{item.price.toLocaleString('en-US')}</td>
-                        <td className="py-1.5 text-center font-black">{item.quantity}</td>
+                        <td className="py-1.5 text-center font-black">{item.quantity.toLocaleString('en-US')}</td>
                         <td className="py-1.5 text-left font-black pl-1">
                           { (item.price * item.quantity).toLocaleString('en-US') }
                         </td>

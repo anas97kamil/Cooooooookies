@@ -340,18 +340,18 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                             )}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-2">
-                            <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">التكلفة:</span><span className="text-red-400 text-xs font-bold">{product.costPrice.toLocaleString()}</span></div>
+                            <div className="flex flex-col"><span className="text-[9px] text-gray-500 uppercase">التكلفة:</span><span className="text-red-400 text-xs font-bold">{product.costPrice.toLocaleString('en-US')}</span></div>
                             <div className="flex flex-col">
                                 <span className="text-[9px] text-gray-500 uppercase">المفرق:</span>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-green-400 text-xs font-bold">{product.price.toLocaleString()}</span>
+                                    <span className="text-green-400 text-xs font-bold">{product.price.toLocaleString('en-US')}</span>
                                     <span className="text-[10px] text-green-500/80 bg-green-500/10 px-1 rounded flex items-center gap-0.5"><TrendingUp size={8}/>{retailMargin.toFixed(0)}%</span>
                                 </div>
                             </div>
                             <div className="flex flex-col">
                                 <span className="text-[9px] text-gray-500 uppercase">الجملة:</span>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-blue-400 text-xs font-bold">{(product.wholesalePrice || product.price).toLocaleString()}</span>
+                                    <span className="text-blue-400 text-xs font-bold">{(product.wholesalePrice || product.price).toLocaleString('en-US')}</span>
                                     <span className="text-[10px] text-blue-500/80 bg-blue-500/10 px-1 rounded flex items-center gap-0.5"><TrendingUp size={8}/>{wholesaleMargin.toFixed(0)}%</span>
                                 </div>
                             </div>
@@ -359,7 +359,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
                                 <div className="flex flex-col">
                                     <span className="text-[9px] text-gray-500 uppercase">المخزون:</span>
                                     <span className={`text-xs font-bold ${(product.stock ?? 0) <= 5 ? 'text-red-400' : 'text-indigo-400'}`}>
-                                        {(product.stock ?? 0).toLocaleString()} {product.unitType === 'kg' ? 'كغ' : 'قطعة'}
+                                        {(product.stock ?? 0).toLocaleString('en-US')} {product.unitType === 'kg' ? 'كغ' : 'قطعة'}
                                     </span>
                                 </div>
                             )}

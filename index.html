@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar-u-nu-latn" dir="rtl">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -19,15 +19,21 @@
         background-color: #111827;
         color: #F3F4F6;
         -webkit-tap-highlight-color: transparent;
-        /* Force English digits */
-        font-variant-numeric: tabular-nums;
       }
       
-      /* Ensure all numbers use English digits */
+      /* Force English digits globally */
       * {
         font-variant-numeric: tabular-nums;
         -webkit-font-feature-settings: "tnum" 1, "lnum" 1;
         font-feature-settings: "tnum" 1, "lnum" 1;
+      }
+
+      /* Ensure numbers are always English */
+      [class*="tabular-nums"], 
+      input[type="number"],
+      .font-black,
+      .font-bold {
+        font-family: 'Inter', 'Cairo', sans-serif !important;
       }
       
       .animate-fade-up {

@@ -103,7 +103,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
     const months = new Set<string>();
     allGeneralExpenses.filter(e => e.category === category && e.date.endsWith(year)).forEach(e => {
         const dateObj = new Date(e.date);
-        const monthName = dateObj.toLocaleString('ar-SY', { month: 'long' });
+        const monthName = dateObj.toLocaleString('en-US', { month: 'long' });
         months.add(monthName || 'أخرى');
     });
     return Array.from(months);
@@ -112,7 +112,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
   const getDetailedGenExpenses = (category: string, year: string, month: string) => {
     return allGeneralExpenses.filter(e => {
         const dateObj = new Date(e.date);
-        const mName = dateObj.toLocaleString('ar-SY', { month: 'long' });
+        const mName = dateObj.toLocaleString('en-US', { month: 'long' });
         return e.category === category && e.date.endsWith(year) && mName === month;
     });
   };
@@ -147,7 +147,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
         currentQuantity: 0,
         unitType: newStock.unitType,
         minThreshold: newStock.minThreshold,
-        lastUpdated: new Date().toLocaleDateString()
+        lastUpdated: new Date().toLocaleDateString('en-US')
     };
     setInventory(prev => [...prev, item]);
     setNewStock({ name: '', unitType: 'kg', minThreshold: 1 });
@@ -158,7 +158,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
     if (!consumeDialog || !actionQty) return;
     const qtyToSubtract = parseFloat(actionQty);
     if (isNaN(qtyToSubtract)) return;
-    setInventory(prev => prev.map(item => item.id === consumeDialog.id ? { ...item, currentQuantity: item.currentQuantity - qtyToSubtract, lastUpdated: new Date().toLocaleDateString() } : item));
+    setInventory(prev => prev.map(item => item.id === consumeDialog.id ? { ...item, currentQuantity: item.currentQuantity - qtyToSubtract, lastUpdated: new Date().toLocaleDateString('en-US') } : item));
     setConsumeDialog(null);
     setActionQty('');
   };
@@ -167,7 +167,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
     if (!editQtyDialog || !actionQty) return;
     const newQty = parseFloat(actionQty);
     if (isNaN(newQty)) return;
-    setInventory(prev => prev.map(item => item.id === editQtyDialog.id ? { ...item, currentQuantity: newQty, lastUpdated: new Date().toLocaleDateString() } : item));
+    setInventory(prev => prev.map(item => item.id === editQtyDialog.id ? { ...item, currentQuantity: newQty, lastUpdated: new Date().toLocaleDateString('en-US') } : item));
     setEditQtyDialog(null);
     setActionQty('');
   };
@@ -181,7 +181,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
           let updated = [...prev];
           currentInvoiceItems.forEach(purchaseItem => {
               const stockIdx = updated.findIndex(s => s.name === purchaseItem.name);
-              if (stockIdx > -1) updated[stockIdx] = { ...updated[stockIdx], currentQuantity: updated[stockIdx].currentQuantity + purchaseItem.quantity, lastUpdated: new Date().toLocaleDateString() };
+              if (stockIdx > -1) updated[stockIdx] = { ...updated[stockIdx], currentQuantity: updated[stockIdx].currentQuantity + purchaseItem.quantity, lastUpdated: new Date().toLocaleDateString('en-US') };
           });
           return updated;
       });
@@ -206,7 +206,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
         employeeName: employee.name,
         amount: parseFloat(salaryForm.amount),
         date: now.toLocaleDateString('ar-SY'),
-        month: now.toLocaleString('ar-SY', { month: 'long' }),
+        month: now.toLocaleString('en-US', { month: 'long' }),
         notes: salaryForm.notes
     });
     setSalaryForm({ employeeId: '', amount: '', notes: '' });
@@ -381,7 +381,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
                                           <h5 className="text-white font-black text-sm mb-1">{cat}</h5>
                                           <div className="flex items-center justify-between border-t border-gray-800 pt-4 mt-2">
                                               <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">إجمالي المصروف</span>
-                                              <span className="text-pink-500 font-black text-xs tabular-nums">{totalPaid.toLocaleString()} ل.س</span>
+                                              <span className="text-pink-500 font-black text-xs tabular-nums">{totalPaid.toLocaleString('en-US')} ل.س</span>
                                           </div>
                                       </div>
                                   );
@@ -430,7 +430,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
                                           </div>
                                       </div>
                                       <div className="flex items-center gap-4">
-                                          <span className="text-pink-500 font-black text-sm tabular-nums">{exp.amount.toLocaleString()} ل.س</span>
+                                          <span className="text-pink-500 font-black text-sm tabular-nums">{exp.amount.toLocaleString('en-US')} ل.س</span>
                                           {/* Only allow deleting if it's in today's active list or we have a more global delete logic */}
                                           {generalExpenses.some(active => active.id === exp.id) && (
                                               <button onClick={() => onDeleteGeneralExpense(exp.id)} className="text-gray-700 hover:text-red-500 p-1 transition-colors"><Trash2 size={16}/></button>
@@ -535,7 +535,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
                                           <p className="text-[10px] text-gray-500 font-bold mb-4 uppercase">{emp.position || 'موظف'}</p>
                                           <div className="flex items-center justify-between border-t border-gray-800 pt-4">
                                               <span className="text-[9px] text-gray-500 font-black uppercase tracking-widest">إجمالي المستلم</span>
-                                              <span className="text-green-500 font-black text-xs tabular-nums">{totalPaid.toLocaleString()} ل.س</span>
+                                              <span className="text-green-500 font-black text-xs tabular-nums">{totalPaid.toLocaleString('en-US')} ل.س</span>
                                           </div>
                                       </div>
                                   );
@@ -584,7 +584,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
                                           </div>
                                       </div>
                                       <div className="flex items-center gap-4">
-                                          <span className="text-green-500 font-black text-sm tabular-nums">{pay.amount.toLocaleString()} ل.س</span>
+                                          <span className="text-green-500 font-black text-sm tabular-nums">{pay.amount.toLocaleString('en-US')} ل.س</span>
                                           {salaryPayments.some(active => active.id === pay.id) && (
                                               <button onClick={() => onDeleteSalaryPayment(pay.id)} className="text-gray-700 hover:text-red-500 p-1"><Trash2 size={16}/></button>
                                           )}
@@ -646,7 +646,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
                       <button onClick={() => { if (!itemInputs.name || !itemInputs.quantity || !itemInputs.unitPrice) return; const q = parseFloat(itemInputs.quantity); const price = parseFloat(itemInputs.unitPrice); setCurrentInvoiceItems(prev => [...prev, { id: Date.now().toString(), name: itemInputs.name, quantity: q, cost: price, total: q * price }]); setItemInputs({ name: '', quantity: '', unitPrice: '' }); }} className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg">إضافة مادة للفاتورة</button>
                   </div>
                   <div className="flex items-center justify-between pt-6 border-t border-gray-700">
-                      <div className="text-2xl font-black text-red-500 tabular-nums">{currentInvoiceItems.reduce((s,i) => s + i.total, 0).toLocaleString()} <span className="text-[10px] text-gray-600">ل.س</span></div>
+                      <div className="text-2xl font-black text-red-500 tabular-nums">{currentInvoiceItems.reduce((s,i) => s + i.total, 0).toLocaleString('en-US')} <span className="text-[10px] text-gray-600">ل.س</span></div>
                       <button onClick={handleSaveInvoice} className="bg-green-600 hover:bg-green-500 text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-3 shadow-xl transition-all">حفظ وتحديث المستودع</button>
                   </div>
               </div>
@@ -660,7 +660,7 @@ export const ExpensesModal: React.FC<ExpensesModalProps> = ({
                               <div className="bg-gray-800 p-3 rounded-2xl text-red-400"><ShoppingCart size={18} /></div>
                               <div className="flex flex-col">
                                   <span className="text-white text-xs font-black">{inv.supplierName}</span>
-                                  <span className="text-[9px] text-gray-500 font-bold tabular-nums">{inv.date} • {inv.totalAmount.toLocaleString()} ل.س</span>
+                                  <span className="text-[9px] text-gray-500 font-bold tabular-nums">{inv.date} • {inv.totalAmount.toLocaleString('en-US')} ل.س</span>
                               </div>
                           </div>
                           <div className="flex gap-2">

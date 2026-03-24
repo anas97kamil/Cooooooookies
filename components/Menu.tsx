@@ -103,7 +103,7 @@ export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, 
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1.5 bg-black/40 px-2 py-0.5 rounded border border-gray-700" title="رقم الفاتورة">
                                             <Hash size={10} className="text-[#FA8072]" />
-                                            <span className="text-sm font-black text-white tabular-nums">{first.customerNumber}</span>
+                                            <span className="text-sm font-black text-white tabular-nums">{first.customerNumber.toLocaleString('en-US')}</span>
                                         </div>
                                         <span className="font-black text-white text-sm">{first.customerName || 'زبون عام'}</span>
                                         {isLatest && <span className="bg-[#FA8072] text-white text-[8px] px-1.5 py-0.5 rounded font-black uppercase">الأحدث</span>}
@@ -129,7 +129,7 @@ export const SalesTable: React.FC<any> = ({ items, onDeleteItem, onDeleteOrder, 
                                         <div className="w-1 h-1 rounded-full bg-gray-600"></div>
                                         <div className="flex flex-col">
                                             <span className="text-gray-200 font-bold text-[11px]">{item.name}</span>
-                                            <span className="text-[9px] text-gray-500">الكمية: <span className="text-gray-300">{item.quantity}</span> {item.unitType === 'kg' ? 'كغ' : 'قطعة'}</span>
+                                            <span className="text-[9px] text-gray-500">الكمية: <span className="text-gray-300">{item.quantity.toLocaleString('en-US')}</span> {item.unitType === 'kg' ? 'كغ' : 'قطعة'}</span>
                                         </div>
                                     </div>
                                     

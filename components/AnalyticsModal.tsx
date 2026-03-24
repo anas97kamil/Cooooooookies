@@ -118,7 +118,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
     return `الجرد المالي لشهر: ${getMonthName(selectedMonth)} ${selectedYear}`;
   };
 
-  const getMonthName = (m: number) => new Date(2000, m).toLocaleString('ar-SY', { month: 'long' });
+  const getMonthName = (m: number) => new Date(2000, m).toLocaleString('en-US', { month: 'long' });
 
   const handlePrint = () => {
     const printArea = document.getElementById('print-area');
@@ -217,14 +217,14 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                     <div className="border-r-2 border-black/5 pr-4">
                         <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">إجمالي المبيعات</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-black tabular-nums">{totals.revenue.toLocaleString()}</span>
+                            <span className="text-2xl font-black text-black tabular-nums">{totals.revenue.toLocaleString('en-US')}</span>
                             <span className="text-[8px] text-gray-500 font-bold">ل.س</span>
                         </div>
                     </div>
                     <div className="border-r-2 border-black/5 pr-4">
                         <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">إجمالي المصاريف</span>
                         <div className="flex items-baseline gap-1">
-                            <span className="text-2xl font-black text-red-600 tabular-nums">{totals.expenses.toLocaleString()}</span>
+                            <span className="text-2xl font-black text-red-600 tabular-nums">{totals.expenses.toLocaleString('en-US')}</span>
                             <span className="text-[8px] text-gray-500 font-bold">ل.س</span>
                         </div>
                     </div>
@@ -232,7 +232,7 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                         <span className="text-[10px] font-black text-gray-400 uppercase block mb-1">صافي الربح</span>
                         <div className="flex items-baseline gap-1">
                             <span className={`text-2xl font-black tabular-nums ${totals.profit >= 0 ? 'text-green-600' : 'text-red-700'}`}>
-                              {totals.profit.toLocaleString()}
+                              {totals.profit.toLocaleString('en-US')}
                             </span>
                             <span className="text-[8px] text-gray-500 font-bold">ل.س</span>
                         </div>
@@ -250,21 +250,21 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                     <div>
                         <h4 className="text-[9px] font-black text-gray-400 mb-3 flex items-center gap-2 uppercase tracking-widest"><ShoppingCart size={14} className="text-red-500" /> مشتريات (مواد):</h4>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-black text-black tabular-nums">{totals.purchases.toLocaleString()}</span>
+                            <span className="text-xl font-black text-black tabular-nums">{totals.purchases.toLocaleString('en-US')}</span>
                             <span className="text-[9px] text-gray-400 font-bold">ليرة</span>
                         </div>
                     </div>
                     <div className="border-r border-gray-200 pr-6">
                         <h4 className="text-[9px] font-black text-gray-400 mb-3 flex items-center gap-2 uppercase tracking-widest"><Users size={14} className="text-green-600" /> عمال (رواتب):</h4>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-black text-black tabular-nums">{totals.salaries.toLocaleString()}</span>
+                            <span className="text-xl font-black text-black tabular-nums">{totals.salaries.toLocaleString('en-US')}</span>
                             <span className="text-[9px] text-gray-400 font-bold">ليرة</span>
                         </div>
                     </div>
                     <div className="border-r border-gray-200 pr-6">
                         <h4 className="text-[9px] font-black text-gray-400 mb-3 flex items-center gap-2 uppercase tracking-widest"><Receipt size={14} className="text-pink-500" /> مصاريف عامة:</h4>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-black text-black tabular-nums">{totals.general.toLocaleString()}</span>
+                            <span className="text-xl font-black text-black tabular-nums">{totals.general.toLocaleString('en-US')}</span>
                             <span className="text-[9px] text-gray-400 font-bold">ليرة</span>
                         </div>
                     </div>
@@ -288,10 +288,10 @@ export const AnalyticsModal: React.FC<AnalyticsModalProps> = ({ history, current
                             {productStats.map(([name, data], idx) => (
                                 <tr key={idx} className="group">
                                     <td className="py-4 font-black text-black">{name}</td>
-                                    <td className="py-4 text-center tabular-nums font-bold text-gray-500">{data.qty.toLocaleString()}</td>
-                                    <td className="py-4 text-center tabular-nums font-bold text-gray-500">{data.revenue.toLocaleString()}</td>
+                                    <td className="py-4 text-center tabular-nums font-bold text-gray-500">{data.qty.toLocaleString('en-US')}</td>
+                                    <td className="py-4 text-center tabular-nums font-bold text-gray-500">{data.revenue.toLocaleString('en-US')}</td>
                                     <td className={`py-4 text-left font-black tabular-nums ${data.profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                        {data.profit.toLocaleString()}
+                                        {data.profit.toLocaleString('en-US')}
                                     </td>
                                 </tr>
                             ))}

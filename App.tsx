@@ -179,7 +179,7 @@ const App: React.FC = () => {
     setProducts(prev => prev.map(p => {
       const soldItem = items.find(item => item.name === p.name && item.unitType === p.unitType);
       if (soldItem && p.trackStock) {
-        return { ...p, stock: Math.max(0, (p.stock || 0) - soldItem.quantity) };
+        return { ...p, stock: (p.stock || 0) - soldItem.quantity };
       }
       return p;
     }));
@@ -187,6 +187,31 @@ const App: React.FC = () => {
     setSales(prev => [...prev, ...newItems]);
     setInvoiceItems(newItems);
   }, [sales, history]);
+
+  const handleDeleteItem = (id: string) => {
+    const itemToDelete = sales.find(i => i.id === id);
+    if (itemToDelete) {
+      setProducts(prev => prev.map(p => {
+        if (p.name === itemToDelete.name && p.unitType === itemToDelete.unitType && p.trackStock) {
+          return { ...p, stock: (p.stock || 0) + itemToDelete.quantity };
+        }
+        return p;
+      }));
+    }
+    setSales(s => s.filter(i => i.id !== id));
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    const itemsToDelete = sales.filter(i => i.orderId === orderId);
+    setProducts(prev => prev.map(p => {
+      const soldItem = itemsToDelete.find(item => item.name === p.name && item.unitType === p.unitType);
+      if (soldItem && p.trackStock) {
+        return { ...p, stock: (p.stock || 0) + soldItem.quantity };
+      }
+      return p;
+    }));
+    setSales(s => s.filter(i => i.orderId !== orderId));
+  };
 
   const handleArchiveDay = useCallback((isAutoArg: any = false) => {
       const isAuto = isAutoArg === true;
@@ -249,7 +274,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `cookies-bakery-backup-${new Date().toLocaleDateString()}.json`;
+    link.download = `cookies-bakery-backup-${new Date().toLocaleDateString('en-US')}.json`;
     link.click();
   };
 
@@ -259,7 +284,7 @@ const App: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `products-backup-${new Date().toLocaleDateString()}.json`;
+    link.download = `products-backup-${new Date().toLocaleDateString('en-US')}.json`;
     link.click();
   };
 
@@ -335,7 +360,7 @@ const App: React.FC = () => {
           onOpenCustomerManager={() => setModals(m => ({...m, customers: true}))} 
         />
         <div className="mt-8">
-            <SalesTable items={sales} onDeleteItem={(id: string) => setSales(s => s.filter(i => i.id !== id))} onDeleteOrder={(oid: string) => setSales(s => s.filter(i => i.orderId !== oid))} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id: string, p: number) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
+            <SalesTable items={sales} onDeleteItem={handleDeleteItem} onDeleteOrder={handleDeleteOrder} onPreviewInvoice={setInvoiceItems} onUpdateItemPrice={(id: string, p: number) => setSales(s => s.map(i => i.id === id ? {...i, price: p} : i))} />
         </div>
       </main>
 
@@ -374,7 +399,38 @@ const App: React.FC = () => {
           inventory={inventory} 
           setInventory={setInventory} 
         />}
-        {modals.history && <HistoryModal history={history} currentSales={sales} onClose={() => setModals(m => ({...m, history: false}))} onPreviewInvoice={setInvoiceItems} onUpdateOrder={(dayId, orderId, items, name) => setHistory(prev => prev.map(day => day.id === dayId ? {...day, items: [...day.items.filter(it => it.orderId !== orderId), ...items]} : day))} onDeleteArchivedOrder={(dayId, orderId) => setHistory(prev => prev.map(day => day.id === dayId ? {...day, items: day.items.filter(it => it.orderId !== orderId)} : day))} onDeleteArchivedDay={id => setHistory(prev => prev.filter(d => d.id !== id))} />}
+        {modals.history && <HistoryModal 
+          history={history} 
+          currentSales={sales} 
+          onClose={() => setModals(m => ({...m, history: false}))} 
+          onPreviewInvoice={setInvoiceItems} 
+          onUpdateOrder={(dayId, orderId, items, name) => setHistory(prev => prev.map(day => day.id === dayId ? {...day, items: [...day.items.filter(it => it.orderId !== orderId), ...items]} : day))} 
+          onDeleteArchivedOrder={(dayId, orderId) => {
+            const day = history.find(d => d.id === dayId);
+            const itemsToDelete = day?.items.filter(i => i.orderId === orderId) || [];
+            setProducts(prev => prev.map(p => {
+              const soldItem = itemsToDelete.find(item => item.name === p.name && item.unitType === p.unitType);
+              if (soldItem && p.trackStock) {
+                return { ...p, stock: (p.stock || 0) + soldItem.quantity };
+              }
+              return p;
+            }));
+            setHistory(prev => prev.map(day => day.id === dayId ? {...day, items: day.items.filter(it => it.orderId !== orderId)} : day));
+          }} 
+          onDeleteArchivedDay={id => {
+            const dayToDelete = history.find(d => d.id === id);
+            if (dayToDelete) {
+              setProducts(prev => prev.map(p => {
+                const totalSoldInDay = dayToDelete.items.filter(item => item.name === p.name && item.unitType === p.unitType).reduce((sum, i) => sum + i.quantity, 0);
+                if (totalSoldInDay > 0 && p.trackStock) {
+                  return { ...p, stock: (p.stock || 0) + totalSoldInDay };
+                }
+                return p;
+              }));
+            }
+            setHistory(prev => prev.filter(d => d.id !== id));
+          }} 
+        />}
         {modals.products && (
           <ProductManager 
             isOpen={modals.products} 

@@ -97,7 +97,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
     }).sort((a,b) => b.timestamp - a.timestamp);
   }, [fullHistory, selectedYear, selectedMonth]);
 
-  const getMonthName = (monthIndex: number) => new Date(2000, monthIndex).toLocaleString('ar-SY', { month: 'long' });
+  const getMonthName = (monthIndex: number) => new Date(2000, monthIndex).toLocaleString('en-US', { month: 'long' });
 
   const groupItemsByOrder = (items: SaleItem[]) => {
       const orders: Record<string, SaleItem[]> = {};
@@ -219,8 +219,8 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className="flex flex-col items-end">
-                                        <span className="font-black text-lg text-green-400">{dayTotal.toLocaleString()} <small className="text-[10px] text-gray-500 font-normal">ل.س</small></span>
-                                        {day.totalExpenses > 0 && <span className="text-[10px] text-red-400 font-bold">مشتريات: {day.totalExpenses.toLocaleString()}</span>}
+                                        <span className="font-black text-lg text-green-400">{dayTotal.toLocaleString('en-US')} <small className="text-[10px] text-gray-500 font-normal">ل.س</small></span>
+                                        {day.totalExpenses > 0 && <span className="text-[10px] text-red-400 font-bold">مشتريات: {day.totalExpenses.toLocaleString('en-US')}</span>}
                                     </div>
                                     {!isTodayActive && (
                                         <button 
@@ -265,7 +265,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                     
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex items-center gap-1 text-[9px] text-gray-500 font-bold"><Clock size={10} />{first.time}</div>
-                                                        <span className="text-green-400 font-black text-sm">{orderTotal.toLocaleString()}</span>
+                                                        <span className="text-green-400 font-black text-sm">{orderTotal.toLocaleString('en-US')}</span>
                                                         
                                                         <div className="flex gap-2">
                                                            {isEditing ? (
@@ -329,7 +329,7 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                                                                 )}
                                                                 {!isEditing && <span className="text-gray-500 font-normal">({item.quantity} {item.unitType === 'kg' ? 'كغ' : 'قطعة'})</span>}
                                                             </div>
-                                                            <span className={`tabular-nums font-bold ${isEditing ? 'text-green-400' : 'text-gray-400'}`}>{(item.price * item.quantity).toLocaleString()}</span>
+                                                            <span className={`tabular-nums font-bold ${isEditing ? 'text-green-400' : 'text-gray-400'}`}>{(item.price * item.quantity).toLocaleString('en-US')}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -368,10 +368,10 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({
                         {profitReport.map(([name, data], idx) => (
                             <tr key={idx} className="hover:bg-gray-800/50 transition-colors">
                                 <td className="p-4 font-black text-white">{name}</td>
-                                <td className="p-4 text-center tabular-nums text-gray-400">{data.today.toLocaleString()}</td>
-                                <td className="p-4 text-center tabular-nums text-gray-400">{data.month.toLocaleString()}</td>
-                                <td className="p-4 text-center tabular-nums text-gray-400">{data.year.toLocaleString()}</td>
-                                <td className="p-4 text-center tabular-nums font-black text-green-400 bg-green-400/5">{data.total.toLocaleString()}</td>
+                                <td className="p-4 text-center tabular-nums text-gray-400">{data.today.toLocaleString('en-US')}</td>
+                                <td className="p-4 text-center tabular-nums text-gray-400">{data.month.toLocaleString('en-US')}</td>
+                                <td className="p-4 text-center tabular-nums text-gray-400">{data.year.toLocaleString('en-US')}</td>
+                                <td className="p-4 text-center tabular-nums font-black text-green-400 bg-green-400/5">{data.total.toLocaleString('en-US')}</td>
                             </tr>
                         ))}
                     </tbody>
